@@ -1,0 +1,27 @@
+<div class="bottom-nav py-2">
+    <div class="container-fluid">
+        <div class="row text-center">
+            
+            <div class="col nav-item <%= active === 'shop' ? 'active' : '' %>">
+                <a href="/shop">
+                    <img src="/images/UI/home.png">
+                </a>
+            </div>
+            <div class="col nav-item <%= active === 'favorite' ? 'active' : '' %>">
+                <a href="/favorite">
+                    <img src="/images/UI/like.png">
+                </a>
+            </div>
+            <div class="col nav-item <%= active === 'cart' ? 'active' : '' %>">
+                <a href="/cart">
+                    <img src="/images/UI/order.png">
+                </a>
+            </div>
+            <div class="col nav-item <%= active === 'profile' ? 'active' : '' %>">
+                <a href="/profile">
+                    <img src="/images/UI/profile.png">
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

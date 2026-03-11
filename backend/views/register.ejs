@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - Authentication App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        .register-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 480px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid #e5e5e5;
+            padding-bottom: 20px;
+        }
+
+        .logo {
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 5px;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 500;
+            color: #111;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 20px;
+            margin-bottom: 0;
+        }
+
+        .form-control {
+            border-radius: 8px;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            transition: all 0.2s;
+            background-color: #fafafa;
+        }
+
+        .form-control:focus {
+            border-color: #111;
+            background-color: white;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 14px;
+            display: block;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            padding: 0;
+            cursor: pointer;
+            z-index: 3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+
+        .password-toggle img {
+            width: 20px;
+            height: 20px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .password-toggle:hover img {
+            opacity: 1;
+        }
+
+        .btn-register {
+            background-color: #111;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 10px;
+        }
+
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+            background-color: #fafafa;
+            border-radius: 8px;
+        }
+
+        .password-wrapper:focus-within {
+            background-color: white;
+        }
+
+        .password-wrapper .form-control {
+            background-color: transparent;
+        }
+
+        .password-wrapper .form-control {
+            padding-right: 45px;
+        }
+
+
+        .btn-register:hover {
+            background-color: #333;
+        }
+
+        .btn-register:disabled {
+            background-color: #999;
+            cursor: not-allowed;
+        }
+
+        .links {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e5e5;
+        }
+
+        .links a {
+            color: #111;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .links a:hover {
+            color: #666;
+            text-decoration: underline;
+        }
+
+        .form-text {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+            display: block;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            font-size: 12px;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .show-error {
+            display: block;
+        }
+
+        .is-invalid {
+            border-color: #d32f2f;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .dob-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .dob-select {
+            flex: 1;
+        }
+
+        .dob-select select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .dob-select label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 4px;
+            display: block;
+        }
+
+
+
+
+
+        .alert {
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border: 1px solid transparent;
+            font-size: 14px;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #111;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 20px;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: #111;
+        }
+
+        .back-link::before {
+            content: "←";
+            margin-right: 8px;
+            font-size: 16px;
+        }
+
+        .form-control.is-invalid {
+            background-image: none !important;
+            padding-right: 45px;
+            /* giữ chỗ cho icon mắt */
+        }
+    </style>
+</head>
+
+<body>
+    <div class="register-container">
+        <div class="header"> <img src="/images/UI/logo.jpg" alt="Logo" class="logo">
+            <h1 class="title">Tạo Tài Khoản</h1>
+            <p class="subtitle">Tham gia cùng chúng tôi ngay hôm nay</p>
+        </div>
+        <!-- Phần quay lại trang chủ 
+         <a href="/splash" class="back-link">Quay lại trang chủ</a> -->
+        <% if (message) { %>
+            <div class="alert alert-<%= message.type %>">
+                <%= message.text %>
+            </div>
+            <% } %>
+                <form id="registerForm" autocomplete="off" novalidate>
+                    <div class="form-group">
+                        <label for="username" class="form-label">
+                            Tên đăng nhập *
+                        </label>
+                        <input type="text" class="form-control" id="username" name="username"
+                            autocomplete="new-username" placeholder="Nhập tên đăng nhập (3-30 ký tự)" minlength="3"
+                            maxlength="30" pattern="[a-zA-Z0-9_]+" required>
+                        <span class="form-text">
+                            Chỉ cho phép chữ cái, số và dấu
+                            gạch dưới
+                        </span>
+                        <span class="error-message" id="usernameError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="email" class="form-label">
+                            Email *
+                        </label>
+                        <input type="email" class="form-control" id="email" name="email" autocomplete="off"
+                            placeholder="Nhập email của bạn" required>
+                        <span class="error-message" id="emailError"></span>
+                    </div>
+                    <div class="form-group"> <label for="phoneNumber" class="form-label">Số điện thoại *</label> <input
+                            type="tel" class="form-control" id="phoneNumber" name="phoneNumber"
+                            placeholder="Nhập số điện thoại (10-11 chữ số)" pattern="[0-9]{10,11}" required> <span
+                            class="form-text">Chỉ 10-11 chữ số</span> <span class="error-message"
+                            id="phoneError"></span> </div>
+                    <div class="form-group">
+                        <label for="password" class="form-label">Mật khẩu *</label>
+                        <div class="password-wrapper">
+                            <input type="password" class="form-control" id="password" name="password"
+                                autocomplete="new-password" placeholder="Nhập mật khẩu" minlength="8" maxlength="16"
+                                required>
+                            <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                                <img src="/images/UI/hide.jpg" alt="Toggle">
+                            </button>
+                        </div>
+                        <div class="requirements" style="margin-top: 10px;">
+                            <div class="requirement" id="reqLength"> <span style="margin-right: 8px;">•</span> <span
+                                    style="font-size: 12px; color: #999;">8-16 ký tự</span> </div>
+                            <div class="requirement" id="reqUppercase"> <span style="margin-right: 8px;">•</span> <span
+                                    style="font-size: 12px; color: #999;">Ít nhất một chữ hoa</span> </div>
+                            <div class="requirement" id="reqSpecial"> <span style="margin-right: 8px;">•</span> <span
+                                    style="font-size: 12px; color: #999;">Ít nhất một ký tự đặc biệt
+                                    (!@#$%^&*...)</span> </div>
+                        </div> <span class="error-message" id="passwordError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword" class="form-label">Xác nhận mật khẩu *</label>
+                        <div class="password-wrapper">
+                            <input type="password" class="form-control" id="confirmPassword" autocomplete="new-password"
+                                name="confirmPassword" placeholder="Xác nhận mật khẩu của bạn" required> <button
+                                type="button" class="password-toggle" onclick="togglePassword('confirmPassword')"> <img
+                                    src="/images/UI/hide.jpg" alt="Toggle"> </button>
+                        </div> <span class="error-message" id="confirmPasswordError"></span>
+                    </div>
+
+
+
+                    <button type="submit" class="btn-register" id="submitBtn">
+                        Tạo tài khoản
+                    </button>
+                </form>
+                <div class="links"> <a href="/login">Đã có tài khoản? Đăng nhập</a> </div>
+    </div>
+    <script>
+        const passwordStates = {
+            password: false,
+            confirmPassword: false
+        };
+
+        function togglePassword(fieldId) {
+            const input = document.getElementById(fieldId);
+            const wrapper = input.closest('.password-wrapper');
+            const icon = wrapper.querySelector('.password-toggle img');
+
+            passwordStates[fieldId] = !passwordStates[fieldId];
+
+            input.type = passwordStates[fieldId] ? 'text' : 'password';
+            icon.src = passwordStates[fieldId]
+                ? '/images/UI/show.jpg'
+                : '/images/UI/hide.jpg';
+        }
+    </script>
+
+
+    <script>
+        // Biến lưu trạng thái hiển thị mật khẩu 
+
+        // Xác thực mật khẩu 
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const requirements = {
+            length: document.getElementById('reqLength'),
+            uppercase: document.getElementById('reqUppercase'),
+            special: document.getElementById('reqSpecial')
+        };
+
+        passwordInput.addEventListener('input', function () {
+            validatePassword(); validateConfirmPassword();
+        });
+        confirmPasswordInput.addEventListener('input', validateConfirmPassword);
+        function validatePassword() {
+            const password = passwordInput.value; let isValid = true;
+            // Kiểm tra độ dài 
+            const isValidLength = password.length >= 8
+                && password.length <= 16;
+            updateRequirement(requirements.length, isValidLength);
+            if (!isValidLength) isValid = false;
+            // Kiểm tra chữ hoa 
+            const hasUppercase = /[A-Z]/.test(password);
+            updateRequirement(requirements.uppercase, hasUppercase);
+            if (!hasUppercase) isValid = false;
+            // Kiểm tra ký tự đặc biệt 
+            const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+            updateRequirement(requirements.special, hasSpecial);
+            if (!hasSpecial) isValid = false;
+            return isValid;
+        }
+        function validateConfirmPassword() {
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
+            const errorElement = document.getElementById('confirmPasswordError');
+            if (confirmPassword && password !== confirmPassword) {
+                errorElement.textContent = 'Mật khẩu không khớp';
+                errorElement.classList.add('show-error');
+                confirmPasswordInput.classList.add('is-invalid');
+                return false;
+            }
+            else {
+                errorElement.textContent = ''; errorElement.classList.remove('show-error');
+                confirmPasswordInput.classList.remove('is-invalid'); return true;
+            }
+        }
+        function updateRequirement(element, isValid) {
+            const icon = element.querySelector('span:first-child');
+            const text = element.querySelector('span:last-child');
+            if (isValid) {
+                icon.textContent = '✓';
+                icon.style.color = '#28a745';
+                text.style.color = '#28a745';
+
+            }
+            else {
+                icon.textContent = '•';
+                icon.style.color = '#999';
+                text.style.color = '#999';
+            }
+        }
+        // Xử lý submit form 
+        document.getElementById('registerForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            // Reset lỗi 
+            resetErrors();
+
+            // Kiểm tra mật khẩu 
+            if (!validatePassword()) {
+                showError('passwordError',
+                    'Mật khẩu phải đáp ứng tất cả yêu cầu');
+                return;
+            }
+            // Kiểm tra xác nhận mật khẩu 
+            if (!validateConfirmPassword()) { return; }
+
+            // // Chuẩn bị dữ liệu 
+            const formData = {
+                username: document.getElementById('username').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                phoneNumber: document.getElementById('phoneNumber').value.trim(),
+                password: passwordInput.value,
+
+
+            };
+            // Hiển thị loading 
+            const submitBtn = document.getElementById('submitBtn'); const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> Đang xử lý...';
+            try {
+                const response = await fetch('/api/auth/register',
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData),
+                        credentials: 'include'
+
+                    });
+                const result = await response.json();
+                if (result.success) {
+                    showMessage('Đăng ký thành công! Đang chuyển hướng...', 'success');
+                    // Chuyển hướng sau 2 giây 
+                    setTimeout(() => {
+                        window.location.href = '/login?registered=true';
+                    }, 2000);
+                }
+                else {
+                    showMessage(result.message || 'Đăng ký thất bại', 'danger');
+                    // Hiển thị lỗi cụ thể 
+                    if (result.errors) {
+                        result.errors.forEach(error => {
+                            showError(error.field + 'Error', error.message);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showMessage('Đã xảy ra lỗi. Vui lòng thử lại.', 'danger');
+            } finally {
+                // Khôi phục button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+
+        function resetErrors() {
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.textContent = '';
+                el.classList.remove('show-error');
+            });
+            document.querySelectorAll('.is-invalid').forEach(el => {
+                el.classList.remove('is-invalid');
+            });
+        }
+        function showError(fieldId, message) {
+            const errorElement = document.getElementById(fieldId);
+            errorElement.textContent = message;
+            errorElement.classList.add('show-error');
+            // Thêm class is-invalid cho input tương ứng 
+            const inputId = fieldId.replace('Error', '');
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.classList.add('is-invalid');
+            }
+        }
+        function showMessage(text, type) {
+            // Xóa thông báo cũ 
+            const existingAlert = document.querySelector('.alert');
+            if (existingAlert) { existingAlert.remove(); }
+            // Tạo thông báo mới 
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = text;
+            // Thêm vào container 
+            const container = document.querySelector('.register-container');
+            const backLink = container.querySelector('.back-link');
+            if (backLink) {
+                container.insertBefore(alertDiv, backLink.nextSibling);
+            } else {
+                container.prepend(alertDiv);
+            }
+            // Tự động xóa sau 5 giây 
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        } </script>
+    </script>
+</body>
+
+</html>
