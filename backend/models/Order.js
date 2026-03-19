@@ -75,6 +75,10 @@ const orderSchema = new mongoose.Schema(
       enum: ["COD", "VNPAY"],
       default: "COD",
     },
+    paymentTxnRef: String,
+    paymentTransactionNo: String,
+    paymentResponseCode: String,
+    paymentReturnUrl: String,
     paymentStatus: {
       type: String,
       enum: ["pending", "paid", "failed", "refunded"],

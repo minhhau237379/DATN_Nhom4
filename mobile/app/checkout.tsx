@@ -1,16 +1,21 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import * as Linking from "expo-linking";
+import * as WebBrowser from "expo-web-browser";
 import AppToast from "../components/AppToast";
 import AppBottomNav, { APP_BOTTOM_NAV_HEIGHT } from "../components/AppBottomNav";
 import api from "../services/api";
+
+WebBrowser.maybeCompleteAuthSession();
 
 type CheckoutItem = {
   product: {
@@ -32,13 +37,19 @@ type AddressItem = {
 };
 
 export default function CheckoutScreen() {
-  const params = useLocalSearchParams<{ selected?: string }>();
+  const params = useLocalSearchParams<{
+    selected?: string;
+    paymentStatus?: string;
+    paymentMessage?: string;
+    orderId?: string;
+  }>();
   const [items, setItems] = useState<CheckoutItem[]>([]);
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "VNPAY">("COD");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [handledPaymentResult, setHandledPaymentResult] = useState(false);
   const [notice, setNotice] = useState({
     visible: false,
     title: "",
@@ -55,17 +66,25 @@ export default function CheckoutScreen() {
     }
   }, [params.selected]);
 
-  const showNotice = (title: string, message: string, orderId = "") => {
+  const paymentStatus = Array.isArray(params.paymentStatus)
+    ? params.paymentStatus[0]
+    : params.paymentStatus;
+  const paymentMessage = Array.isArray(params.paymentMessage)
+    ? params.paymentMessage[0]
+    : params.paymentMessage;
+  const orderId = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
+
+  const showNotice = (title: string, message: string, nextOrderId = "") => {
     setNotice({
       visible: true,
       title,
       message,
-      orderId,
+      orderId: nextOrderId,
     });
   };
 
   const closeNotice = () => {
-    const orderId = notice.orderId;
+    const nextOrderId = notice.orderId;
 
     setNotice({
       visible: false,
@@ -74,10 +93,32 @@ export default function CheckoutScreen() {
       orderId: "",
     });
 
-    if (orderId) {
+    if (nextOrderId) {
       router.replace("/tabs/orders");
     }
   };
+
+  const getClientReturnUrl = () => {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      return `${window.location.origin}/checkout`;
+    }
+
+    return Linking.createURL("/checkout");
+  };
+
+  useEffect(() => {
+    if (handledPaymentResult || !paymentStatus) {
+      return;
+    }
+
+    if (paymentStatus === "success") {
+      showNotice("Thành công", paymentMessage || "Thanh toán online thành công", orderId);
+    } else {
+      showNotice("Lỗi", paymentMessage || "Thanh toán thất bại hoặc đã bị hủy");
+    }
+
+    setHandledPaymentResult(true);
+  }, [handledPaymentResult, orderId, paymentMessage, paymentStatus]);
 
   const loadData = useCallback(async () => {
     try {
@@ -136,6 +177,61 @@ export default function CheckoutScreen() {
     try {
       setSubmitting(true);
 
+      if (paymentMethod === "VNPAY") {
+        const res = await api.post("/order/create-vnpay-payment", {
+          addressId: selectedAddressId,
+          selectedProductIds,
+          clientReturnUrl: getClientReturnUrl(),
+        });
+
+        if (!res.data.success || !res.data.paymentUrl) {
+          showNotice("Lỗi", res.data.message || "Không thể tạo thanh toán online");
+          return;
+        }
+
+        const paymentUrl = res.data.paymentUrl as string;
+
+        if (Platform.OS === "web" && typeof window !== "undefined") {
+          window.location.assign(paymentUrl);
+          return;
+        }
+
+        const result = await WebBrowser.openAuthSessionAsync(
+          paymentUrl,
+          getClientReturnUrl(),
+        );
+
+        if (result.type === "success" && result.url) {
+          const parsed = Linking.parse(result.url);
+          const resultOrderId =
+            typeof parsed.queryParams?.orderId === "string"
+              ? parsed.queryParams.orderId
+              : "";
+          const resultMessage =
+            typeof parsed.queryParams?.paymentMessage === "string"
+              ? parsed.queryParams.paymentMessage
+              : "";
+          const resultStatus =
+            typeof parsed.queryParams?.paymentStatus === "string"
+              ? parsed.queryParams.paymentStatus
+              : "";
+
+          if (resultStatus === "success") {
+            showNotice(
+              "Thành công",
+              resultMessage || "Thanh toán online thành công",
+              resultOrderId,
+            );
+          } else {
+            showNotice("Lỗi", resultMessage || "Thanh toán thất bại hoặc đã bị hủy");
+          }
+        } else if (result.type !== "cancel") {
+          showNotice("Thông báo", "Bạn đã đóng phiên thanh toán online");
+        }
+
+        return;
+      }
+
       const res = await api.post("/order/create", {
         addressId: selectedAddressId,
         paymentMethod,
@@ -145,9 +241,7 @@ export default function CheckoutScreen() {
       if (res.data.success) {
         showNotice(
           "Thành công",
-          paymentMethod === "VNPAY"
-            ? "Thanh toán online thành công"
-            : "Đặt hàng thành công",
+          "Đặt hàng thành công",
           res.data.order?._id || "done",
         );
       } else {
@@ -155,7 +249,7 @@ export default function CheckoutScreen() {
       }
     } catch (err: any) {
       console.error(err);
-      showNotice("Lỗi", err.response?.data?.message || "Không thể tạo đơn hàng");
+      showNotice("Lỗi", err.response?.data?.message || "Không thể xử lý thanh toán");
     } finally {
       setSubmitting(false);
     }

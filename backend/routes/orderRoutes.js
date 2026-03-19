@@ -45,6 +45,7 @@ function requireLogin(req, res, next) {
 }
 
 router.post("/create", requireLogin, orderController.createOrder);
+router.post("/create-vnpay-payment", requireLogin, orderController.createVnpayPayment);
 router.get("/", requireLogin, orderController.listOrders);
 router.get("/:id", requireLogin, orderController.getOrderDetail);
 

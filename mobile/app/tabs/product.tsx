@@ -33,8 +33,8 @@ export default function Shop() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("");
   const [category, setCategory] = useState("");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
+  const [minPrice] = useState("");
+  const [maxPrice] = useState("");
   const [notice, setNotice] = useState({
     visible: false,
     title: "",
