@@ -13,6 +13,8 @@ const userRoutes = require("./routes/userRoutes");
 const favoriteRoutes = require("./routes/favoriteRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const addressRoutes = require("./routes/address");
+
 
 const app = express();
 
@@ -22,7 +24,7 @@ connectDB();
 
 /* ======================= CORS (QUAN TRỌNG) ======================= */
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: ["http://localhost:5173", "http://localhost:8081"],
   credentials: true
 }));
 
@@ -32,12 +34,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 /* ======================= SESSION ======================= */
+app.set("trust proxy", 1);
 app.use(session({
   secret: config.session.secret,
   resave: false,
   saveUninitialized: false,
   cookie: {
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    sameSite: "lax"
   }
 }));
 
@@ -53,6 +58,7 @@ app.use("/api/favorite", favoriteRoutes);
 app.use("/api/profile", userRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/order", orderRoutes);
+app.use("/api/address", addressRoutes);
 /* ======================= HEALTH CHECK ======================= */
 app.get("/health", (req, res) => {
   res.json({

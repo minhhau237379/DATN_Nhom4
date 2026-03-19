@@ -30,6 +30,18 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Phone number is required'],
         match: [/^[0-9]{10,11}$/, 'Please enter a valid phone number (10-11 digits)']
     },
+    resetPasswordOtp: {
+        type: String,
+        default: null,
+    },
+    resetPasswordOtpExpires: {
+        type: Date,
+        default: null,
+    },
+    resetPasswordVerified: {
+        type: Boolean,
+        default: false,
+    },
 
     // ✅ FAVORITES PHẢI NẰM TRONG SCHEMA
     // favorites: [

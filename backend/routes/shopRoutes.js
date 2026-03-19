@@ -45,11 +45,13 @@ router.get("/", async (req, res) => {
     let favorites = [];
 
     if (req.session?.user) {
-      const favs = await Favorite.find({
+      const favoriteDoc = await Favorite.findOne({
         user: req.session.user._id,
       });
 
-      favorites = favs.map((f) => f.product.toString());
+      favorites = (favoriteDoc?.items || []).map((item) =>
+        item.product.toString(),
+      );
     }
 
     res.json({
@@ -88,11 +90,13 @@ router.get("/product/:id", async (req, res) => {
     let favorites = [];
 
     if (req.session?.user) {
-      const favs = await Favorite.find({
+      const favoriteDoc = await Favorite.findOne({
         user: req.session.user._id,
       });
 
-      favorites = favs.map((f) => f.product.toString());
+      favorites = (favoriteDoc?.items || []).map((item) =>
+        item.product.toString(),
+      );
     }
 
     res.json({
@@ -122,15 +126,17 @@ router.get("/favorites", async (req, res) => {
       });
     }
 
-    const favorites = await Favorite.find({
+    const favoriteDoc = await Favorite.findOne({
       user: req.session.user._id,
     })
-      .populate("product")
+      .populate("items.product")
       .lean();
 
     res.json({
       success: true,
-      products: favorites.map((f) => f.product),
+      products: (favoriteDoc?.items || [])
+        .map((item) => item.product)
+        .filter(Boolean),
     });
 
   } catch (err) {
