@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết đơn hàng</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+
+<body>
+    <%- include('partials/header') %>
+
+        <main class="container order-detail-page">
+            <a href="/orders" class="back-link">← Quay lại danh sách đơn hàng</a>
+
+            <h1>Chi tiết đơn hàng #<%= order._id.toString().slice(-6) %>
+            </h1>
+
+            <div class="order-detail-container">
+                <!-- Thông tin đơn hàng -->
+                <section class="order-info-section">
+                    <h2>Thông tin đơn hàng</h2>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <strong>Trạng thái:</strong>
+                            <span class="status-badge <%= order.orderStatus %>">
+                                <%= getStatusText(order.orderStatus) %>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Ngày đặt:</strong>
+                            <span>
+                                <%= new Date(order.createdAt).toLocaleDateString('vi-VN') %>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Phương thức thanh toán:</strong>
+                            <span>
+                                <%= getPaymentMethodText(order.paymentMethod) %>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <strong>Tình trạng thanh toán:</strong>
+                            <span>
+                                <%= getPaymentStatusText(order.paymentStatus) %>
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Thông tin giao hàng -->
+                <section class="shipping-info-section">
+                    <h2>Thông tin giao hàng</h2>
+                    <div class="shipping-details">
+                        <p><strong>Người nhận:</strong>
+                            <%= order.shippingAddress.fullName %>
+                        </p>
+                        <p><strong>SĐT:</strong>
+                            <%= order.shippingAddress.phone %>
+                        </p>
+                        <p><strong>Địa chỉ:</strong>
+                            <%= order.shippingAddress.address %>,
+                                <%= order.shippingAddress.ward %>,
+                                    <%= order.shippingAddress.district %>,
+                                        <%= order.shippingAddress.city %>
+                        </p>
+                        <% if (order.trackingNumber) { %>
+                            <p><strong>Mã vận đơn:</strong>
+                                <%= order.trackingNumber %>
+                            </p>
+                            <% } %>
+                                <% if (order.deliveredAt) { %>
+                                    <p><strong>Ngày giao:</strong>
+                                        <%= new Date(order.deliveredAt).toLocaleDateString('vi-VN') %>
+                                    </p>
+                                    <% } %>
+                    </div>
+                </section>
+
+                <!-- Chi tiết sản phẩm -->
+                <section class="products-section">
+                    <h2>Sản phẩm</h2>
+                    <div class="products-list">
+                        <% order.items.forEach(item=> { %>
+                            <div class="product-item">
+                                <img src="<%= item.product?.image || '/images/no-image.png' %>"
+                                    alt="<%= item.product?.name || 'Sản phẩm' %>">
+                                <h4>
+                                    <%= item.product?.name || 'Sản phẩm đã xóa' %>
+                                </h4>
+                                <% if (item.color || item.size) { %>
+                                    <p class="product-variants">
+                                        <% if (item.color) { %>Màu: <%= item.color %>
+                                                <% } %>
+                                                    <% if (item.size) { %> | Size: <%= item.size %>
+                                                            <% } %>
+                                    </p>
+                                    <% } %>
+                                        <p class="product-quantity">Số lượng: <%= item.quantity %>
+                                        </p>
+                            </div>
+                            <div class="product-price">
+                                <p>
+                                    <%= item.price.toLocaleString() %> đ
+                                </p>
+                                <p class="product-total">
+                                    <%= (item.price * item.quantity).toLocaleString() %> đ
+                                </p>
+                            </div>
+                    </div>
+                    <% }) %>
+            </div>
+            </section>
+
+            <!-- Tóm tắt thanh toán -->
+            <section class="payment-summary">
+                <h2>Tóm tắt thanh toán</h2>
+                <div class="summary-grid">
+                    <div class="summary-row">
+                        <span>Tạm tính:</span>
+                        <span>
+                            <%= (order.totalAmount - order.shippingFee).toLocaleString() %> đ
+                        </span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Phí vận chuyển:</span>
+                        <span>
+                            <%= order.shippingFee.toLocaleString() %> đ
+                        </span>
+                    </div>
+                    <div class="summary-row total">
+                        <strong>Tổng cộng:</strong>
+                        <strong>
+                            <%= order.totalAmount.toLocaleString() %> đ
+                        </strong>
+                    </div>
+                </div>
+
+                <% if (order.orderStatus==='pending' ) { %>
+                    <div class="order-actions">
+                        <button class="btn btn-danger" onclick="cancelOrder('<%= order._id %>')">
+                            Hủy đơn hàng
+                        </button>
+                    </div>
+                    <% } %>
+            </section>
+            </div>
+        </main>
+
+        <%- include('partials/footer') %>
+
+            <script>
+                function getStatusText(status) {
+                    const statusMap = {
+                        'pending': 'Chờ xử lý',
+                        'processing': 'Đang xử lý',
+                        'shipped': 'Đang giao hàng',
+                        'delivered': 'Đã giao',
+                        'cancelled': 'Đã hủy'
+                    };
+                    return statusMap[status] || status;
+                }
+
+                function getPaymentMethodText(method) {
+                    const methodMap = {
+                        'cod': 'Thanh toán khi nhận hàng',
+                        'momo': 'Ví MoMo',
+                        'banking': 'Chuyển khoản ngân hàng'
+                    };
+                    return methodMap[method] || method;
+                }
+
+                function getPaymentStatusText(status) {
+                    const statusMap = {
+                        'pending': 'Chờ thanh toán',
+                        'paid': 'Đã thanh toán',
+                        'failed': 'Thanh toán thất bại'
+                    };
+                    return statusMap[status] || status;
+                }
+
+                async function cancelOrder(orderId) {
+                    if (!confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) return;
+
+                    const reason = prompt('Lý do hủy đơn hàng:');
+                    if (!reason) return;
+
+                    try {
+                        const response = await fetch(`/orders/${orderId}/cancel`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ reason })
+                        });
+
+                        const result = await response.json();
+
+                        if (result.success) {
+                            alert('Đã hủy đơn hàng thành công');
+                            location.reload();
+                        } else {
+                            alert('Lỗi: ' + result.message);
+                        }
+                    } catch (error) {
+                        console.error('Lỗi:', error);
+                        alert('Có lỗi xảy ra khi hủy đơn hàng');
+                    }
+                }
+            </script>
+</body>
+
+</html>

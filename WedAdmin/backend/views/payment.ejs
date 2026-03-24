@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phương thức thanh toán - Nike</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            max-width: 375px;
+            margin: 0 auto;
+            background-color: white;
+            min-height: 100vh;
+            position: relative;
+        }
+        .header {
+            background-color: white;
+            padding: 16px;
+            border-bottom: 1px solid #e5e5e5;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #111;
+            margin: 0;
+        }
+        .time {
+            font-size: 14px;
+            color: #666;
+            text-align: center;
+            margin-top: 4px;
+        }
+        .order-info {
+            padding: 16px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        .order-date {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+        .order-number {
+            font-size: 12px;
+            color: #666;
+        }
+        .order-status {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 8px;
+            display: inline-block;
+        }
+        .product-section {
+            padding: 16px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 12px;
+        }
+        .product-item {
+            display: flex;
+            margin-bottom: 16px;
+        }
+        .product-image {
+            width: 80px;
+            height: 80px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #666;
+        }
+        .product-details {
+            flex: 1;
+        }
+        .product-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #111;
+            margin-bottom: 4px;
+        }
+        .product-desc {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+        .product-price {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111;
+        }
+        .cancel-btn {
+            color: #d32f2f;
+            background: none;
+            border: 1px solid #d32f2f;
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        .delivery-section, .payment-section {
+            padding: 16px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        .delivery-info, .purchase-info {
+            font-size: 14px;
+            color: #111;
+            line-height: 1.5;
+        }
+        .purchase-number {
+            font-weight: 600;
+        }
+        .payment-method {
+            font-size: 14px;
+            color: #666;
+        }
+        .total-section {
+            padding: 16px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .total-row.total {
+            font-weight: 600;
+            color: #111;
+            font-size: 16px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e5e5e5;
+        }
+        .payment-methods {
+            padding: 16px;
+        }
+        .payment-option {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border: 2px solid #e5e5e5;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .payment-option:hover {
+            border-color: #111;
+        }
+        .payment-option.selected {
+            border-color: #111;
+            background-color: #f9f9f9;
+        }
+        .payment-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .payment-icon img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .payment-details {
+            flex: 1;
+        }
+        .payment-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 4px;
+        }
+        .payment-desc {
+            font-size: 12px;
+            color: #666;
+        }
+        .payment-check {
+            color: #111;
+            font-size: 20px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .payment-option.selected .payment-check {
+            opacity: 1;
+        }
+        .confirm-btn {
+            background-color: #111;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            width: calc(100% - 32px);
+            margin: 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: fixed;
+            bottom: 20px;
+            left: 16px;
+            z-index: 10;
+        }
+        .confirm-btn:hover {
+            background-color: #333;
+        }
+        .confirm-btn:disabled {
+            background-color: #999;
+            cursor: not-allowed;
+        }
+        .navigation {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border-top: 1px solid #e5e5e5;
+            padding: 12px 0;
+            display: flex;
+            justify-content: space-around;
+            z-index: 100;
+        }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #666;
+            font-size: 10px;
+        }
+        .nav-item.active {
+            color: #111;
+        }
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+        }
+        .nav-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .help-section {
+            padding: 16px;
+            padding-bottom: 80px;
+        }
+        .help-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 12px;
+        }
+        .help-links {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .help-link {
+            background-color: #f5f5f5;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #111;
+            text-decoration: none;
+        }
+        .momo-qr {
+            display: none;
+            padding: 20px;
+            text-align: center;
+            border-top: 1px solid #e5e5e5;
+        }
+        .momo-qr.active {
+            display: block;
+        }
+        .qr-code {
+            width: 200px;
+            height: 200px;
+            background-color: #f5f5f5;
+            margin: 0 auto 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #666;
+        }
+        .bank-list {
+            display: none;
+            padding: 20px;
+            border-top: 1px solid #e5e5e5;
+        }
+        .bank-list.active {
+            display: block;
+        }
+        .bank-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border: 1px solid #e5e5e5;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        .bank-item:hover {
+            border-color: #111;
+        }
+        .bank-logo {
+            width: 40px;
+            height: 40px;
+            margin-right: 12px;
+        }
+        .bank-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .bank-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #111;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading.active {
+            display: block;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #111;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <button class="back-btn" onclick="window.history.back()">←</button>
+                <h1 class="title">Phương thức thanh toán</h1>
+                <div style="width: 40px;"></div>
+            </div>
+            <div class="time" id="currentTime"></div>
+        </div>
+
+        <!-- Order Info -->
+        <div class="order-info">
+            <div class="order-date">Đã mua Online - 03 Tháng 5, 2022</div>
+            <div class="order-number">C1293819387 - 10$</div>
+            <div class="order-status">Xác nhận đơn hàng</div>
+        </div>
+
+        <!-- Product Section -->
+        <div class="product-section">
+            <h2 class="section-title">Sản phẩm</h2>
+            <div class="product-item">
+                <div class="product-image">
+                    <img src="/assets/images/logo.jpg" alt="Product" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                </div>
+                <div class="product-details">
+                    <div class="product-name">Nike Everyday Plus Cushioned</div>
+                    <div class="product-desc">Training Ankle Socks (6 Pairs)<br>Size L [W 10-13 / M 8-12]</div>
+                    <div class="product-price">10$</div>
+                    <button class="cancel-btn">Hủy đơn hàng</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Delivery Section -->
+        <div class="delivery-section">
+            <h2 class="section-title">Giao hàng</h2>
+            <div class="delivery-info">
+                John Smith<br>
+                2950 S 108th St<br>
+                53227, West Allis, US<br>
+                john@mail.com
+            </div>
+        </div>
+
+        <!-- Purchase Number -->
+        <div class="payment-section">
+            <h2 class="section-title">Mã đơn hàng</h2>
+            <div class="purchase-info">
+                <span class="purchase-number">C19283791823</span>
+            </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="payment-section">
+            <h2 class="section-title">Thanh toán</h2>
+            <div class="payment-method">
+                136******383
+            </div>
+        </div>
+
+        <!-- Total Section -->
+        <div class="total-section">
+            <div class="total-row">
+                <span>Tạm tính</span>
+                <span>10.00$</span>
+            </div>
+            <div class="total-row">
+                <span>Phí vận chuyển</span>
+                <span>0.00$</span>
+            </div>
+            <div class="total-row">
+                <span>Thuế</span>
+                <span>0.00$</span>
+            </div>
+            <div class="total-row total">
+                <span>Tổng cộng</span>
+                <span>10.00$</span>
+            </div>
+        </div>
+
+        <!-- Payment Methods -->
+        <div class="payment-methods">
+            <h2 class="section-title">Chọn phương thức thanh toán</h2>
+            
+            <!-- Momo Option -->
+            <div class="payment-option selected" onclick="selectPayment('momo')">
+                <div class="payment-icon">
+                    <img src="/assets/images/MOMO-Logo.png" alt="Momo">
+                </div>
+                <div class="payment-details">
+                    <div class="payment-title">Ví điện tử Momo</div>
+                    <div class="payment-desc">Thanh toán nhanh với ví Momo</div>
+                </div>
+                <div class="payment-check">✓</div>
+            </div>
+
+            <!-- Bank Transfer Option -->
+            <div class="payment-option" onclick="selectPayment('bank')">
+                <div class="payment-icon">
+                    <img src="/assets/images/bankicon.png" alt="Ngân hàng">
+                </div>
+                <div class="payment-details">
+                    <div class="payment-title">Chuyển khoản ngân hàng</div>
+                    <div class="payment-desc">Thanh toán qua Internet Banking</div>
+                </div>
+                <div class="payment-check">✓</div>
+            </div>
+        </div>
+
+        <!-- Momo QR Code -->
+        <div class="momo-qr active" id="momoQR">
+            <h3 class="section-title">Quét mã QR để thanh toán</h3>
+            <div class="qr-code">
+                <!-- QR Code placeholder - bạn có thể thay bằng QR thật -->
+                <div style="text-align: center;">
+                    <div style="font-size: 16px; font-weight: 600; color: #111; margin-bottom: 8px;">MOMO</div>
+                    <div style="font-size: 12px; color: #666;">Quét mã để thanh toán</div>
+                </div>
+            </div>
+            <p style="font-size: 12px; color: #666; text-align: center;">
+                Mở ứng dụng Momo và quét mã QR để hoàn tất thanh toán
+            </p>
+        </div>
+
+        <!-- Bank List -->
+        <div class="bank-list" id="bankList">
+            <h3 class="section-title">Chọn ngân hàng</h3>
+            
+            <div class="bank-item" onclick="selectBank('VCB')">
+                <div class="bank-logo">
+                    <div style="background-color: #0066b3; color: white; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">VCB</div>
+                </div>
+                <div class="bank-name">Vietcombank</div>
+            </div>
+            
+            <div class="bank-item" onclick="selectBank('BIDV')">
+                <div class="bank-logo">
+                    <div style="background-color: #e31837; color: white; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">BIDV</div>
+                </div>
+                <div class="bank-name">BIDV</div>
+            </div>
+            
+            <div class="bank-item" onclick="selectBank('Techcombank')">
+                <div class="bank-logo">
+                    <div style="background-color: #0054a6; color: white; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">TCB</div>
+                </div>
+                <div class="bank-name">Techcombank</div>
+            </div>
+            
+            <div class="bank-item" onclick="selectBank('MB')">
+                <div class="bank-logo">
+                    <div style="background-color: #1859a9; color: white; width: 100%; height: 100%; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">MB</div>
+                </div>
+                <div class="bank-name">MB Bank</div>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Đang xử lý thanh toán...</p>
+        </div>
+
+        <!-- Confirm Button -->
+        <button class="confirm-btn" onclick="processPayment()" id="confirmBtn">
+            Xác nhận thanh toán
+        </button>
+
+        <!-- Help Section -->
+        <div class="help-section">
+            <h3 class="help-title">Trợ giúp nhanh</h3>
+            <div class="help-links">
+                <a href="/home" class="help-link">Trang chủ</a>
+                <a href="/shop" class="help-link">Cửa hàng</a>
+                <a href="/favorites" class="help-link">Yêu thích</a>
+                <a href="/cart" class="help-link">Giỏ hàng</a>
+                <a href="/profile" class="help-link">Hồ sơ</a>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="navigation">
+            <a href="/home" class="nav-item">
+                <div class="nav-icon">
+                    <img src="/img/home.png" alt="Home">
+                </div>
+                Trang chủ
+            </a>
+            <a href="/shop" class="nav-item">
+                <div class="nav-icon">
+                    <img src="/img/shop.png" alt="Shop">
+                </div>
+                Cửa hàng
+            </a>
+            <a href="/favorites" class="nav-item">
+                <div class="nav-icon">
+                    <img src="/img/like.png" alt="Favorites">
+                </div>
+                Yêu thích
+            </a>
+            <a href="/orders" class="nav-item active">
+                <div class="nav-icon">
+                    <img src="/img/order.png" alt="Orders">
+                </div>
+                Đơn hàng
+            </a>
+            <a href="/profile" class="nav-item">
+                <div class="nav-icon">
+                    <img src="/img/profile.png" alt="Profile">
+                </div>
+                Hồ sơ
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Update current time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
+                              now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('currentTime').textContent = timeString;
+        }
+        
+        // Initial time update
+        updateTime();
+        
+        // Update time every minute
+        setInterval(updateTime, 60000);
+
+        // Payment selection
+        let selectedPayment = 'momo';
+        let selectedBank = null;
+
+        function selectPayment(paymentType) {
+            selectedPayment = paymentType;
+            
+            // Update UI
+            document.querySelectorAll('.payment-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            document.querySelectorAll('.payment-option').forEach(option => {
+                if (option.querySelector('.payment-title').textContent.includes(
+                    paymentType === 'momo' ? 'Momo' : 'Ngân hàng')) {
+                    option.classList.add('selected');
+                }
+            });
+            
+            // Show/hide QR or bank list
+            if (paymentType === 'momo') {
+                document.getElementById('momoQR').classList.add('active');
+                document.getElementById('bankList').classList.remove('active');
+                document.getElementById('confirmBtn').textContent = 'Xác nhận thanh toán';
+            } else {
+                document.getElementById('momoQR').classList.remove('active');
+                document.getElementById('bankList').classList.add('active');
+                document.getElementById('confirmBtn').textContent = 'Tiếp tục với ngân hàng';
+            }
+            
+            // Update confirm button text
+            updateConfirmButton();
+        }
+
+        function selectBank(bankName) {
+            selectedBank = bankName;
+            
+            // Update UI
+            document.querySelectorAll('.bank-item').forEach(item => {
+                item.style.borderColor = '#e5e5e5';
+                item.style.backgroundColor = 'white';
+            });
+            
+            event.currentTarget.style.borderColor = '#111';
+            event.currentTarget.style.backgroundColor = '#f9f9f9';
+            
+            // Update confirm button
+            document.getElementById('confirmBtn').textContent = `Thanh toán qua ${bankName}`;
+        }
+
+        function updateConfirmButton() {
+            const btn = document.getElementById('confirmBtn');
+            if (selectedPayment === 'momo') {
+                btn.textContent = 'Xác nhận thanh toán với Momo';
+            } else if (selectedPayment === 'bank' && selectedBank) {
+                btn.textContent = `Thanh toán qua ${selectedBank}`;
+            } else if (selectedPayment === 'bank') {
+                btn.textContent = 'Vui lòng chọn ngân hàng';
+                btn.disabled = true;
+                return;
+            }
+            btn.disabled = false;
+        }
+
+        async function processPayment() {
+            const btn = document.getElementById('confirmBtn');
+            const loading = document.getElementById('loading');
+            
+            // Validate bank selection
+            if (selectedPayment === 'bank' && !selectedBank) {
+                alert('Vui lòng chọn ngân hàng');
+                return;
+            }
+            
+            // Show loading
+            btn.style.display = 'none';
+            loading.classList.add('active');
+            
+            // Simulate payment processing
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Payment success
+                if (selectedPayment === 'momo') {
+                    alert('🎉 Thanh toán qua Momo thành công!\nĐơn hàng của bạn đang được xử lý.');
+                } else {
+                    alert(`🎉 Thanh toán qua ${selectedBank} thành công!\nVui lòng kiểm tra email để xác nhận đơn hàng.`);
+                }
+                
+                // Redirect to order confirmation page
+                window.location.href = '/order-confirmation?order=C19283791823';
+                
+            } catch (error) {
+                // Hide loading
+                btn.style.display = 'block';
+                loading.classList.remove('active');
+                
+                alert('❌ Thanh toán thất bại. Vui lòng thử lại.');
+                console.error('Payment error:', error);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateConfirmButton();
+            
+            // Auto-select first bank if bank payment is selected
+            if (selectedPayment === 'bank') {
+                const firstBank = document.querySelector('.bank-item');
+                if (firstBank) {
+                    firstBank.click();
+                }
+            }
+        });
+
+        // Cancel order
+        document.querySelector('.cancel-btn').addEventListener('click', function() {
+            if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
+                alert('Đơn hàng đã được hủy. Tiền sẽ được hoàn lại trong vòng 3-5 ngày làm việc.');
+                // In real app, you would call API to cancel order
+            }
+        });
+    </script>
+</body>
+</html>
