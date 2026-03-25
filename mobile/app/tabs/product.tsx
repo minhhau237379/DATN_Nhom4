@@ -31,6 +31,7 @@ export default function Shop() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sort, setSort] = useState("");
   const [category, setCategory] = useState("");
   const [minPrice] = useState("");
@@ -57,6 +58,14 @@ export default function Shop() {
     });
   };
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const loadFavorites = useCallback(async () => {
     try {
       if (!(await isLoggedIn())) {
@@ -74,7 +83,7 @@ export default function Shop() {
   const fetchProducts = useCallback(async () => {
     try {
       const res = await api.get("/shop", {
-        params: { search, sort, category, minPrice, maxPrice },
+        params: { search: debouncedSearch, sort, category, minPrice, maxPrice },
       });
 
       setProducts(res.data.products);
@@ -82,7 +91,7 @@ export default function Shop() {
     } catch (err) {
       console.error(err);
     }
-  }, [search, sort, category, minPrice, maxPrice]);
+  }, [debouncedSearch, sort, category, minPrice, maxPrice]);
 
   useEffect(() => {
     fetchProducts();

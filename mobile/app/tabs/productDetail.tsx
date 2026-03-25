@@ -22,6 +22,18 @@ type Product = {
   specifications?: Record<string, string>;
 };
 
+const specLabelMap: Record<string, string> = {
+  brand: "Thương hiệu",
+  character: "Nhân vật",
+  age: "Độ tuổi",
+  material: "Chất liệu",
+  height: "Kích thước",
+  origin: "Xuất xứ",
+  theme: "Chủ đề",
+};
+
+const formatSpecLabel = (key: string) => specLabelMap[key] || key;
+
 export default function ProductDetail() {
   const { id } = useLocalSearchParams();
   const [product, setProduct] = useState<Product | null>(null);
@@ -184,10 +196,11 @@ export default function ProductDetail() {
           </Text>
 
           {product.specifications &&
-            Object.keys(product.specifications).map((key) => (
+            Object.keys(product.specifications).length > 0 &&
+            Object.entries(product.specifications).map(([key, value]) => (
               <View key={key} style={styles.specRow}>
-                <Text style={styles.specKey}>{key}</Text>
-                <Text>{product.specifications?.[key]}</Text>
+                <Text style={styles.specKey}>{formatSpecLabel(key)}</Text>
+                <Text style={styles.specValue}>{value}</Text>
               </View>
             ))}
         </View>
@@ -296,8 +309,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: "#eee",
     paddingVertical: 5,
+    gap: 12,
   },
-  specKey: { fontWeight: "600" },
+  specKey: { fontWeight: "700", color: "#334155", flex: 1 },
+  specValue: { flex: 1, textAlign: "right", color: "#0f172a" },
   related: {
     flexDirection: "row",
     flexWrap: "wrap",

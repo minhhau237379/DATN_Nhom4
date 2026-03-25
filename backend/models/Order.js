@@ -72,7 +72,7 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["COD", "VNPAY"],
+      enum: ["COD", "VNPAY", "BANKING", "MOMO"],
       default: "COD",
     },
     paymentTxnRef: String,
@@ -86,7 +86,7 @@ const orderSchema = new mongoose.Schema(
     },
     orderStatus: {
       type: String,
-      enum: ["pending", "confirmed", "shipping", "completed", "cancelled"],
+      enum: ["pending", "confirmed", "processing", "paid", "shipping", "completed", "cancelled"],
       default: "pending",
     },
     paidAt: Date,

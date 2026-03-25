@@ -1,0 +1,39 @@
+.page-order-detail .detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.page-order-detail .detail-grid > div {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(15, 139, 141, 0.04);
+}
+
+.page-order-detail .detail-grid p {
+  margin: 6px 0 0;
+}
+
+.page-order-detail .detail-grid select {
+  margin-top: 8px;
+  min-width: 0;
+}
+
+.page-order-detail .status-pill {
+  min-width: 118px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 1100px) {
+  .page-order-detail .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .page-order-detail .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

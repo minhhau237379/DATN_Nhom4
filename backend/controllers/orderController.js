@@ -27,6 +27,33 @@ const appendQueryParams = (baseUrl, params) => {
   return url.toString();
 };
 
+const getPublicBaseUrl = (req) => {
+  const envBaseUrl = process.env.PUBLIC_BACKEND_URL || process.env.APP_PUBLIC_URL;
+
+  if (envBaseUrl) {
+    return {
+      baseUrl: envBaseUrl.replace(/\/+$/, ""),
+      source: "env",
+    };
+  }
+
+  const forwardedProto = Array.isArray(req.headers["x-forwarded-proto"])
+    ? req.headers["x-forwarded-proto"][0]
+    : req.headers["x-forwarded-proto"];
+  const forwardedHost = Array.isArray(req.headers["x-forwarded-host"])
+    ? req.headers["x-forwarded-host"][0]
+    : req.headers["x-forwarded-host"];
+
+  const proto = forwardedProto || req.protocol || "http";
+  const host = forwardedHost || req.headers.host || `localhost:${process.env.PORT || 3003}`;
+  const baseUrl = `${proto}://${host}`.replace(/\/+$/, "");
+
+  return {
+    baseUrl,
+    source: "request",
+  };
+};
+
 const loadCheckoutContext = async ({ userId, addressId, selectedProductIds, session }) => {
   const addressDoc = await Address.findOne({ user: userId }).session(session);
 
@@ -304,10 +331,18 @@ exports.createVnpayPayment = async (req, res) => {
     const tmnCode = process.env.VNP_TMNCODE;
     const hashSecret = process.env.VNP_HASHSECRET;
     const vnpUrl = process.env.VNP_URL;
-    const returnUrl = process.env.VNP_RETURN_URL;
+    const vnpReturnUrl = process.env.VNP_RETURN_URL;
+    const { baseUrl: publicBaseUrl, source } = getPublicBaseUrl(req);
+    const returnUrl = vnpReturnUrl || `${publicBaseUrl}/payment/vnpay/return`;
 
     if (!tmnCode || !hashSecret || !vnpUrl || !returnUrl) {
       throw new Error("Cau hinh VNPAY chua day du");
+    }
+
+    if (!vnpReturnUrl && source === "request") {
+      console.warn(
+        `[VNPAY] Chua co VNP_RETURN_URL, dang tam su dung return URL: ${returnUrl}.`,
+      );
     }
 
     const params = {

@@ -4,6 +4,17 @@ const { sendPasswordResetOtp } = require("../utils/mailer");
 
 const generateOtp = () => `${Math.floor(100000 + Math.random() * 900000)}`;
 
+const buildToken = (user) =>
+  jwt.sign(
+    {
+      id: user._id,
+      username: user.username,
+      role: user.role,
+    },
+    process.env.JWT_SECRET || "secret",
+    { expiresIn: "7d" },
+  );
+
 const registerUser = async (req, res) => {
   try {
     const { username, email, password, phoneNumber } = req.body;
@@ -69,16 +80,10 @@ const loginUser = async (req, res) => {
     req.session.user = {
       _id: user._id,
       username: user.username,
+      role: user.role,
     };
 
-    const token = jwt.sign(
-      {
-        id: user._id,
-        username: user.username,
-      },
-      process.env.JWT_SECRET || "secret",
-      { expiresIn: "7d" },
-    );
+    const token = buildToken(user);
 
     res.status(200).json({
       success: true,
@@ -89,6 +94,7 @@ const loginUser = async (req, res) => {
           id: user._id,
           username: user.username,
           email: user.email,
+          role: user.role,
         },
       },
     });
@@ -98,6 +104,61 @@ const loginUser = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error logging in",
+    });
+  }
+};
+
+const adminLogin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const user = await User.findOne({
+      $or: [{ username }, { email: username }],
+      role: "admin",
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Tai khoan admin khong ton tai",
+      });
+    }
+
+    const isMatch = await user.comparePassword(password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Mat khau khong dung",
+      });
+    }
+
+    req.session.user = {
+      _id: user._id,
+      username: user.username,
+      role: user.role,
+    };
+
+    const token = buildToken(user);
+
+    res.status(200).json({
+      success: true,
+      message: "Dang nhap admin thanh cong",
+      data: {
+        token,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Admin login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error logging in admin",
     });
   }
 };
@@ -293,6 +354,7 @@ const resetPassword = async (req, res) => {
 module.exports = {
   register: registerUser,
   login: loginUser,
+  adminLogin,
   logout: logoutUser,
   forgotPassword,
   verifyOtp,

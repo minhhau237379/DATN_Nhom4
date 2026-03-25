@@ -10,10 +10,10 @@ router.get("/", async (req, res) => {
   try {
     const { category, minPrice, maxPrice, search, sort } = req.query;
 
-    let filter = {};
+    let filter = { status: 1 };
 
     if (category) {
-      const cat = await Category.findOne({ name: category });
+      const cat = await Category.findOne({ name: category, status: 1 });
       if (cat) {
         filter.id_category = cat._id;
       }
@@ -39,7 +39,7 @@ router.get("/", async (req, res) => {
     }
 
     const products = await query.lean();
-    const categories = await Category.find().lean();
+    const categories = await Category.find({ status: 1 }).lean();
 
     // 🔥 FAVORITES
     let favorites = [];
@@ -71,7 +71,7 @@ router.get("/", async (req, res) => {
 // PRODUCT DETAIL
 router.get("/product/:id", async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).lean();
+    const product = await Product.findOne({ _id: req.params.id, status: 1 }).lean();
 
     if (!product) {
       return res.status(404).json({
@@ -83,6 +83,7 @@ router.get("/product/:id", async (req, res) => {
     const relatedProducts = await Product.find({
       id_category: product.id_category,
       _id: { $ne: product._id },
+      status: 1,
     })
       .limit(4)
       .lean();
@@ -129,7 +130,10 @@ router.get("/favorites", async (req, res) => {
     const favoriteDoc = await Favorite.findOne({
       user: req.session.user._id,
     })
-      .populate("items.product")
+      .populate({
+        path: "items.product",
+        match: { status: 1 },
+      })
       .lean();
 
     res.json({
