@@ -1,19 +1,32 @@
-const User = require('../models/User');
+const User = require("../models/User");
 const jwt = require("jsonwebtoken");
+const { sendPasswordResetOtp } = require("../utils/mailer");
 
-// Register
+const generateOtp = () => `${Math.floor(100000 + Math.random() * 900000)}`;
+
+const buildToken = (user) =>
+  jwt.sign(
+    {
+      id: user._id,
+      username: user.username,
+      role: user.role,
+    },
+    process.env.JWT_SECRET || "secret",
+    { expiresIn: "7d" },
+  );
+
 const registerUser = async (req, res) => {
   try {
     const { username, email, password, phoneNumber } = req.body;
 
     const existed = await User.findOne({
-      $or: [{ username }, { email }]
+      $or: [{ username }, { email }],
     });
 
     if (existed) {
       return res.status(400).json({
         success: false,
-        message: 'Username hoặc email đã tồn tại'
+        message: "Username hoac email da ton tai",
       });
     }
 
@@ -21,92 +34,329 @@ const registerUser = async (req, res) => {
       username,
       email,
       password,
-      phoneNumber
+      phoneNumber,
     });
 
     await user.save();
 
     res.status(201).json({
       success: true,
-      message: 'Đăng ký thành công'
+      message: "Dang ky thanh cong",
     });
-
   } catch (error) {
-    console.error('Registration error:', error);
+    console.error("Registration error:", error);
+
     res.status(500).json({
       success: false,
-      message: 'Error registering user'
+      message: "Error registering user",
     });
   }
 };
 
-// Login
 const loginUser = async (req, res) => {
   try {
     const { username, password } = req.body;
 
     const user = await User.findOne({
-      $or: [{ username }, { email: username }]
+      $or: [{ username }, { email: username }],
     });
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Tài khoản không tồn tại'
+        message: "Tai khoan khong ton tai",
       });
     }
 
     const isMatch = await user.comparePassword(password);
+
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Mật khẩu không đúng'
+        message: "Mat khau khong dung",
       });
     }
 
-  
-    // 🔥 TẠO TOKEN
-const token = jwt.sign(
-  {
-    id: user._id,
-    username: user.username
-  },
-  process.env.JWT_SECRET || "secret",
-  { expiresIn: "7d" }
-);
-
-res.status(200).json({
-  success: true,
-  message: "Đăng nhập thành công",
-  data: {
-    token,
-    user: {
-      id: user._id,
+    req.session.user = {
+      _id: user._id,
       username: user.username,
-      email: user.email
-    }
-  }
-});
+      role: user.role,
+    };
 
+    const token = buildToken(user);
+
+    res.status(200).json({
+      success: true,
+      message: "Dang nhap thanh cong",
+      data: {
+        token,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+        },
+      },
+    });
   } catch (error) {
-    console.error('Login error:', error);
+    console.error("Login error:", error);
+
     res.status(500).json({
       success: false,
-      message: 'Error logging in'
+      message: "Error logging in",
     });
   }
 };
 
-// Logout
+const adminLogin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const user = await User.findOne({
+      $or: [{ username }, { email: username }],
+      role: "admin",
+    });
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Tai khoan admin khong ton tai",
+      });
+    }
+
+    const isMatch = await user.comparePassword(password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Mat khau khong dung",
+      });
+    }
+
+    req.session.user = {
+      _id: user._id,
+      username: user.username,
+      role: user.role,
+    };
+
+    const token = buildToken(user);
+
+    res.status(200).json({
+      success: true,
+      message: "Dang nhap admin thanh cong",
+      data: {
+        token,
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Admin login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error logging in admin",
+    });
+  }
+};
+
 const logoutUser = (req, res) => {
-  res.json({
-    success: true,
-    message: "Đăng xuất thành công"
+  req.session.destroy(() => {
+    res.json({
+      success: true,
+      message: "Dang xuat thanh cong",
+    });
   });
+};
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui long nhap email",
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Email khong ton tai trong he thong",
+      });
+    }
+
+    const otp = generateOtp();
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    user.resetPasswordOtp = otp;
+    user.resetPasswordOtpExpires = expiresAt;
+    user.resetPasswordVerified = false;
+    await user.save();
+
+    try {
+      await sendPasswordResetOtp({
+        email: user.email,
+        otp,
+      });
+    } catch (mailError) {
+      user.resetPasswordOtp = null;
+      user.resetPasswordOtpExpires = null;
+      user.resetPasswordVerified = false;
+      await user.save();
+      throw mailError;
+    }
+
+    res.json({
+      success: true,
+      message: "Ma xac nhan da duoc gui toi email cua ban",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+
+    if (error.message === "EMAIL_NOT_CONFIGURED") {
+      return res.status(500).json({
+        success: false,
+        message: "He thong gui email chua duoc cau hinh",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Khong the gui ma xac nhan",
+    });
+  }
+};
+
+const verifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    if (!email || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Thieu email hoac OTP",
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+
+    if (!user || !user.resetPasswordOtp || !user.resetPasswordOtpExpires) {
+      return res.status(400).json({
+        success: false,
+        message: "Ma OTP khong hop le",
+      });
+    }
+
+    if (user.resetPasswordOtpExpires.getTime() < Date.now()) {
+      return res.status(400).json({
+        success: false,
+        message: "Ma OTP da het han",
+      });
+    }
+
+    if (user.resetPasswordOtp !== otp.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Ma OTP khong dung",
+      });
+    }
+
+    user.resetPasswordVerified = true;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Xac nhan OTP thanh cong",
+    });
+  } catch (error) {
+    console.error("Verify OTP error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Khong the xac nhan OTP",
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Thieu email hoac mat khau moi",
+      });
+    }
+
+    if (newPassword.length < 8 || newPassword.length > 16) {
+      return res.status(400).json({
+        success: false,
+        message: "Mat khau phai tu 8-16 ky tu",
+      });
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: "Mat khau phai co it nhat 1 chu hoa",
+      });
+    }
+
+    if (!/[!@#$%^&*]/.test(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message: "Mat khau phai co it nhat 1 ky tu dac biet",
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Email khong ton tai trong he thong",
+      });
+    }
+
+    if (!user.resetPasswordVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "Ban chua xac nhan OTP",
+      });
+    }
+
+    user.password = newPassword;
+    user.resetPasswordOtp = null;
+    user.resetPasswordOtpExpires = null;
+    user.resetPasswordVerified = false;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Dat lai mat khau thanh cong",
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Khong the dat lai mat khau",
+    });
+  }
 };
 
 module.exports = {
   register: registerUser,
   login: loginUser,
-  logout: logoutUser
+  adminLogin,
+  logout: logoutUser,
+  forgotPassword,
+  verifyOtp,
+  resetPassword,
 };

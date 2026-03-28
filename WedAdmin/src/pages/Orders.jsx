@@ -1,0 +1,228 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import api from "../services/api";
+import "./Orders.css";
+
+const statusOptions = ["pending", "confirmed", "processing", "paid", "shipping", "completed", "cancelled"];
+
+const paymentOptions = ["pending", "paid", "failed", "refunded"];
+
+const getStatusTone = (value) => {
+  const map = {
+    pending: "status-pending",
+    confirmed: "status-confirmed",
+    processing: "status-processing",
+    paid: "status-paid",
+    shipping: "status-shipping",
+    completed: "status-completed",
+    cancelled: "status-cancelled",
+  };
+
+  return map[value] || "status-pill-neutral";
+};
+
+const getPaymentTone = (value) => {
+  const map = {
+    pending: "status-pending",
+    paid: "status-paid",
+    failed: "status-cancelled",
+    refunded: "status-refunded",
+  };
+
+  return map[value] || "status-pill-neutral";
+};
+
+export default function Orders() {
+  const [orders, setOrders] = useState([]);
+  const [filters, setFilters] = useState({ status: "", paymentStatus: "", search: "" });
+  const [loading, setLoading] = useState(true);
+  const [message, setMessage] = useState("");
+  const [drafts, setDrafts] = useState({});
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await api.get("/admin/orders", { params: filters });
+      setOrders(res.data.orders || []);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleFilterChange = (e) => {
+    setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const updateOrder = async (orderId) => {
+    const current = drafts[orderId] || {};
+    try {
+      await api.patch(`/admin/orders/${orderId}/status`, current);
+      setMessage("Cập nhật đơn hàng thành công");
+      await load();
+    } catch (err) {
+      setMessage(err.response?.data?.message || "Không thể cập nhật đơn hàng");
+    }
+  };
+
+  const setDraft = (orderId, field, value) => {
+    setDrafts((prev) => ({
+      ...prev,
+      [orderId]: {
+        ...(prev[orderId] || {}),
+        [field]: value,
+      },
+    }));
+  };
+
+  const stats = useMemo(() => {
+    const total = orders.length;
+    const paid = orders.filter((order) => order.paymentStatus === "paid").length;
+    const completed = orders.filter((order) => order.orderStatus === "completed").length;
+    const cancelled = orders.filter((order) => order.orderStatus === "cancelled").length;
+
+    return { total, paid, completed, cancelled };
+  }, [orders]);
+
+  return (
+    <div className="stack page-orders">
+      <section className="panel panel-hero">
+        <div className="panel-header">
+          <div>
+            <p className="eyebrow">Quản lý đơn hàng</p>
+            <h3>Theo dõi thanh toán và trạng thái xử lý</h3>
+           
+          </div>
+
+          <div className="stats-inline">
+            <div className="mini-stat">
+              <span>Tổng</span>
+              <strong>{stats.total}</strong>
+            </div>
+            <div className="mini-stat">
+              <span>Đã thanh toán</span>
+              <strong>{stats.paid}</strong>
+            </div>
+            <div className="mini-stat">
+              <span>Hoàn tất</span>
+              <strong>{stats.completed}</strong>
+            </div>
+            <div className="mini-stat">
+              <span>Đã hủy</span>
+              <strong>{stats.cancelled}</strong>
+            </div>
+          </div>
+        </div>
+
+        {message && <div className="alert">{message}</div>}
+
+        <div className="filter-row">
+          <input name="search" value={filters.search} onChange={handleFilterChange} placeholder="Mã đơn" />
+          <select name="status" value={filters.status} onChange={handleFilterChange}>
+            <option value="">Tất cả trạng thái</option>
+            {statusOptions.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+          <select name="paymentStatus" value={filters.paymentStatus} onChange={handleFilterChange}>
+            <option value="">Tất cả thanh toán</option>
+            {paymentOptions.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+          <button className="btn btn-secondary" type="button" onClick={load}>
+            Lọc
+          </button>
+        </div>
+      </section>
+
+      <section className="panel">
+        {loading ? (
+          <p>Đang tải...</p>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mã đơn</th>
+                  <th>Khách hàng</th>
+                  <th>Thanh toán</th>
+                  <th>Trạng thái</th>
+                  <th>Tổng tiền</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => {
+                  const draft = drafts[order._id] || {
+                    orderStatus: order.orderStatus,
+                    paymentStatus: order.paymentStatus,
+                  };
+
+                  return (
+                    <tr key={order._id}>
+                      <td>
+                        <Link to={`/admin/orders/${order._id}`}>#{order.orderNumber || order._id.slice(-6)}</Link>
+                      </td>
+                      <td>
+                        <strong>{order.user?.username || "N/A"}</strong>
+                        <div className="muted-text small-text">{order.user?.email || ""}</div>
+                      </td>
+                      <td>
+                        <span className={`status-pill ${getPaymentTone(order.paymentStatus)}`}>
+                          {order.paymentStatus}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`status-pill ${getStatusTone(order.orderStatus)}`}>
+                          {order.orderStatus}
+                        </span>
+                      </td>
+                      <td>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} ₫</td>
+                      <td>
+                        <div className="actions-inline">
+                          <select
+                            value={draft.paymentStatus || ""}
+                            onChange={(e) => setDraft(order._id, "paymentStatus", e.target.value)}
+                          >
+                            <option value="">-</option>
+                            {paymentOptions.map((status) => (
+                              <option key={status} value={status}>
+                                {status}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            value={draft.orderStatus || ""}
+                            onChange={(e) => setDraft(order._id, "orderStatus", e.target.value)}
+                          >
+                            {statusOptions.map((status) => (
+                              <option key={status} value={status}>
+                                {status}
+                              </option>
+                            ))}
+                          </select>
+                          <button className="btn btn-primary" type="button" onClick={() => updateOrder(order._id)}>
+                            Lưu
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}

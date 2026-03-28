@@ -30,6 +30,31 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Phone number is required'],
         match: [/^[0-9]{10,11}$/, 'Please enter a valid phone number (10-11 digits)']
     },
+    role: {
+        type: String,
+        enum: ['user', 'admin'],
+        default: 'user'
+    },
+    resetPasswordOtp: {
+        type: String,
+        default: null,
+    },
+    resetPasswordOtpExpires: {
+        type: Date,
+        default: null,
+    },
+    resetPasswordVerified: {
+        type: Boolean,
+        default: false,
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    },
 
     // ✅ FAVORITES PHẢI NẰM TRONG SCHEMA
     // favorites: [
@@ -51,6 +76,8 @@ const userSchema = new mongoose.Schema({
 
 // Hash password before saving
 userSchema.pre('save', async function(next) {
+    this.updatedAt = Date.now();
+
     if (!this.isModified('password')) return next();
     
     try {
