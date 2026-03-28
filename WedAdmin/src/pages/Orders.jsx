@@ -3,7 +3,31 @@ import { Link } from "react-router-dom";
 import api from "../services/api";
 import "./Orders.css";
 
-const statusOptions = ["pending", "confirmed", "processing", "paid", "shipping", "completed", "cancelled"];
+// ====== LABEL TIẾNG VIỆT ======
+const STATUS_LABEL = {
+  pending: "Chờ xử lý",
+  confirmed: "Đã xác nhận",
+  processing: "Đang xử lý",
+  paid: "Đã thanh toán",
+  shipping: "Đang giao",
+  completed: "Hoàn tất",
+  cancelled: "Đã hủy",
+};
+
+const PAYMENT_LABEL = {
+  pending: "Chưa thanh toán",
+  paid: "Đã thanh toán",
+  failed: "Thất bại",
+  refunded: "Hoàn tiền",
+};
+
+// ====== FLOW TRẠNG THÁI ======
+const FLOW = {
+  pending: ["confirmed", "cancelled"],
+  confirmed: ["processing", "cancelled"],
+  processing: ["shipping"],
+  shipping: ["completed"],
+};
 
 const paymentOptions = ["pending", "paid", "failed", "refunded"];
 
@@ -17,7 +41,6 @@ const getStatusTone = (value) => {
     completed: "status-completed",
     cancelled: "status-cancelled",
   };
-
   return map[value] || "status-pill-neutral";
 };
 
@@ -28,7 +51,6 @@ const getPaymentTone = (value) => {
     failed: "status-cancelled",
     refunded: "status-refunded",
   };
-
   return map[value] || "status-pill-neutral";
 };
 
@@ -51,17 +73,39 @@ export default function Orders() {
 
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFilterChange = (e) => {
     setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const updateOrder = async (orderId) => {
+  // ====== CHECK KHÓA ======
+  const isLocked = (status) => {
+    return ["completed", "cancelled"].includes(status);
+  };
+
+  const isInvalidTransition = (current, next) => {
+    if (["completed", "cancelled"].includes(current)) return true;
+    if (next === "pending") return true;
+    return false;
+  };
+
+  const updateOrder = async (orderId, order) => {
     const current = drafts[orderId] || {};
+
     try {
+      if (isLocked(order.orderStatus)) {
+        setMessage("Đơn đã hoàn tất hoặc đã hủy, không thể sửa");
+        return;
+      }
+
+      if (isInvalidTransition(order.orderStatus, current.orderStatus)) {
+        setMessage("Không thể chuyển về 'Chờ xử lý'");
+        return;
+      }
+
       await api.patch(`/admin/orders/${orderId}/status`, current);
+
       setMessage("Cập nhật đơn hàng thành công");
       await load();
     } catch (err) {
@@ -81,9 +125,9 @@ export default function Orders() {
 
   const stats = useMemo(() => {
     const total = orders.length;
-    const paid = orders.filter((order) => order.paymentStatus === "paid").length;
-    const completed = orders.filter((order) => order.orderStatus === "completed").length;
-    const cancelled = orders.filter((order) => order.orderStatus === "cancelled").length;
+    const paid = orders.filter((o) => o.paymentStatus === "paid").length;
+    const completed = orders.filter((o) => o.orderStatus === "completed").length;
+    const cancelled = orders.filter((o) => o.orderStatus === "cancelled").length;
 
     return { total, paid, completed, cancelled };
   }, [orders]);
@@ -95,7 +139,6 @@ export default function Orders() {
           <div>
             <p className="eyebrow">Quản lý đơn hàng</p>
             <h3>Theo dõi thanh toán và trạng thái xử lý</h3>
-           
           </div>
 
           <div className="stats-inline">
@@ -122,22 +165,25 @@ export default function Orders() {
 
         <div className="filter-row">
           <input name="search" value={filters.search} onChange={handleFilterChange} placeholder="Mã đơn" />
+
           <select name="status" value={filters.status} onChange={handleFilterChange}>
             <option value="">Tất cả trạng thái</option>
-            {statusOptions.map((status) => (
-              <option key={status} value={status}>
-                {status}
+            {Object.keys(STATUS_LABEL).map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABEL[s]}
               </option>
             ))}
           </select>
+
           <select name="paymentStatus" value={filters.paymentStatus} onChange={handleFilterChange}>
             <option value="">Tất cả thanh toán</option>
-            {paymentOptions.map((status) => (
-              <option key={status} value={status}>
-                {status}
+            {paymentOptions.map((s) => (
+              <option key={s} value={s}>
+                {PAYMENT_LABEL[s]}
               </option>
             ))}
           </select>
+
           <button className="btn btn-secondary" type="button" onClick={load}>
             Lọc
           </button>
@@ -167,50 +213,69 @@ export default function Orders() {
                     paymentStatus: order.paymentStatus,
                   };
 
+                  const allowedStatus = FLOW[order.orderStatus] || [];
+
                   return (
                     <tr key={order._id}>
                       <td>
-                        <Link to={`/admin/orders/${order._id}`}>#{order.orderNumber || order._id.slice(-6)}</Link>
+                        <Link to={`/admin/orders/${order._id}`}>
+                          #{order.orderNumber || order._id.slice(-6)}
+                        </Link>
                       </td>
+
                       <td>
                         <strong>{order.user?.username || "N/A"}</strong>
                         <div className="muted-text small-text">{order.user?.email || ""}</div>
                       </td>
+
                       <td>
                         <span className={`status-pill ${getPaymentTone(order.paymentStatus)}`}>
-                          {order.paymentStatus}
+                          {PAYMENT_LABEL[order.paymentStatus]}
                         </span>
                       </td>
+
                       <td>
                         <span className={`status-pill ${getStatusTone(order.orderStatus)}`}>
-                          {order.orderStatus}
+                          {STATUS_LABEL[order.orderStatus]}
                         </span>
                       </td>
+
                       <td>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} ₫</td>
+
                       <td>
                         <div className="actions-inline">
+                          {/* PAYMENT */}
                           <select
                             value={draft.paymentStatus || ""}
                             onChange={(e) => setDraft(order._id, "paymentStatus", e.target.value)}
+                            disabled={isLocked(order.orderStatus)}
                           >
-                            <option value="">-</option>
-                            {paymentOptions.map((status) => (
-                              <option key={status} value={status}>
-                                {status}
+                            {paymentOptions.map((s) => (
+                              <option key={s} value={s}>
+                                {PAYMENT_LABEL[s]}
                               </option>
                             ))}
                           </select>
+
+                          {/* ORDER STATUS */}
                           <select
                             value={draft.orderStatus || ""}
                             onChange={(e) => setDraft(order._id, "orderStatus", e.target.value)}
+                            disabled={isLocked(order.orderStatus)}
                           >
-                            {statusOptions.map((status) => (
-                              <option key={status} value={status}>
-                                {status}
+                            {(allowedStatus.length > 0 ? allowedStatus : [order.orderStatus]).map((s) => (
+                              <option key={s} value={s}>
+                                {STATUS_LABEL[s]}
                               </option>
                             ))}
                           </select>
-                          <button className="btn btn-primary" type="button" onClick={() => updateOrder(order._id)}>
+
+                          <button
+                            className="btn btn-primary"
+                            type="button"
+                            onClick={() => updateOrder(order._id, order)}
+                            disabled={isLocked(order.orderStatus)}
+                          >
                             Lưu
                           </button>
                         </div>

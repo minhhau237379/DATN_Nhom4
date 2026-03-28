@@ -1,0 +1,29 @@
+{
+	"folders": [
+		{
+			"path": "../../../../test/New folder"
+		},
+		{
+			"path": "../node_modules"
+		},
+		{
+			"path": "../public"
+		},
+		{
+			"path": "../public/images"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "assets"
+		},
+		{
+			"path": "components"
+		},
+		{
+			"path": "services"
+		}
+	],
+	"settings": {}
+}

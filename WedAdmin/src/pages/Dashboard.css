@@ -60,3 +60,15 @@
     grid-template-columns: minmax(0, 1.45fr) minmax(420px, 0.9fr);
   }
 }
+/* ===== CHART ===== */
+.page-dashboard .dashboard-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 1100px) {
+  .page-dashboard .dashboard-charts {
+    grid-template-columns: 1fr;
+  }
+}
