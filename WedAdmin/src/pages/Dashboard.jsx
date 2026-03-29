@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
+import { getBackendOrigin } from "../services/baseUrl";
 import "./Dashboard.css";
-
-const getBackendOrigin = () =>
-  (api.defaults.baseURL || "http://localhost:3003/api").replace(/\/api$/, "");
 
 const resolveImageUrl = (value) => {
   if (!value) {

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../services/api";
+import { getBackendOrigin } from "../services/baseUrl";
 import "./Products.css";
 
 const emptyForm = {
@@ -20,13 +21,6 @@ const emptyForm = {
   },
 };
 
-const specFields = [
-  { key: "theme", label: "Chủ đề" },
-  { key: "age", label: "Độ tuổi" },
-  { key: "gender", label: "Giới tính" },
-  { key: "brand", label: "Thương hiệu" },
-  { key: "origin", label: "Xuất xứ" },
-];
 
 const descriptionTemplate = `<p><strong>Chủ đề:</strong> </p>
 <p><strong>Độ tuổi:</strong> </p>
@@ -60,7 +54,7 @@ const toImageUrl = (value) => {
   if (firstImage.startsWith("http") || firstImage.startsWith("blob:") || firstImage.startsWith("data:")) {
     return firstImage;
   }
-  return `http://localhost:3003${firstImage}`;
+  return `${getBackendOrigin()}${firstImage}`;
 };
 
 export default function Products() {
@@ -183,15 +177,7 @@ export default function Products() {
     setFilePreviewUrls(files.map((file) => URL.createObjectURL(file)));
   };
 
-  const handleSpecChange = (key, value) => {
-    setForm((prev) => ({
-      ...prev,
-      specifications: {
-        ...(prev.specifications || {}),
-        [key]: value,
-      },
-    }));
-  };
+
 
   const insertDescriptionHtml = (before, after = "", placeholder = "Nội dung") => {
     const textarea = descriptionRef.current;

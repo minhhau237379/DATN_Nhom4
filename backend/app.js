@@ -18,6 +18,10 @@ const orderRoutes = require("./routes/orderRoutes");
 const addressRoutes = require("./routes/address");
 const paymentRoutes = require("./routes/paymentRoutes");
 
+const corsOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:5174,http://localhost:8081")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 const app = express();
 
@@ -29,7 +33,7 @@ connectDB().then(() => ensureAdminUser().catch((err) => {
 
 /* ======================= CORS (QUAN TRỌNG) ======================= */
 app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:8081"],
+  origin: corsOrigins,
   credentials: true
 }));
 
