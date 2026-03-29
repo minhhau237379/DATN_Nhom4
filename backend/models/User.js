@@ -35,6 +35,18 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'admin'],
         default: 'user'
     },
+    isLocked: {
+        type: Boolean,
+        default: false,
+    },
+    lockReason: {
+        type: String,
+        default: "",
+    },
+    lockedAt: {
+        type: Date,
+        default: null,
+    },
     resetPasswordOtp: {
         type: String,
         default: null,

@@ -13,12 +13,13 @@ import { useFocusEffect } from "@react-navigation/native";
 import AppToast from "../../components/AppToast";
 import api from "../../services/api";
 import { isLoggedIn } from "../../utils/auth";
+import { resolveImageUri } from "../../utils/productImage";
 
 type Product = {
   _id: string;
   name: string;
   price: number;
-  image: string;
+  image: string | string[];
 };
 
 type Category = {
@@ -138,7 +139,7 @@ export default function Shop() {
       }
     >
       <Image
-        source={{ uri: `http://localhost:3003${item.image}` }}
+        source={{ uri: resolveImageUri(item.image) }}
         style={styles.image}
       />
 

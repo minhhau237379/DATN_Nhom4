@@ -21,3 +21,6 @@
 .page-categories .form-grid label textarea {
   min-width: 0;
 }
+.full {
+  width: 100%;
+}

@@ -4,11 +4,16 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-const getUserInfo = (req) => {
+const getUserInfo = async (req) => {
   if (req.session?.user?._id) {
+    const user = await User.findById(req.session.user._id).lean();
+    if (!user || user.isLocked) {
+      return null;
+    }
+
     return {
-      id: req.session.user._id,
-      username: req.session.user.username,
+      id: user._id,
+      username: user.username,
     };
   }
 
@@ -20,17 +25,23 @@ const getUserInfo = (req) => {
   try {
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
+    const user = await User.findById(decoded.id).lean();
+
+    if (!user || user.isLocked) {
+      return null;
+    }
+
     return {
-      id: decoded.id,
-      username: decoded.username,
+      id: user._id,
+      username: user.username,
     };
   } catch (err) {
     return null;
   }
 };
 
-const requireLogin = (req, res, next) => {
-  const userInfo = getUserInfo(req);
+const requireLogin = async (req, res, next) => {
+  const userInfo = await getUserInfo(req);
 
   if (!userInfo) {
     return res.status(401).json({

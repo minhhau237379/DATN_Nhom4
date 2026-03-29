@@ -3,19 +3,16 @@ import { Link } from "react-router-dom";
 import api from "../services/api";
 import "./Orders.css";
 
-const statusOptions = ["pending", "confirmed", "processing", "paid", "shipping", "completed", "cancelled"];
-
-const paymentOptions = ["pending", "paid", "failed", "refunded"];
+const statusOptions = ["Chờ xác nhận", "Đã xác nhận", "Đang xử lý", "Đang giao hàng", "Hoàn tất", "Đã hủy"];
 
 const getStatusTone = (value) => {
   const map = {
-    pending: "status-pending",
-    confirmed: "status-confirmed",
-    processing: "status-processing",
-    paid: "status-paid",
-    shipping: "status-shipping",
-    completed: "status-completed",
-    cancelled: "status-cancelled",
+    "Chờ xác nhận": "status-pending",
+    "Đã xác nhận": "status-confirmed",
+    "Đang xử lý": "status-processing",
+    "Đang giao hàng": "status-shipping",
+    "Hoàn tất": "status-completed",
+    "Đã hủy": "status-cancelled",
   };
 
   return map[value] || "status-pill-neutral";
@@ -23,10 +20,8 @@ const getStatusTone = (value) => {
 
 const getPaymentTone = (value) => {
   const map = {
-    pending: "status-pending",
-    paid: "status-paid",
-    failed: "status-cancelled",
-    refunded: "status-refunded",
+    "Chưa thanh toán": "status-pending",
+    "Đã thanh toán": "status-paid",
   };
 
   return map[value] || "status-pill-neutral";
@@ -81,9 +76,9 @@ export default function Orders() {
 
   const stats = useMemo(() => {
     const total = orders.length;
-    const paid = orders.filter((order) => order.paymentStatus === "paid").length;
-    const completed = orders.filter((order) => order.orderStatus === "completed").length;
-    const cancelled = orders.filter((order) => order.orderStatus === "cancelled").length;
+    const paid = orders.filter((order) => order.paymentStatus === "Đã thanh toán").length;
+    const completed = orders.filter((order) => order.orderStatus === "Hoàn tất").length;
+    const cancelled = orders.filter((order) => order.orderStatus === "Đã hủy").length;
 
     return { total, paid, completed, cancelled };
   }, [orders]);
@@ -121,18 +116,10 @@ export default function Orders() {
         {message && <div className="alert">{message}</div>}
 
         <div className="filter-row">
-          <input name="search" value={filters.search} onChange={handleFilterChange} placeholder="Mã đơn" />
-          <select name="status" value={filters.status} onChange={handleFilterChange}>
+          <input style={{ width: "45%" }} name="search" value={filters.search} onChange={handleFilterChange} placeholder="Mã đơn" />
+          <select style={{ width: "50%" }} name="status" value={filters.status} onChange={handleFilterChange}>
             <option value="">Tất cả trạng thái</option>
             {statusOptions.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-          <select name="paymentStatus" value={filters.paymentStatus} onChange={handleFilterChange}>
-            <option value="">Tất cả thanh toán</option>
-            {paymentOptions.map((status) => (
               <option key={status} value={status}>
                 {status}
               </option>
@@ -164,7 +151,6 @@ export default function Orders() {
                 {orders.map((order) => {
                   const draft = drafts[order._id] || {
                     orderStatus: order.orderStatus,
-                    paymentStatus: order.paymentStatus,
                   };
 
                   return (
@@ -189,17 +175,6 @@ export default function Orders() {
                       <td>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} ₫</td>
                       <td>
                         <div className="actions-inline">
-                          <select
-                            value={draft.paymentStatus || ""}
-                            onChange={(e) => setDraft(order._id, "paymentStatus", e.target.value)}
-                          >
-                            <option value="">-</option>
-                            {paymentOptions.map((status) => (
-                              <option key={status} value={status}>
-                                {status}
-                              </option>
-                            ))}
-                          </select>
                           <select
                             value={draft.orderStatus || ""}
                             onChange={(e) => setDraft(order._id, "orderStatus", e.target.value)}

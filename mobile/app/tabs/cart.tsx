@@ -12,12 +12,13 @@ import { useFocusEffect } from "@react-navigation/native";
 import api from "../../services/api";
 import AppToast from "../../components/AppToast";
 import { isLoggedIn } from "../../utils/auth";
+import { resolveImageUri } from "../../utils/productImage";
 
 type Product = {
   _id: string;
   name: string;
   price: number;
-  image: string;
+  image: string | string[];
   stock?: number;
 };
 
@@ -191,7 +192,7 @@ export default function Cart() {
       </TouchableOpacity>
 
       <Image
-        source={{ uri: `http://localhost:3003${item.product.image}` }}
+        source={{ uri: resolveImageUri(item.product.image) }}
         style={styles.image}
       />
 

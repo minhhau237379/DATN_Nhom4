@@ -48,5 +48,6 @@ router.post("/create", requireLogin, orderController.createOrder);
 router.post("/create-vnpay-payment", requireLogin, orderController.createVnpayPayment);
 router.get("/", requireLogin, orderController.listOrders);
 router.get("/:id", requireLogin, orderController.getOrderDetail);
+router.patch("/:id/cancel", requireLogin, orderController.cancelOrder);
 
 module.exports = router;

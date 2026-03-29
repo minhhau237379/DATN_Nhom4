@@ -68,6 +68,13 @@ const loginUser = async (req, res) => {
       });
     }
 
+    if (user.isLocked) {
+      return res.status(403).json({
+        success: false,
+        message: "Tai khoan da bi khoa",
+      });
+    }
+
     const isMatch = await user.comparePassword(password);
 
     if (!isMatch) {
@@ -121,6 +128,13 @@ const adminLogin = async (req, res) => {
       return res.status(401).json({
         success: false,
         message: "Tai khoan admin khong ton tai",
+      });
+    }
+
+    if (user.isLocked) {
+      return res.status(403).json({
+        success: false,
+        message: "Tai khoan admin da bi khoa",
       });
     }
 

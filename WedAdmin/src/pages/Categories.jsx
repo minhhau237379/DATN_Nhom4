@@ -77,18 +77,6 @@ export default function Categories() {
     }
   };
 
-  const remove = async (category) => {
-    if (!window.confirm(`Xóa danh mục "${category.name}"?`)) return;
-
-    try {
-      await api.delete(`/admin/categories/${category._id}`);
-      setMessage("Xóa danh mục thành công");
-      await load();
-    } catch (err) {
-      setMessage(err.response?.data?.message || "Không thể xóa danh mục");
-    }
-  };
-
   const toggleStatus = async (category) => {
     try {
       await api.patch(`/admin/categories/${category._id}/status`, {
@@ -154,12 +142,12 @@ export default function Categories() {
         <form className="form-grid" onSubmit={submit}>
           <label>
             Tên danh mục
-            <input name="name" value={form.name} onChange={handleChange} required />
+            <input style={{ width: "70%" }} name="name" value={form.name} onChange={handleChange} required />
           </label>
 
           <label>
             Trạng thái
-            <select name="status" value={form.status} onChange={handleChange}>
+            <select style={{ width: "70%" }} name="status" value={form.status} onChange={handleChange}>
               <option value="1">Hiện</option>
               <option value="0">Ẩn</option>
             </select>
@@ -167,7 +155,7 @@ export default function Categories() {
 
           <label className="full">
             Mô tả
-            <textarea name="description" value={form.description} onChange={handleChange} rows="4" />
+            <textarea style={{ width: "70%" }} name="description" value={form.description} onChange={handleChange} rows="2" />
           </label>
 
           <div className="full actions-inline">
@@ -218,9 +206,6 @@ export default function Categories() {
                         </button>
                         <button type="button" className="btn btn-secondary" onClick={() => toggleStatus(category)}>
                           {category.status === 1 ? "Ẩn" : "Hiện"}
-                        </button>
-                        <button type="button" className="btn btn-danger" onClick={() => remove(category)}>
-                          Xóa
                         </button>
                       </div>
                     </td>

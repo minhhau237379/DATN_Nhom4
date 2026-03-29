@@ -19,8 +19,7 @@ export default function PaymentsScreen() {
     try {
       const res = await api.get("/order");
       const paidOrders = (res.data.orders || []).filter(
-        (item: PaymentItem) =>
-          item.paymentMethod === "VNPAY" || item.paymentStatus === "paid",
+        (item: PaymentItem) => item.paymentStatus === "Đã thanh toán",
       );
       setPayments(paidOrders);
     } catch (err) {
@@ -59,7 +58,7 @@ export default function PaymentsScreen() {
               Phương thức: {item.paymentMethod || "VNPAY"}
             </Text>
             <Text style={styles.meta}>
-              Trạng thái: {item.paymentStatus || "paid"}
+              Trạng thái: {item.paymentStatus || "Đã thanh toán"}
             </Text>
             <Text style={styles.total}>
               Số tiền: {(item.totalPrice || 0).toLocaleString("vi-VN")} VND

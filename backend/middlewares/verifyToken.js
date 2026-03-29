@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-module.exports = (req, res, next) => {
+module.exports = async (req, res, next) => {
 
   const authHeader = req.headers.authorization;
 
@@ -17,7 +18,27 @@ module.exports = (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
 
-    req.user = decoded;
+    const user = await User.findById(decoded.id).lean();
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Tai khoan khong ton tai"
+      });
+    }
+
+    if (user.isLocked) {
+      return res.status(403).json({
+        success: false,
+        message: "Tai khoan da bi khoa"
+      });
+    }
+
+    req.user = {
+      id: user._id,
+      username: user.username,
+      role: user.role,
+    };
 
     next();
 

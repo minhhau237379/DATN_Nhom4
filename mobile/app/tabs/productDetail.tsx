@@ -1,6 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  FlatList,
+  Dimensions,
   Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,12 +15,15 @@ import { router, useLocalSearchParams } from "expo-router";
 import AppToast from "../../components/AppToast";
 import api from "../../services/api";
 import { isLoggedIn } from "../../utils/auth";
+import { getProductImages, resolveImageUri } from "../../utils/productImage";
+
+const { width: screenWidth } = Dimensions.get("window");
 
 type Product = {
   _id: string;
   name: string;
   price: number;
-  image: string;
+  image: string | string[];
   stock?: number;
   description?: string;
   specifications?: Record<string, string>;
@@ -34,11 +41,53 @@ const specLabelMap: Record<string, string> = {
 
 const formatSpecLabel = (key: string) => specLabelMap[key] || key;
 
+const descriptionFieldKeyMap: Record<string, string> = {
+  "Chủ đề": "theme",
+  "Độ tuổi": "age",
+  "Giới tính": "gender",
+  "Thương hiệu": "brand",
+  "Xuất xứ": "origin",
+};
+
+const extractDescriptionFields = (html?: string) => {
+  if (!html) {
+    return [] as Array<{ label: string; value: string }>;
+  }
+
+  const matches = Array.from(
+    html.matchAll(/<p>\s*<strong>([^<:]+):<\/strong>\s*([\s\S]*?)<\/p>/gi),
+  );
+
+  const parsed = matches
+    .map(([, label, value]) => ({
+      label: String(label).trim(),
+      value: String(value)
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<[^>]*>/g, "")
+        .replace(/&nbsp;/g, " ")
+        .trim(),
+    }))
+    .filter((item) => item.label && item.value);
+
+  if (parsed.length) {
+    return parsed;
+  }
+
+  const text = html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return text ? [{ label: "Mô tả", value: text }] : [];
+};
+
 export default function ProductDetail() {
   const { id } = useLocalSearchParams();
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const imageListRef = useRef<FlatList<string> | null>(null);
   const [notice, setNotice] = useState({
     visible: false,
     title: "",
@@ -138,15 +187,75 @@ export default function ProductDetail() {
   }
 
   const isOutOfStock = (product.stock || 0) <= 0;
+  const productImages = getProductImages(product.image);
+  const descriptionFields = extractDescriptionFields(product.description);
+  const descriptionKeys = new Set(
+    descriptionFields.map((field) => descriptionFieldKeyMap[field.label] || field.label),
+  );
+  const specEntries =
+    product.specifications &&
+    Object.entries(product.specifications).filter(([key, value]) => {
+      const normalizedValue = String(value ?? "").trim();
+      return normalizedValue && !descriptionKeys.has(key);
+    });
+  const slideWidth = screenWidth - 20;
 
   return (
     <>
       <ScrollView style={styles.container}>
         <View style={styles.imageBox}>
-          <Image
-            source={{ uri: `http://localhost:3003${product.image}` }}
-            style={styles.image}
+          <FlatList
+            ref={imageListRef}
+            data={productImages.length ? productImages : [""]}
+            horizontal
+            pagingEnabled
+            snapToInterval={slideWidth}
+            decelerationRate="fast"
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item, index) => `${item || "image"}-${index}`}
+            getItemLayout={(_, index) => ({
+              length: slideWidth,
+              offset: slideWidth * index,
+              index,
+            })}
+            onMomentumScrollEnd={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
+              const nextIndex = Math.round(event.nativeEvent.contentOffset.x / slideWidth);
+              setActiveImageIndex(nextIndex);
+            }}
+            renderItem={({ item }) => (
+              <View style={[styles.slide, { width: slideWidth }]}>
+                <Image source={{ uri: resolveImageUri(item) }} style={styles.image} />
+              </View>
+            )}
           />
+
+          {productImages.length > 1 ? (
+            <View style={styles.dots}>
+              {productImages.map((image, index) => (
+                <View
+                  key={`${image}-${index}`}
+                  style={[styles.dot, index === activeImageIndex && styles.dotActive]}
+                />
+              ))}
+            </View>
+          ) : null}
+
+          {productImages.length > 1 ? (
+            <View style={styles.thumbRow}>
+              {productImages.map((image, index) => (
+                <TouchableOpacity
+                  key={`${image}-thumb-${index}`}
+                  style={[styles.thumbItem, index === activeImageIndex && styles.thumbActive]}
+                  onPress={() => {
+                    setActiveImageIndex(index);
+                    imageListRef.current?.scrollToIndex({ index, animated: true });
+                  }}
+                >
+                  <Image source={{ uri: resolveImageUri(image) }} style={styles.thumbImage} />
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.section}>
@@ -191,13 +300,21 @@ export default function ProductDetail() {
         <View style={styles.section}>
           <Text style={styles.title}>Mô tả sản phẩm</Text>
 
-          <Text style={styles.desc}>
-            {product.description || "Chưa có thông tin"}
-          </Text>
+          {descriptionFields.length ? (
+            <View style={styles.descriptionPanel}>
+              {descriptionFields.map((field) => (
+                <View key={field.label} style={styles.descriptionRow}>
+                  <Text style={styles.descriptionLabel}>{field.label}</Text>
+                  <Text style={styles.descriptionValue}>{field.value}</Text>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.descFallback}>Chưa có thông tin</Text>
+          )}
 
-          {product.specifications &&
-            Object.keys(product.specifications).length > 0 &&
-            Object.entries(product.specifications).map(([key, value]) => (
+          {specEntries && specEntries.length > 0 &&
+            specEntries.map(([key, value]) => (
               <View key={key} style={styles.specRow}>
                 <Text style={styles.specKey}>{formatSpecLabel(key)}</Text>
                 <Text style={styles.specValue}>{value}</Text>
@@ -218,7 +335,7 @@ export default function ProductDetail() {
               }
             >
               <Image
-                source={{ uri: `http://localhost:3003${item.image}` }}
+                source={{ uri: resolveImageUri(item.image) }}
                 style={styles.relatedImage}
               />
               <Text numberOfLines={2}>{item.name}</Text>
@@ -249,9 +366,14 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     margin: 10,
   },
+  slide: {
+    marginRight: 6,
+    borderRadius: 18,
+    overflow: "hidden",
+  },
   image: {
     width: "100%",
-    height: 250,
+    height: 240,
     resizeMode: "contain",
   },
   section: {
@@ -302,7 +424,34 @@ const styles = StyleSheet.create({
   },
   btnText: { color: "white", fontWeight: "bold" },
   title: { fontWeight: "bold", marginBottom: 5 },
-  desc: { marginBottom: 10 },
+  descriptionPanel: {
+    backgroundColor: "#f8fafc",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    padding: 12,
+    gap: 10,
+    marginBottom: 10,
+  },
+  descriptionRow: {
+    flexDirection: "row",
+    gap: 12,
+    alignItems: "flex-start",
+  },
+  descriptionLabel: {
+    width: 96,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  descriptionValue: {
+    flex: 1,
+    color: "#334155",
+    lineHeight: 21,
+  },
+  descFallback: {
+    color: "#64748b",
+    marginBottom: 10,
+  },
   specRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -328,6 +477,49 @@ const styles = StyleSheet.create({
   relatedImage: {
     width: "100%",
     height: 100,
+    resizeMode: "contain",
+  },
+  dots: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 10,
+  },
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: "#d5001c",
+    opacity: 0.25,
+  },
+  dotActive: {
+    opacity: 1,
+    transform: [{ scale: 1.15 }],
+  },
+  thumbRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 12,
+    justifyContent: "center",
+    flexWrap: "wrap",
+  },
+  thumbItem: {
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#fff",
+    overflow: "hidden",
+    padding: 4,
+  },
+  thumbActive: {
+    borderColor: "#d5001c",
+    borderWidth: 2,
+  },
+  thumbImage: {
+    width: "100%",
+    height: "100%",
     resizeMode: "contain",
   },
 });

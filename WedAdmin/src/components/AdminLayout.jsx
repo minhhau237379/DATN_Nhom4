@@ -6,6 +6,7 @@ const navItems = [
   { to: "/admin/dashboard", label: "Dashboard" },
   { to: "/admin/products", label: "Sản phẩm" },
   { to: "/admin/categories", label: "Danh mục" },
+  { to: "/admin/users", label: "Người dùng" },
   { to: "/admin/orders", label: "Đơn hàng" },
 ];
 

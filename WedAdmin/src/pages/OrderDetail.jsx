@@ -3,18 +3,16 @@ import { Link, useParams } from "react-router-dom";
 import api from "../services/api";
 import "./OrderDetail.css";
 
-const statusOptions = ["pending", "confirmed", "processing", "paid", "shipping", "completed", "cancelled"];
-const paymentOptions = ["pending", "paid", "failed", "refunded"];
+const statusOptions = ["Chờ xác nhận", "Đã xác nhận", "Đang xử lý", "Đang giao hàng", "Hoàn tất", "Đã hủy"];
 
 const getStatusTone = (value) => {
   const map = {
-    pending: "status-pending",
-    confirmed: "status-confirmed",
-    processing: "status-processing",
-    paid: "status-paid",
-    shipping: "status-shipping",
-    completed: "status-completed",
-    cancelled: "status-cancelled",
+    "Chờ xác nhận": "status-pending",
+    "Đã xác nhận": "status-confirmed",
+    "Đang xử lý": "status-processing",
+    "Đang giao hàng": "status-shipping",
+    "Hoàn tất": "status-completed",
+    "Đã hủy": "status-cancelled",
   };
 
   return map[value] || "status-pill-neutral";
@@ -22,10 +20,8 @@ const getStatusTone = (value) => {
 
 const getPaymentTone = (value) => {
   const map = {
-    pending: "status-pending",
-    paid: "status-paid",
-    failed: "status-cancelled",
-    refunded: "status-refunded",
+    "Chưa thanh toán": "status-pending",
+    "Đã thanh toán": "status-paid",
   };
 
   return map[value] || "status-pill-neutral";
@@ -34,7 +30,7 @@ const getPaymentTone = (value) => {
 export default function OrderDetail() {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
-  const [draft, setDraft] = useState({ orderStatus: "", paymentStatus: "" });
+  const [draft, setDraft] = useState({ orderStatus: "" });
   const [message, setMessage] = useState("");
 
   const load = async () => {
@@ -42,7 +38,6 @@ export default function OrderDetail() {
     setOrder(res.data.order);
     setDraft({
       orderStatus: res.data.order?.orderStatus || "",
-      paymentStatus: res.data.order?.paymentStatus || "",
     });
   };
 
@@ -125,19 +120,9 @@ export default function OrderDetail() {
           </div>
           <div>
             <strong>Thanh toán</strong>
-            <span className={`status-pill ${getPaymentTone(draft.paymentStatus)}`}>
-              {draft.paymentStatus || order.paymentStatus}
+            <span className={`status-pill ${getPaymentTone(order.paymentStatus)}`}>
+              {order.paymentStatus}
             </span>
-            <select
-              value={draft.paymentStatus}
-              onChange={(e) => setDraft((prev) => ({ ...prev, paymentStatus: e.target.value }))}
-            >
-              {paymentOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
           </div>
           <div>
             <strong>Trạng thái đơn</strong>

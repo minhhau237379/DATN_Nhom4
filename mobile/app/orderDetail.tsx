@@ -4,10 +4,12 @@ import {
   FlatList,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import AppBottomNav, { APP_BOTTOM_NAV_HEIGHT } from "../components/AppBottomNav";
+import AppToast from "../components/AppToast";
 import api from "../services/api";
 
 type OrderItem = {
@@ -34,10 +36,67 @@ type OrderDetail = {
   items: OrderItem[];
 };
 
+const orderStatusLabel = (value?: string) => {
+  const map: Record<string, string> = {
+    "Chờ xác nhận": "Chờ xác nhận",
+    "Đã xác nhận": "Đã xác nhận",
+    "Đang xử lý": "Đang xử lý",
+    "Đang giao hàng": "Đang giao hàng",
+    "Hoàn tất": "Hoàn tất",
+    "Đã hủy": "Đã hủy",
+    pending: "Chờ xác nhận",
+    confirmed: "Đã xác nhận",
+    processing: "Đang xử lý",
+    shipping: "Đang giao hàng",
+    completed: "Hoàn tất",
+    cancelled: "Đã hủy",
+  };
+
+  return map[value || ""] || value || "Chờ xác nhận";
+};
+
+const paymentStatusLabel = (value?: string) => {
+  const map: Record<string, string> = {
+    "Chưa thanh toán": "Chưa thanh toán",
+    "Đã thanh toán": "Đã thanh toán",
+    pending: "Chưa thanh toán",
+    paid: "Đã thanh toán",
+    failed: "Chưa thanh toán",
+    refunded: "Chưa thanh toán",
+  };
+
+  return map[value || ""] || value || "Chưa thanh toán";
+};
+
+const canCancelOrder = (orderStatus?: string) =>
+  orderStatusLabel(orderStatus) === "Chờ xác nhận";
+
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cancelling, setCancelling] = useState(false);
+  const [notice, setNotice] = useState({
+    visible: false,
+    title: "",
+    message: "",
+  });
+
+  const showNotice = (title: string, message: string) => {
+    setNotice({
+      visible: true,
+      title,
+      message,
+    });
+  };
+
+  const closeNotice = () => {
+    setNotice({
+      visible: false,
+      title: "",
+      message: "",
+    });
+  };
 
   const loadOrder = useCallback(async () => {
     if (!id) return;
@@ -49,10 +108,37 @@ export default function OrderDetailScreen() {
     } catch (err) {
       console.error(err);
       setOrder(null);
+      showNotice("Lỗi", "Không thể tải chi tiết đơn hàng");
     } finally {
       setLoading(false);
     }
   }, [id]);
+
+  const cancelOrder = () => {
+    if (!id) return;
+
+    const runCancel = async () => {
+      try {
+        setCancelling(true);
+        showNotice("Đang xử lý", "Đang hủy đơn hàng...");
+        const res = await api.patch(`/order/${id}/cancel`);
+
+        if (res.data?.success) {
+          showNotice("Thành công", res.data.message || "Đã hủy đơn hàng");
+          await loadOrder();
+        } else {
+          showNotice("Lỗi", res.data?.message || "Không thể hủy đơn hàng");
+        }
+      } catch (err: any) {
+        console.error(err);
+        showNotice("Lỗi", err.response?.data?.message || "Không thể hủy đơn hàng");
+      } finally {
+        setCancelling(false);
+      }
+    };
+
+    void runCancel();
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -98,11 +184,25 @@ export default function OrderDetailScreen() {
                   ? new Date(order.createdAt).toLocaleString("vi-VN")
                   : ""}
               </Text>
-              <Text style={styles.meta}>Trạng thái đơn: {order.orderStatus}</Text>
               <Text style={styles.meta}>
-                Thanh toán: {order.paymentMethod} - {order.paymentStatus}
+                Trạng thái đơn: {orderStatusLabel(order.orderStatus)}
+              </Text>
+              <Text style={styles.meta}>
+                Thanh toán: {order.paymentMethod} - {paymentStatusLabel(order.paymentStatus)}
               </Text>
             </View>
+
+            {canCancelOrder(order.orderStatus) ? (
+              <TouchableOpacity
+                style={[styles.cancelBtn, cancelling && styles.cancelBtnDisabled]}
+                onPress={cancelOrder}
+                disabled={cancelling}
+              >
+                <Text style={styles.cancelText}>
+                  {cancelling ? "Đang hủy..." : "Hủy đơn hàng"}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
 
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>Địa chỉ giao hàng</Text>
@@ -139,6 +239,13 @@ export default function OrderDetailScreen() {
       />
 
       <AppBottomNav active="cart" />
+
+      <AppToast
+        visible={notice.visible}
+        title={notice.title}
+        message={notice.message}
+        onHide={closeNotice}
+      />
     </View>
   );
 }
@@ -216,5 +323,23 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     marginTop: 6,
+  },
+  cancelBtn: {
+    backgroundColor: "#fff",
+    borderColor: "#d5001c",
+    borderWidth: 1.5,
+    borderRadius: 30,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    alignItems: "center",
+    marginHorizontal: 10,
+    marginBottom: 12,
+  },
+  cancelBtnDisabled: {
+    opacity: 0.6,
+  },
+  cancelText: {
+    color: "#d5001c",
+    fontWeight: "700",
   },
 });

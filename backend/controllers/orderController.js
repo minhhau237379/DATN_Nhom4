@@ -4,6 +4,20 @@ const Product = require("../models/Product");
 const Order = require("../models/Order");
 const Address = require("../models/Address");
 const { buildPaymentUrl, formatVnpDate, verifyReturnParams } = require("../utils/vnpay");
+const {
+  normalizeProductImages,
+  getPrimaryProductImage,
+  normalizeProductRecord,
+} = require("../utils/product");
+const {
+  ORDER_STATUS,
+  PAYMENT_STATUS,
+  normalizeOrderStatus,
+  normalizePaymentStatus,
+  canCancelOrder,
+  canMoveForward,
+  isFinalOrderStatus,
+} = require("../utils/orderStatus");
 
 const getClientIp = (req) => {
   const forwarded = req.headers["x-forwarded-for"];
@@ -25,6 +39,31 @@ const appendQueryParams = (baseUrl, params) => {
   });
 
   return url.toString();
+};
+
+const normalizeOrderRecord = (order) => {
+  if (!order) {
+    return order;
+  }
+
+  return {
+    ...order,
+    orderStatus: normalizeOrderStatus(order.orderStatus),
+    paymentStatus: normalizePaymentStatus(order.paymentStatus),
+    items: (order.items || []).map((item) => ({
+      ...item,
+      image: normalizeProductImages(item.image),
+    })),
+  };
+};
+
+const buildOrderFilterByStatus = (value) => {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = normalizeOrderStatus(value);
+  return normalized;
 };
 
 const getPublicBaseUrl = (req) => {
@@ -100,7 +139,7 @@ const loadCheckoutContext = async ({ userId, addressId, selectedProductIds, sess
   const orderItems = cartItems.map((item) => ({
     product: item.product._id,
     name: item.product.name,
-    image: item.product.image,
+    image: getPrimaryProductImage(item.product.image),
     price: item.product.price,
     quantity: item.quantity,
   }));
@@ -131,7 +170,7 @@ const finalizePaidOrder = async (order) => {
       throw new Error("Khong tim thay don hang");
     }
 
-    if (lockedOrder.paymentStatus === "paid") {
+    if (normalizePaymentStatus(lockedOrder.paymentStatus) === PAYMENT_STATUS.PAID) {
       await session.commitTransaction();
       return lockedOrder;
     }
@@ -167,8 +206,8 @@ const finalizePaidOrder = async (order) => {
       await cart.save({ session });
     }
 
-    lockedOrder.paymentStatus = "paid";
-    lockedOrder.orderStatus = "confirmed";
+    lockedOrder.paymentStatus = PAYMENT_STATUS.PAID;
+    lockedOrder.orderStatus = ORDER_STATUS.WAITING_CONFIRM;
     lockedOrder.paidAt = lockedOrder.paidAt || new Date();
     await lockedOrder.save({ session });
 
@@ -183,14 +222,25 @@ const finalizePaidOrder = async (order) => {
 };
 
 const markOrderFailed = async (order, responseCode) => {
-  if (order.paymentStatus === "paid") {
+  if (normalizePaymentStatus(order.paymentStatus) === PAYMENT_STATUS.PAID) {
     return order;
   }
 
-  order.paymentStatus = "failed";
+  order.paymentStatus = PAYMENT_STATUS.UNPAID;
+  order.orderStatus = ORDER_STATUS.CANCELLED;
   order.paymentResponseCode = responseCode || order.paymentResponseCode;
   await order.save();
   return order;
+};
+
+const restoreOrderStock = async (order, session) => {
+  for (const item of order.items) {
+    await Product.findByIdAndUpdate(
+      item.product?._id || item.product,
+      { $inc: { stock: item.quantity } },
+      { session },
+    );
+  }
 };
 
 exports.createOrder = async (req, res) => {
@@ -232,8 +282,8 @@ exports.createOrder = async (req, res) => {
             city: selectedAddress.city,
           },
           paymentMethod,
-          paymentStatus: "pending",
-          orderStatus: "pending",
+          paymentStatus: PAYMENT_STATUS.UNPAID,
+          orderStatus: ORDER_STATUS.WAITING_CONFIRM,
         },
       ],
       { session },
@@ -261,7 +311,7 @@ exports.createOrder = async (req, res) => {
     res.json({
       success: true,
       message: "Dat hang thanh cong",
-      order: order[0],
+      order: normalizeOrderRecord(order[0].toObject()),
     });
   } catch (err) {
     await session.abortTransaction();
@@ -319,8 +369,8 @@ exports.createVnpayPayment = async (req, res) => {
             city: selectedAddress.city,
           },
           paymentMethod: "VNPAY",
-          paymentStatus: "pending",
-          orderStatus: "pending",
+          paymentStatus: PAYMENT_STATUS.UNPAID,
+          orderStatus: ORDER_STATUS.WAITING_CONFIRM,
           paymentReturnUrl: clientReturnUrl,
         },
       ],
@@ -378,7 +428,7 @@ exports.createVnpayPayment = async (req, res) => {
     res.json({
       success: true,
       message: "Tao link thanh toan thanh cong",
-      order,
+      order: normalizeOrderRecord(order.toObject()),
       paymentUrl,
     });
   } catch (err) {
@@ -396,7 +446,9 @@ exports.createVnpayPayment = async (req, res) => {
 
 exports.listOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.authUserId }).sort({ createdAt: -1 });
+    const orders = (await Order.find({ user: req.authUserId }).sort({ createdAt: -1 }).lean()).map(
+      normalizeOrderRecord,
+    );
     res.json({ success: true, orders });
   } catch (err) {
     console.error("LIST ORDERS ERROR:", err);
@@ -409,7 +461,7 @@ exports.getOrderDetail = async (req, res) => {
     const order = await Order.findOne({
       _id: req.params.id,
       user: req.authUserId,
-    });
+    }).lean();
 
     if (!order) {
       return res.status(404).json({
@@ -418,13 +470,64 @@ exports.getOrderDetail = async (req, res) => {
       });
     }
 
-    res.json({ success: true, order });
+    res.json({ success: true, order: normalizeOrderRecord(order) });
   } catch (err) {
     console.error("GET ORDER DETAIL ERROR:", err);
     res.status(500).json({
       success: false,
       message: "Khong the tai chi tiet don hang",
     });
+  }
+};
+
+exports.cancelOrder = async (req, res) => {
+  const session = await mongoose.startSession();
+
+  try {
+    session.startTransaction();
+
+    const order = await Order.findOne({
+      _id: req.params.id,
+      user: req.authUserId,
+    }).session(session);
+
+    if (!order) {
+      throw new Error("Khong tim thay don hang");
+    }
+
+    const currentStatus = normalizeOrderStatus(order.orderStatus);
+
+    if (currentStatus === ORDER_STATUS.CANCELLED || currentStatus === ORDER_STATUS.COMPLETED) {
+      throw new Error("Don hang khong the huy");
+    }
+
+    if (currentStatus !== ORDER_STATUS.WAITING_CONFIRM) {
+      throw new Error("Don hang da duoc xac nhan nen khong the huy");
+    }
+
+    const currentPayment = normalizePaymentStatus(order.paymentStatus);
+    await restoreOrderStock(order, session);
+
+    order.orderStatus = ORDER_STATUS.CANCELLED;
+    order.paymentStatus = currentPayment;
+    await order.save({ session });
+
+    await session.commitTransaction();
+
+    res.json({
+      success: true,
+      message: "Da huy don hang",
+      order: normalizeOrderRecord(order.toObject()),
+    });
+  } catch (err) {
+    await session.abortTransaction();
+    console.error("CANCEL ORDER ERROR:", err);
+    res.status(400).json({
+      success: false,
+      message: err.message || "Khong the huy don hang",
+    });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -461,7 +564,7 @@ const handleVnpayCallback = async ({ query }) => {
       success: true,
       code: "00",
       message: "Thanh toan thanh cong",
-      order: paidOrder,
+      order: normalizeOrderRecord(paidOrder.toObject()),
     };
   }
 
@@ -471,7 +574,7 @@ const handleVnpayCallback = async ({ query }) => {
     success: false,
     code: query.vnp_ResponseCode || "99",
     message: "Thanh toan that bai hoac bi huy",
-    order: failedOrder,
+    order: normalizeOrderRecord(failedOrder.toObject()),
   };
 };
 

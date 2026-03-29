@@ -15,6 +15,9 @@ type OrderItem = {
   items?: { quantity: number }[];
 };
 
+const orderStatusLabel = (value?: string) => value || "Chờ xác nhận";
+const paymentStatusLabel = (value?: string) => value || "Chưa thanh toán";
+
 export default function OrdersScreen() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
 
@@ -63,10 +66,10 @@ export default function OrdersScreen() {
                 : ""}
             </Text>
             <Text style={styles.meta}>
-              Trạng thái: {item.orderStatus || "pending"}
+              Trạng thái: {orderStatusLabel(item.orderStatus)}
             </Text>
             <Text style={styles.meta}>
-              Thanh toán: {item.paymentMethod || "COD"} - {item.paymentStatus || "pending"}
+              Thanh toán: {item.paymentMethod || "COD"} - {paymentStatusLabel(item.paymentStatus)}
             </Text>
             <Text style={styles.meta}>
               Số sản phẩm: {item.items?.reduce((sum, product) => sum + product.quantity, 0) || 0}

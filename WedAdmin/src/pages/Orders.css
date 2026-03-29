@@ -1,5 +1,13 @@
+.page-orders .panel-hero .filter-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.page-orders .filter-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .page-orders .actions-inline select {
-  min-width: 130px;
+  min-width: 0;
 }
 
 .page-orders .table-wrap a {
@@ -23,7 +31,22 @@
 }
 
 .page-orders .status-pill {
-  min-width: 118px;
+  min-width: 88px;
   font-weight: 900;
   letter-spacing: 0.02em;
+}
+
+.page-orders .actions-inline {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.page-orders .actions-inline select,
+.page-orders .actions-inline .btn {
+  width: 100%;
+  min-width: 0;
+}
+
+.page-orders .table-wrap td:last-child {
+  min-width: 0;
 }

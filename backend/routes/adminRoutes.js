@@ -20,8 +20,8 @@ router.get("/auth/me", (req, res) => {
 });
 
 router.get("/products", adminController.listProducts);
-router.post("/products", upload.single("imageFile"), adminController.createProduct);
-router.put("/products/:id", upload.single("imageFile"), adminController.updateProduct);
+router.post("/products", upload.array("imageFiles", 10), adminController.createProduct);
+router.put("/products/:id", upload.array("imageFiles", 10), adminController.updateProduct);
 router.patch("/products/:id/stock", adminController.updateProductStock);
 router.patch("/products/:id/status", adminController.updateProductStatus);
 router.delete("/products/:id", adminController.deleteProduct);
@@ -35,6 +35,10 @@ router.delete("/categories/:id", adminController.deleteCategory);
 router.get("/orders", adminController.listOrders);
 router.get("/orders/:id", adminController.getOrderDetail);
 router.patch("/orders/:id/status", adminController.updateOrderStatus);
+
+router.get("/users", adminController.listUsers);
+router.get("/users/:id", adminController.getUserDetail);
+router.patch("/users/:id/lock", adminController.updateUserLockStatus);
 
 router.get("/stats/overview", adminController.dashboardStats);
 

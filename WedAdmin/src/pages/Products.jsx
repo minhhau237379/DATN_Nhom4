@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../services/api";
 import "./Products.css";
 
@@ -9,8 +9,8 @@ const emptyForm = {
   stock: "",
   description: "",
   id_category: "",
-  imagePath: "",
   status: "1",
+  imagePaths: [],
   specifications: {
     age: "",
     gender: "",
@@ -28,15 +28,39 @@ const specFields = [
   { key: "origin", label: "Xuất xứ" },
 ];
 
+const descriptionTemplate = `<p><strong>Chủ đề:</strong> </p>
+<p><strong>Độ tuổi:</strong> </p>
+<p><strong>Giới tính:</strong> </p>
+<p><strong>Thương hiệu:</strong> </p>
+<p><strong>Xuất xứ:</strong> </p>`;
+
 const statusText = {
   1: "Hiện",
   0: "Ẩn",
 };
 
-const toImageUrl = (path) => {
-  if (!path) return "/images/no-image.png";
-  if (path.startsWith("http")) return path;
-  return `http://localhost:3003${path}`;
+const normalizeImages = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return [value].filter(Boolean);
+};
+
+const stripHtml = (value) => {
+  if (!value) return "";
+
+  return String(value)
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+const toImageUrl = (value) => {
+  const firstImage = normalizeImages(value)[0];
+  if (!firstImage) return "/images/no-image.png";
+  if (firstImage.startsWith("http") || firstImage.startsWith("blob:") || firstImage.startsWith("data:")) {
+    return firstImage;
+  }
+  return `http://localhost:3003${firstImage}`;
 };
 
 export default function Products() {
@@ -50,8 +74,9 @@ export default function Products() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [form, setForm] = useState(emptyForm);
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [filePreviewUrls, setFilePreviewUrls] = useState([]);
+  const descriptionRef = useRef(null);
 
   const editing = useMemo(() => Boolean(form._id), [form._id]);
 
@@ -90,20 +115,37 @@ export default function Products() {
 
   useEffect(() => {
     return () => {
-      if (imagePreview && imagePreview.startsWith("blob:")) {
-        URL.revokeObjectURL(imagePreview);
-      }
+      filePreviewUrls.forEach((url) => {
+        if (url.startsWith("blob:")) {
+          URL.revokeObjectURL(url);
+        }
+      });
     };
-  }, [imagePreview]);
+  }, [filePreviewUrls]);
 
   const openCreate = () => {
-    setForm(emptyForm);
-    setImageFile(null);
-    setImagePreview("");
+    filePreviewUrls.forEach((url) => {
+      if (url.startsWith("blob:")) {
+        URL.revokeObjectURL(url);
+      }
+    });
+    setForm({
+      ...emptyForm,
+      description: descriptionTemplate,
+    });
+    setSelectedFiles([]);
+    setFilePreviewUrls([]);
     setMessage("");
   };
 
   const openEdit = (product) => {
+    filePreviewUrls.forEach((url) => {
+      if (url.startsWith("blob:")) {
+        URL.revokeObjectURL(url);
+      }
+    });
+    const images = normalizeImages(product.image);
+
     setForm({
       _id: product._id,
       name: product.name || "",
@@ -111,21 +153,34 @@ export default function Products() {
       stock: product.stock ?? "",
       description: product.description || "",
       id_category: product.id_category?._id || product.id_category || "",
-      imagePath: product.image || "",
       status: String(product.status ?? 1),
+      imagePaths: images,
       specifications: {
         ...emptyForm.specifications,
         ...(product.specifications || {}),
       },
     });
-    setImageFile(null);
-    setImagePreview(toImageUrl(product.image));
+    setSelectedFiles([]);
+    setFilePreviewUrls([]);
     setMessage("");
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+
+    filePreviewUrls.forEach((url) => {
+      if (url.startsWith("blob:")) {
+        URL.revokeObjectURL(url);
+      }
+    });
+
+    setSelectedFiles(files);
+    setFilePreviewUrls(files.map((file) => URL.createObjectURL(file)));
   };
 
   const handleSpecChange = (key, value) => {
@@ -138,13 +193,51 @@ export default function Products() {
     }));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0] || null;
+  const insertDescriptionHtml = (before, after = "", placeholder = "Nội dung") => {
+    const textarea = descriptionRef.current;
+    const current = form.description || "";
 
-    setImageFile(file);
-    if (file) {
-      setImagePreview(URL.createObjectURL(file));
+    if (!textarea) {
+      setForm((prev) => ({
+        ...prev,
+        description: `${prev.description || ""}${before}${placeholder}${after}`,
+      }));
+      return;
     }
+
+    const start = textarea.selectionStart ?? current.length;
+    const end = textarea.selectionEnd ?? current.length;
+    const selected = current.slice(start, end) || placeholder;
+    const nextValue = `${current.slice(0, start)}${before}${selected}${after}${current.slice(end)}`;
+
+    setForm((prev) => ({ ...prev, description: nextValue }));
+
+    requestAnimationFrame(() => {
+      textarea.focus();
+      const cursor = start + before.length + selected.length + after.length;
+      textarea.setSelectionRange(cursor, cursor);
+    });
+  };
+
+  const fillDescriptionTemplate = () => {
+    setForm((prev) => ({
+      ...prev,
+      description: descriptionTemplate,
+    }));
+  };
+
+  const clearDescription = () => {
+    setForm((prev) => ({
+      ...prev,
+      description: "",
+    }));
+  };
+
+  const removeExistingImage = (indexToRemove) => {
+    setForm((prev) => ({
+      ...prev,
+      imagePaths: (prev.imagePaths || []).filter((_, index) => index !== indexToRemove),
+    }));
   };
 
   const submit = async (e) => {
@@ -157,20 +250,18 @@ export default function Products() {
       formData.append("name", form.name);
       formData.append("price", String(form.price));
       formData.append("stock", String(form.stock || 0));
+      formData.append("description", form.description || "");
       formData.append("status", form.status);
       formData.append("specifications", JSON.stringify(form.specifications || {}));
+      formData.append("images", JSON.stringify(form.imagePaths || []));
 
       if (form.id_category) {
         formData.append("id_category", form.id_category);
       }
 
-      if (form.imagePath) {
-        formData.append("image", form.imagePath);
-      }
-
-      if (imageFile) {
-        formData.append("imageFile", imageFile);
-      }
+      selectedFiles.forEach((file) => {
+        formData.append("imageFiles", file);
+      });
 
       const res = editing
         ? await api.put(`/admin/products/${form._id}`, formData)
@@ -183,18 +274,6 @@ export default function Products() {
       setMessage(err.response?.data?.message || "Không thể lưu sản phẩm");
     } finally {
       setSaving(false);
-    }
-  };
-
-  const remove = async (product) => {
-    if (!window.confirm(`Xóa sản phẩm "${product.name}"?`)) return;
-
-    try {
-      await api.delete(`/admin/products/${product._id}`);
-      setMessage("Xóa sản phẩm thành công");
-      await load();
-    } catch (err) {
-      setMessage(err.response?.data?.message || "Không thể xóa sản phẩm");
     }
   };
 
@@ -222,60 +301,10 @@ export default function Products() {
 
   const activeCount = products.filter((item) => item.status === 1).length;
   const hiddenCount = products.filter((item) => item.status === 0).length;
+  const previewImages = [...(form.imagePaths || []), ...filePreviewUrls];
 
   return (
     <div className="stack page-products">
-      <section className="panel panel-hero">
-        <div className="panel-header">
-          <div>
-            <p className="eyebrow">Quản lý sản phẩm</p>
-            <h3>Sản phẩm, ảnh và trạng thái hiển thị</h3>
-            
-          </div>
-
-          <div className="stats-inline">
-            <div className="mini-stat">
-              <span>Tổng</span>
-              <strong>{products.length}</strong>
-            </div>
-            <div className="mini-stat">
-              <span>Hiện</span>
-              <strong>{activeCount}</strong>
-            </div>
-            <div className="mini-stat">
-              <span>Ẩn</span>
-              <strong>{hiddenCount}</strong>
-            </div>
-          </div>
-        </div>
-
-        {message && <div className="alert">{message}</div>}
-
-        <div className="filter-row">
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Tìm tên sản phẩm"
-          />
-          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-            <option value="">Tất cả danh mục</option>
-            {categories.map((cat) => (
-              <option key={cat._id} value={cat._id}>
-                {cat.name}
-              </option>
-            ))}
-          </select>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-            <option value="">Tất cả trạng thái</option>
-            <option value="1">Hiện</option>
-            <option value="0">Ẩn</option>
-          </select>
-          <button className="btn btn-primary" type="button" onClick={openCreate}>
-            Thêm sản phẩm
-          </button>
-        </div>
-      </section>
-
       <section className="panel">
         <div className="panel-header">
           <h3>{editing ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới"}</h3>
@@ -322,55 +351,128 @@ export default function Products() {
             </select>
           </label>
 
-          <label className="full">
-            Ảnh sản phẩm
-            <input type="file" accept="image/*" onChange={handleFileChange} />
-          </label>
+          <div className="full html-editor-panel">
+            <div className="field-head">
+              <div>
+                <span className="field-label">Mô tả HTML</span>
+                <small className="field-help">
+                  Mô tả được lưu dưới dạng HTML để app user render đẹp hơn.
+                </small>
+              </div>
 
-          <label className="full">
-            Đường dẫn ảnh
-            <input
-              name="imagePath"
-              value={form.imagePath}
+              <div className="html-toolbar">
+                <button type="button" className="chip-btn chip-primary" onClick={fillDescriptionTemplate}>
+                  Mẫu 5 trường
+                </button>
+                <button type="button" className="chip-btn chip-danger" onClick={clearDescription}>
+                  Xóa mô tả
+                </button>
+                <button type="button" className="chip-btn" onClick={() => insertDescriptionHtml("<p>", "</p>")}>
+                  P
+                </button>
+                <button
+                  type="button"
+                  className="chip-btn"
+                  onClick={() => insertDescriptionHtml("<strong>", "</strong>")}
+                >
+                  B
+                </button>
+                <button type="button" className="chip-btn" onClick={() => insertDescriptionHtml("<em>", "</em>")}>
+                  I
+                </button>
+                <button
+                  type="button"
+                  className="chip-btn"
+                  onClick={() => insertDescriptionHtml("<ul>\n  <li>", "</li>\n</ul>", "Mục")}
+                >
+                  UL
+                </button>
+                <button
+                  type="button"
+                  className="chip-btn"
+                  onClick={() => insertDescriptionHtml("<li>", "</li>", "Mục")}
+                >
+                  LI
+                </button>
+                <button
+                  type="button"
+                  className="chip-btn"
+                  onClick={() => insertDescriptionHtml("<p><strong>Chủ đề:</strong> ", "</p>", "Nội dung")}
+                >
+                  Chủ đề
+                </button>
+                <button
+                  type="button"
+                  className="chip-btn"
+                  onClick={() => insertDescriptionHtml("<p><strong>Độ tuổi:</strong> ", "</p>", "Nội dung")}
+                >
+                  Độ tuổi
+                </button>
+                <button
+                  type="button"
+                  className="chip-btn"
+                  onClick={() => insertDescriptionHtml("<p><strong>Giới tính:</strong> ", "</p>", "Nội dung")}
+                >
+                  Giới tính
+                </button>
+                <button
+                  type="button"
+                  className="chip-btn"
+                  onClick={() => insertDescriptionHtml("<p><strong>Thương hiệu:</strong> ", "</p>", "Nội dung")}
+                >
+                  Thương hiệu
+                </button>
+                <button
+                  type="button"
+                  className="chip-btn"
+                  onClick={() => insertDescriptionHtml("<p><strong>Xuất xứ:</strong> ", "</p>", "Nội dung")}
+                >
+                  Xuất xứ
+                </button>
+              </div>
+            </div>
+
+            <textarea
+              ref={descriptionRef}
+              name="description"
+              value={form.description}
               onChange={handleChange}
-              placeholder="/images/products/..."
+              rows="7"
+              placeholder="Ví dụ: <p><strong>Chất liệu:</strong> Nhựa ABS</p>"
             />
-          </label>
-
-          <div className="full spec-panel">
-            <div className="spec-panel-head">
-              <strong>Thông số hiển thị trên app user</strong>
-              <span>Điền đầy đủ để trang chi tiết hiển thị đẹp hơn.</span>
-            </div>
-
-            <div className="spec-grid">
-              {specFields.map((field) => (
-                <label key={field.key}>
-                  {field.label}
-                  <input
-                    value={form.specifications?.[field.key] || ""}
-                    onChange={(e) => handleSpecChange(field.key, e.target.value)}
-                    placeholder={field.label}
-                  />
-                </label>
-              ))}
-            </div>
           </div>
 
-          <div className="full upload-preview">
-            <div className="upload-preview-box">
-              {imagePreview || form.imagePath ? (
-                <img src={imagePreview || toImageUrl(form.imagePath)} alt="Preview" />
-              ) : (
-                <div className="upload-placeholder">Chưa chọn ảnh</div>
-              )}
+          <label className="full">
+            Ảnh sản phẩm
+            <input type="file" accept="image/*" multiple onChange={handleFileChange} />
+          </label>
+
+          <div className="full image-preview-panel">
+            <div className="image-preview-head">
+              <strong>Ảnh hiện có và ảnh mới</strong>
+              <span>Chọn nhiều hình để lưu vào cùng một sản phẩm.</span>
             </div>
-            <div className="upload-preview-meta">
-              <strong>Xem trước ảnh</strong>
-              <p>
-                Ảnh sẽ được lưu vào <code>backend/public/images/products/&lt;danh-mục&gt;</code> khi bạn chọn file.
-              </p>
-            </div>
+
+            {previewImages.length ? (
+              <div className="image-preview-grid">
+                {previewImages.map((image, index) => (
+                  <div className="image-preview-item" key={`${image}-${index}`}>
+                    <img src={toImageUrl(image)} alt={`Preview ${index + 1}`} />
+                    {index < (form.imagePaths || []).length ? (
+                      <button
+                        type="button"
+                        className="image-remove-btn"
+                        onClick={() => removeExistingImage(index)}
+                      >
+                        Xóa
+                      </button>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="upload-placeholder">Chưa chọn ảnh</div>
+            )}
           </div>
 
           <div className="full actions-inline">
@@ -386,12 +488,57 @@ export default function Products() {
         </form>
       </section>
 
+      <section className="panel panel-hero">
+        <div className="panel-header">
+          <div>
+            <p className="eyebrow">Quản lý sản phẩm</p>
+            <h3>Sản phẩm, ảnh và trạng thái hiển thị</h3>
+          </div>
+
+          <div className="stats-inline">
+            <div className="mini-stat">
+              <span>Tổng</span>
+              <strong>{products.length}</strong>
+            </div>
+            <div className="mini-stat">
+              <span>Hiện</span>
+              <strong>{activeCount}</strong>
+            </div>
+            <div className="mini-stat">
+              <span>Ẩn</span>
+              <strong>{hiddenCount}</strong>
+            </div>
+          </div>
+        </div>
+
+        {message && <div className="alert">{message}</div>}
+
+        <div className="filter-row">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm tên sản phẩm"
+          />
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+            <option value="">Tất cả danh mục</option>
+            {categories.map((cat) => (
+              <option key={cat._id} value={cat._id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="">Tất cả trạng thái</option>
+            <option value="1">Hiện</option>
+            <option value="0">Ẩn</option>
+          </select>
+        </div>
+      </section>
+
       <section className="panel">
         <div className="panel-header">
           <h3>Danh sách sản phẩm</h3>
-          <p className="muted-text">
-            Bấm vào nút trạng thái để ẩn/hiện nhanh mà không mất dữ liệu.
-          </p>
+          <p className="muted-text">Bấm vào nút trạng thái để ẩn/hiện nhanh mà không mất dữ liệu.</p>
         </div>
 
         {loading ? (
@@ -418,7 +565,9 @@ export default function Products() {
                     </td>
                     <td>
                       <strong>{product.name}</strong>
-                      <div className="muted-text small-text">{product.description || "Chưa có mô tả"}</div>
+                      {/* <div className="muted-text small-text">
+                        {stripHtml(product.description) || "Chưa có mô tả"}
+                      </div> */}
                     </td>
                     <td>{product.id_category?.name || "Chưa có"}</td>
                     <td>
@@ -426,7 +575,7 @@ export default function Products() {
                         {statusText[product.status ?? 1]}
                       </span>
                     </td>
-                    <td>{Number(product.price || 0).toLocaleString("vi-VN")} ₫</td>
+                    <td>{Number(product.price || 0).toLocaleString("vi-VN")} đ</td>
                     <td>
                       <input
                         className="stock-input"
@@ -444,9 +593,6 @@ export default function Products() {
                         <button type="button" className="btn btn-secondary" onClick={() => toggleStatus(product)}>
                           {product.status === 1 ? "Ẩn" : "Hiện"}
                         </button>
-                        <button type="button" className="btn btn-danger" onClick={() => remove(product)}>
-                          Xóa
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -456,6 +602,8 @@ export default function Products() {
           </div>
         )}
       </section>
+
+    
     </div>
   );
 }

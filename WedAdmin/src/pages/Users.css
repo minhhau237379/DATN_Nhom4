@@ -1,0 +1,115 @@
+.page-users .users-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.page-users .user-detail {
+  display: grid;
+  gap: 18px;
+}
+
+.page-users .user-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(15, 139, 141, 0.05);
+}
+
+.page-users .user-summary h4 {
+  margin: 4px 0 0;
+  font-size: 1.4rem;
+}
+
+.page-users .detail-grid-user {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.page-users .detail-grid-user > div,
+.page-users .detail-block {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(15, 139, 141, 0.04);
+}
+
+.page-users .detail-grid-user p,
+.page-users .detail-block p {
+  margin: 6px 0 0;
+}
+
+.page-users .address-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.page-users .address-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(37, 56, 82, 0.1);
+}
+
+.page-users .address-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.page-users .address-default {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(15, 139, 141, 0.12);
+  color: var(--primary-strong);
+  font-weight: 800;
+  font-size: 0.82rem;
+}
+
+.page-users .recent-order-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.page-users .recent-order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid rgba(37, 56, 82, 0.1);
+}
+
+.page-users .recent-order-item p,
+.page-users .recent-order-item small {
+  margin: 0;
+}
+
+.page-users .row-selected {
+  background: rgba(15, 139, 141, 0.04);
+}
+
+@media (max-width: 1100px) {
+  .page-users .detail-grid-user {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .page-users .detail-grid-user {
+    grid-template-columns: 1fr;
+  }
+
+  .page-users .user-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

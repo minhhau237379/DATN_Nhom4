@@ -4,6 +4,7 @@ const Product = require("../models/Product");
 const Category = require("../models/Category");
 const User = require("../models/User");
 const Favorite = require("../models/Favorite");
+const { normalizeProductRecord } = require("../utils/product");
 
 // SHOP
 router.get("/", async (req, res) => {
@@ -38,7 +39,7 @@ router.get("/", async (req, res) => {
       query = query.sort({ price: -1 });
     }
 
-    const products = await query.lean();
+    const products = (await query.lean()).map(normalizeProductRecord);
     const categories = await Category.find({ status: 1 }).lean();
 
     // 🔥 FAVORITES
@@ -71,7 +72,9 @@ router.get("/", async (req, res) => {
 // PRODUCT DETAIL
 router.get("/product/:id", async (req, res) => {
   try {
-    const product = await Product.findOne({ _id: req.params.id, status: 1 }).lean();
+    const product = normalizeProductRecord(
+      await Product.findOne({ _id: req.params.id, status: 1 }).lean(),
+    );
 
     if (!product) {
       return res.status(404).json({
@@ -80,13 +83,13 @@ router.get("/product/:id", async (req, res) => {
       });
     }
 
-    const relatedProducts = await Product.find({
+    const relatedProducts = (await Product.find({
       id_category: product.id_category,
       _id: { $ne: product._id },
       status: 1,
     })
       .limit(4)
-      .lean();
+      .lean()).map(normalizeProductRecord);
 
     let favorites = [];
 
@@ -139,7 +142,7 @@ router.get("/favorites", async (req, res) => {
     res.json({
       success: true,
       products: (favoriteDoc?.items || [])
-        .map((item) => item.product)
+        .map((item) => normalizeProductRecord(item.product))
         .filter(Boolean),
     });
 

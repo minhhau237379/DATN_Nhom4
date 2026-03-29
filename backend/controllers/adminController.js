@@ -3,8 +3,24 @@ const path = require("path");
 const Product = require("../models/Product");
 const Category = require("../models/Category");
 const Order = require("../models/Order");
+const Address = require("../models/Address");
 const User = require("../models/User");
 const { saveImageBuffer, sanitizeFolderName } = require("../utils/storage");
+const {
+  normalizeProductImages,
+  normalizeProductRecord,
+  getPrimaryProductImage,
+} = require("../utils/product");
+const {
+  ORDER_STATUS,
+  PAYMENT_STATUS,
+  normalizeOrderStatus,
+  normalizePaymentStatus,
+  orderStatusOptions,
+  paymentStatusOptions,
+  canMoveForward,
+  isFinalOrderStatus,
+} = require("../utils/orderStatus");
 
 const normalizePrice = (value) => {
   if (value === undefined || value === null || value === "") return undefined;
@@ -50,6 +66,42 @@ const normalizeStatus = (value) => {
   return Number.isNaN(parsed) ? undefined : parsed === 0 ? 0 : 1;
 };
 
+const buildOrderStatusMatch = (value) => {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = normalizeOrderStatus(value);
+  const legacyMap = {
+    [ORDER_STATUS.WAITING_CONFIRM]: ["pending", "cho_xu_ly"],
+    [ORDER_STATUS.CONFIRMED]: ["confirmed", "da_xac_nhan"],
+    [ORDER_STATUS.PROCESSING]: ["processing", "dang_xu_ly"],
+    [ORDER_STATUS.SHIPPING]: ["shipping", "dang_giao_hang"],
+    [ORDER_STATUS.COMPLETED]: ["completed", "done", "hoan_tat"],
+    [ORDER_STATUS.CANCELLED]: ["cancelled", "cancel", "da_huy"],
+  };
+
+  return {
+    $in: [normalized, ...(legacyMap[normalized] || [])],
+  };
+};
+
+const buildPaymentStatusMatch = (value) => {
+  if (!value) {
+    return undefined;
+  }
+
+  const normalized = normalizePaymentStatus(value);
+  const legacyMap = {
+    [PAYMENT_STATUS.UNPAID]: ["pending", "failed", "refunded", "chua_thanh_toan"],
+    [PAYMENT_STATUS.PAID]: ["paid", "da_thanh_toan"],
+  };
+
+  return {
+    $in: [normalized, ...(legacyMap[normalized] || [])],
+  };
+};
+
 const getCategoryFolderName = (category) =>
   sanitizeFolderName(category?.name || category?._id || category?.description || "uncategorized");
 
@@ -61,16 +113,60 @@ const resolveCategory = async (payloadCategoryId) => {
   return Category.findById(payloadCategoryId).lean();
 };
 
-const saveUploadedProductImage = async ({ file, category }) => {
-  if (!file) {
-    return undefined;
+const saveUploadedProductImages = async ({ files, category }) => {
+  if (!files || !files.length) {
+    return [];
   }
 
-  return saveImageBuffer({
-    buffer: file.buffer,
-    folder: getCategoryFolderName(category),
-    originalname: file.originalname,
-  });
+  const savedImages = [];
+
+  for (const file of files) {
+    const savedPath = await saveImageBuffer({
+      buffer: file.buffer,
+      folder: getCategoryFolderName(category),
+      originalname: file.originalname,
+    });
+
+    savedImages.push(savedPath);
+  }
+
+  return savedImages;
+};
+
+const restoreOrderStock = async (order) => {
+  for (const item of order.items || []) {
+    if (!item.product || !item.quantity) {
+      continue;
+    }
+
+    await Product.findByIdAndUpdate(item.product?._id || item.product, {
+      $inc: { stock: item.quantity },
+    });
+  }
+};
+
+const parseImageList = (value) => {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return normalizeProductImages(value);
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+
+      if (Array.isArray(parsed)) {
+        return normalizeProductImages(parsed);
+      }
+    } catch (error) {
+      return normalizeProductImages(value);
+    }
+  }
+
+  return normalizeProductImages(value);
 };
 
 exports.listProducts = async (req, res) => {
@@ -94,10 +190,10 @@ exports.listProducts = async (req, res) => {
       filter.status = normalizeStatus(status);
     }
 
-    const products = await Product.find(filter)
+    const products = (await Product.find(filter)
       .populate("id_category")
       .sort({ createdAt: -1 })
-      .lean();
+      .lean()).map(normalizeProductRecord);
 
     res.json({
       success: true,
@@ -116,10 +212,15 @@ exports.createProduct = async (req, res) => {
   try {
     const categoryId = req.body.id_category || req.body.categoryId || null;
     const category = await resolveCategory(categoryId);
+    const uploadedImages = await saveUploadedProductImages({
+      files: req.files || (req.file ? [req.file] : []),
+      category,
+    });
+    const existingImages = parseImageList(req.body.images || req.body.image);
     const payload = {
       name: req.body.name?.trim(),
       price: normalizePrice(req.body.price),
-      image: req.body.image || "",
+      image: [...existingImages, ...uploadedImages],
       description: req.body.description || "",
       specifications: parseSpecifications(req.body.specifications),
       stock: normalizeStock(req.body.stock) ?? 0,
@@ -127,12 +228,10 @@ exports.createProduct = async (req, res) => {
       id_category: categoryId,
     };
 
-    if (req.file) {
-      payload.image = await saveUploadedProductImage({ file: req.file, category });
-    }
-
     const product = await Product.create(payload);
-    const savedProduct = await Product.findById(product._id).populate("id_category");
+    const savedProduct = normalizeProductRecord(
+      await Product.findById(product._id).populate("id_category").lean(),
+    );
 
     res.status(201).json({
       success: true,
@@ -161,23 +260,21 @@ exports.updateProduct = async (req, res) => {
     }
 
     const resolvedCategory = await resolveCategory(nextCategoryId || currentProduct.id_category?._id);
+    const uploadedImages = await saveUploadedProductImages({
+      files: req.files || (req.file ? [req.file] : []),
+      category: resolvedCategory,
+    });
+    const existingImages = parseImageList(req.body.images || req.body.image || currentProduct.image);
     const update = {
       name: req.body.name?.trim(),
       price: normalizePrice(req.body.price),
-      image: req.body.image,
+      image: [...existingImages, ...uploadedImages],
       description: req.body.description,
       specifications: parseSpecifications(req.body.specifications),
       stock: normalizeStock(req.body.stock),
       status: normalizeStatus(req.body.status),
       id_category: nextCategoryId,
     };
-
-    if (req.file) {
-      update.image = await saveUploadedProductImage({
-        file: req.file,
-        category: resolvedCategory,
-      });
-    }
 
     Object.keys(update).forEach((key) => {
       if (update[key] === undefined) {
@@ -471,22 +568,26 @@ exports.listOrders = async (req, res) => {
     const filter = {};
 
     if (status) {
-      filter.orderStatus = status;
+      filter.orderStatus = buildOrderStatusMatch(status);
     }
 
     if (paymentStatus) {
-      filter.paymentStatus = paymentStatus;
+      filter.paymentStatus = buildPaymentStatusMatch(paymentStatus);
     }
 
     if (search) {
       filter.orderNumber = { $regex: search, $options: "i" };
     }
 
-    const orders = await Order.find(filter)
+    const orders = (await Order.find(filter)
       .populate("user", "username email phoneNumber role")
       .populate("items.product")
       .sort({ createdAt: -1 })
-      .lean();
+      .lean()).map((order) => ({
+        ...order,
+        orderStatus: normalizeOrderStatus(order.orderStatus),
+        paymentStatus: normalizePaymentStatus(order.paymentStatus),
+      }));
 
     res.json({
       success: true,
@@ -517,7 +618,11 @@ exports.getOrderDetail = async (req, res) => {
 
     res.json({
       success: true,
-      order,
+      order: {
+        ...order,
+        orderStatus: normalizeOrderStatus(order.orderStatus),
+        paymentStatus: normalizePaymentStatus(order.paymentStatus),
+      },
     });
   } catch (err) {
     console.error("ADMIN ORDER DETAIL ERROR:", err);
@@ -530,28 +635,14 @@ exports.getOrderDetail = async (req, res) => {
 
 exports.updateOrderStatus = async (req, res) => {
   try {
-    const update = {};
-
-    if (req.body.orderStatus) {
-      update.orderStatus = req.body.orderStatus;
-    }
-
     if (req.body.paymentStatus) {
-      update.paymentStatus = req.body.paymentStatus;
+      return res.status(400).json({
+        success: false,
+        message: "Trang thai thanh toan duoc cap nhat tu dong",
+      });
     }
 
-    if (req.body.trackingNumber !== undefined) {
-      update.trackingNumber = req.body.trackingNumber;
-    }
-
-    if (req.body.paidAt !== undefined) {
-      update.paidAt = req.body.paidAt ? new Date(req.body.paidAt) : null;
-    }
-
-    const order = await Order.findByIdAndUpdate(req.params.id, update, {
-      new: true,
-      runValidators: true,
-    })
+    const order = await Order.findById(req.params.id)
       .populate("user", "username email phoneNumber role")
       .populate("items.product");
 
@@ -562,10 +653,55 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
+    const currentStatus = normalizeOrderStatus(order.orderStatus);
+    order.paymentStatus = normalizePaymentStatus(order.paymentStatus);
+    order.orderStatus = currentStatus;
+    if (isFinalOrderStatus(currentStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Don hang da hoan tat hoac da huy nen khong the chinh sua",
+      });
+    }
+
+    const nextStatus = req.body.orderStatus
+      ? normalizeOrderStatus(req.body.orderStatus)
+      : currentStatus;
+
+    if (req.body.orderStatus && !canMoveForward(currentStatus, nextStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: "Khong the quay lai trang thai truoc do",
+      });
+    }
+
+    if (req.body.trackingNumber !== undefined) {
+      order.trackingNumber = req.body.trackingNumber;
+    }
+
+    if (req.body.paidAt !== undefined) {
+      order.paidAt = req.body.paidAt ? new Date(req.body.paidAt) : null;
+    }
+
+    order.orderStatus = nextStatus;
+
+    if (nextStatus === ORDER_STATUS.CANCELLED && currentStatus !== ORDER_STATUS.CANCELLED) {
+      await restoreOrderStock(order);
+    }
+
+    await order.save();
+
+    const populatedOrder = await Order.findById(order._id)
+      .populate("user", "username email phoneNumber role")
+      .populate("items.product");
+
     res.json({
       success: true,
       message: "Cap nhat don hang thanh cong",
-      order,
+      order: {
+        ...populatedOrder.toObject(),
+        orderStatus: normalizeOrderStatus(populatedOrder.orderStatus),
+        paymentStatus: normalizePaymentStatus(populatedOrder.paymentStatus),
+      },
     });
   } catch (err) {
     console.error("ADMIN UPDATE ORDER ERROR:", err);
@@ -584,10 +720,11 @@ exports.dashboardStats = async (req, res) => {
       totalCategories,
       activeProducts,
       activeCategories,
-      totalOrders,
-      paidOrders,
-      recentOrders,
-      topProducts,
+    totalOrders,
+    paidOrders,
+      allOrders,
+    recentOrders,
+    topProducts,
     ] = await Promise.all([
       require("../models/User").countDocuments({ role: { $ne: "admin" } }),
       Product.countDocuments(),
@@ -596,16 +733,28 @@ exports.dashboardStats = async (req, res) => {
       Category.countDocuments({ status: 1 }),
       Order.countDocuments(),
       Order.find({
-        $or: [{ paymentStatus: "paid" }, { orderStatus: "completed" }],
+        $or: [
+          { paymentStatus: { $in: [PAYMENT_STATUS.PAID, "paid"] } },
+          { orderStatus: { $in: [ORDER_STATUS.COMPLETED, "completed"] } },
+        ],
       }).select("totalPrice"),
+      Order.find().select("orderStatus paymentStatus totalPrice createdAt").lean(),
       Order.find().sort({ createdAt: -1 }).limit(5).populate("user", "username").lean(),
       Order.aggregate([
-        { $match: { $or: [{ paymentStatus: "paid" }, { orderStatus: "completed" }] } },
+        {
+          $match: {
+            $or: [
+              { paymentStatus: { $in: [PAYMENT_STATUS.PAID, "paid"] } },
+              { orderStatus: { $in: [ORDER_STATUS.COMPLETED, "completed"] } },
+            ],
+          },
+        },
         { $unwind: "$items" },
         {
           $group: {
             _id: "$items.product",
             name: { $first: "$items.name" },
+            image: { $first: "$items.image" },
             quantity: { $sum: "$items.quantity" },
             revenue: {
               $sum: { $multiply: ["$items.price", "$items.quantity"] },
@@ -618,6 +767,62 @@ exports.dashboardStats = async (req, res) => {
     ]);
 
     const revenue = paidOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+    const normalizedRecentOrders = recentOrders.map((order) => ({
+      ...order,
+      orderStatus: normalizeOrderStatus(order.orderStatus),
+      paymentStatus: normalizePaymentStatus(order.paymentStatus),
+    }));
+
+    const statusCounts = Object.fromEntries(orderStatusOptions.map((status) => [status, 0]));
+    const paymentCounts = Object.fromEntries(paymentStatusOptions.map((status) => [status, 0]));
+
+    const monthlyMap = new Map(
+      Array.from({ length: 6 }, (_, index) => {
+        const date = new Date();
+        date.setMonth(date.getMonth() - (5 - index));
+        const key = `${date.getFullYear()}-${date.getMonth()}`;
+
+        return [
+          key,
+          {
+            label: date.toLocaleDateString("vi-VN", { month: "short", year: "2-digit" }),
+            orders: 0,
+            revenue: 0,
+          },
+        ];
+      }),
+    );
+
+    allOrders.forEach((order) => {
+      const orderStatus = normalizeOrderStatus(order.orderStatus);
+      const paymentStatus = normalizePaymentStatus(order.paymentStatus);
+
+      if (statusCounts[orderStatus] !== undefined) {
+        statusCounts[orderStatus] += 1;
+      }
+
+      if (paymentCounts[paymentStatus] !== undefined) {
+        paymentCounts[paymentStatus] += 1;
+      }
+
+      const createdAt = order.createdAt ? new Date(order.createdAt) : null;
+      if (!createdAt) {
+        return;
+      }
+
+      const monthKey = `${createdAt.getFullYear()}-${createdAt.getMonth()}`;
+      const bucket = monthlyMap.get(monthKey);
+
+      if (!bucket) {
+        return;
+      }
+
+      bucket.orders += 1;
+
+      if (paymentStatus === PAYMENT_STATUS.PAID || orderStatus === ORDER_STATUS.COMPLETED) {
+        bucket.revenue += Number(order.totalPrice || 0);
+      }
+    });
 
     res.json({
       success: true,
@@ -629,8 +834,17 @@ exports.dashboardStats = async (req, res) => {
         activeCategories,
         totalOrders,
         revenue,
-        recentOrders,
+        recentOrders: normalizedRecentOrders,
         topProducts,
+        orderStatusBreakdown: orderStatusOptions.map((status) => ({
+          label: status,
+          value: statusCounts[status] || 0,
+        })),
+        paymentStatusBreakdown: paymentStatusOptions.map((status) => ({
+          label: status,
+          value: paymentCounts[status] || 0,
+        })),
+        monthlyOrders: Array.from(monthlyMap.values()),
       },
     });
   } catch (err) {
@@ -638,6 +852,113 @@ exports.dashboardStats = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Khong the tai thong ke",
+    });
+  }
+};
+
+exports.listUsers = async (req, res) => {
+  try {
+    const { search, locked } = req.query;
+    const filter = { role: { $ne: "admin" } };
+
+    if (search) {
+      filter.$or = [
+        { username: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phoneNumber: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    if (locked !== undefined && locked !== "") {
+      filter.isLocked = locked === "true";
+    }
+
+    const users = await User.find(filter).sort({ createdAt: -1 }).lean();
+
+    res.json({
+      success: true,
+      users,
+    });
+  } catch (err) {
+    console.error("ADMIN LIST USERS ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: "Khong the tai danh sach nguoi dung",
+    });
+  }
+};
+
+exports.getUserDetail = async (req, res) => {
+  try {
+    const user = await User.findOne({ _id: req.params.id, role: { $ne: "admin" } }).lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Khong tim thay nguoi dung",
+      });
+    }
+
+    const [addressDoc, recentOrders, totalOrders] = await Promise.all([
+      Address.findOne({ user: user._id }).lean(),
+      Order.find({ user: user._id }).sort({ createdAt: -1 }).limit(5).populate("items.product").lean(),
+      Order.countDocuments({ user: user._id }),
+    ]);
+
+    res.json({
+      success: true,
+      user,
+      addresses: addressDoc?.items || [],
+      recentOrders: recentOrders.map((order) => ({
+        ...order,
+        orderStatus: normalizeOrderStatus(order.orderStatus),
+        paymentStatus: normalizePaymentStatus(order.paymentStatus),
+      })),
+      stats: {
+        totalOrders,
+      },
+    });
+  } catch (err) {
+    console.error("ADMIN USER DETAIL ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: "Khong the tai chi tiet nguoi dung",
+    });
+  }
+};
+
+exports.updateUserLockStatus = async (req, res) => {
+  try {
+    const { isLocked, lockReason = "" } = req.body;
+    const locked = Boolean(isLocked);
+
+    const user = await User.findOneAndUpdate(
+      { _id: req.params.id, role: { $ne: "admin" } },
+      {
+        isLocked: locked,
+        lockReason: locked ? String(lockReason || "").trim() : "",
+        lockedAt: locked ? new Date() : null,
+      },
+      { new: true, runValidators: true },
+    ).lean();
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "Khong tim thay nguoi dung",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: locked ? "Da khoa tai khoan" : "Da mo khoa tai khoan",
+      user,
+    });
+  } catch (err) {
+    console.error("ADMIN UPDATE USER LOCK ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: "Khong the cap nhat trang thai tai khoan",
     });
   }
 };

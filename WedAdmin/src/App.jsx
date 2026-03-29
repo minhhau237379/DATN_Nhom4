@@ -5,6 +5,7 @@ import AdminLogin from "./pages/AdminLogin";
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Categories from "./pages/Categories";
+import Users from "./pages/Users";
 import Orders from "./pages/Orders";
 import OrderDetail from "./pages/OrderDetail";
 
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/admin/dashboard" element={<Dashboard />} />
             <Route path="/admin/products" element={<Products />} />
             <Route path="/admin/categories" element={<Categories />} />
+            <Route path="/admin/users" element={<Users />} />
             <Route path="/admin/orders" element={<Orders />} />
             <Route path="/admin/orders/:id" element={<OrderDetail />} />
           </Route>
