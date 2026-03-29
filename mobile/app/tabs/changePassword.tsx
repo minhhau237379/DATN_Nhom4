@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   Image,
   Platform,
@@ -172,6 +172,7 @@ const Input = ({
   <View style={styles.inputWrapper}>
     <TextInput
       style={styles.input}
+      placeholderTextColor="#000"
       placeholder={placeholder}
       secureTextEntry={!visible}
       value={value}
@@ -245,3 +246,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+
+
+
+
+

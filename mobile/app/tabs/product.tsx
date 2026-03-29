@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import {
   FlatList,
   Image,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import AppToast from "../../components/AppToast";
@@ -108,7 +109,7 @@ export default function Shop() {
   const toggleFav = async (id: string) => {
     try {
       if (!(await isLoggedIn())) {
-        showNotice("Thông báo", "Bạn cần đăng nhập để sử dụng yêu thích");
+        showNotice("ThÃ´ng bÃ¡o", "Báº¡n cáº§n Ä‘Äƒng nháº­p Ä‘á»ƒ sá»­ dá»¥ng yÃªu thÃ­ch");
         return;
       }
 
@@ -138,10 +139,7 @@ export default function Shop() {
         })
       }
     >
-      <Image
-        source={{ uri: resolveImageUri(item.image) }}
-        style={styles.image}
-      />
+      <Image source={{ uri: resolveImageUri(item.image) }} style={styles.image} />
 
       <Text style={styles.title} numberOfLines={2}>
         {item.name}
@@ -158,14 +156,11 @@ export default function Shop() {
             toggleFav(item._id);
           }}
         >
-          <Text
-            style={[
-              styles.heart,
-              favorites.includes(item._id) && styles.heartActive,
-            ]}
-          >
-            ♥
-          </Text>
+          <Ionicons
+            name={favorites.includes(item._id) ? "heart" : "heart-outline"}
+            size={28}
+            color={favorites.includes(item._id) ? "#ff2d55" : "#bbb"}
+          />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -176,54 +171,55 @@ export default function Shop() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TextInput
-            placeholder="Nhập từ khóa..."
+            placeholderTextColor="#000"
+            placeholder="Nhập từ khóa ..."
             value={search}
             onChangeText={setSearch}
             style={styles.input}
           />
         </View>
 
-        <View style={styles.sortRow}>
-          <TouchableOpacity onPress={() => toggleSort("price_asc")}>
-            <Text
-              style={[styles.sortBtn, sort === "price_asc" && styles.sortActive]}
-            >
-              Giá ↑
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => toggleSort("price_desc")}>
-            <Text
-              style={[styles.sortBtn, sort === "price_desc" && styles.sortActive]}
-            >
-              Giá ↓
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <FlatList
-          data={[{ _id: "all", name: "Tất cả" }, ...categories]}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.categoryList}
-          renderItem={({ item }) => {
-            const isActive =
-              item._id === "all" ? category === "" : category === item.name;
-
-            return (
-              <TouchableOpacity
-                onPress={() => setCategory(item._id === "all" ? "" : item.name)}
+        <View style={styles.filtersPanel}>
+          <View style={styles.sortRow}>
+            <TouchableOpacity onPress={() => toggleSort("price_asc")}>
+              <Text
+                style={[styles.sortBtn, sort === "price_asc" && styles.sortActive]}
               >
-                <Text
-                  style={[styles.category, isActive && styles.categoryActive]}
+                Giá ↑
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => toggleSort("price_desc")}>
+              <Text
+                style={[styles.sortBtn, sort === "price_desc" && styles.sortActive]}
+              >
+                Giá ↓
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <FlatList
+            data={[{ _id: "all", name: "Tất cả" }, ...categories]}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item._id}
+            contentContainerStyle={styles.categoryList}
+            renderItem={({ item }) => {
+              const isActive =
+                item._id === "all" ? category === "" : category === item.name;
+
+              return (
+                <TouchableOpacity
+                  onPress={() => setCategory(item._id === "all" ? "" : item.name)}
                 >
-                  {item.name}
-                </Text>
-              </TouchableOpacity>
-            );
-          }}
-        />
+                  <Text style={[styles.category, isActive && styles.categoryActive]}>
+                    {item.name}
+                  </Text>
+                </TouchableOpacity>
+              );
+            }}
+          />
+        </View>
 
         <FlatList
           data={products}
@@ -253,7 +249,9 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: "#d5001c",
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingTop: 10,
+    paddingBottom: 12,
   },
   input: {
     backgroundColor: "white",
@@ -261,11 +259,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     height: 40,
   },
+  filtersPanel: {
+    backgroundColor: "#f5f5f5",
+    paddingBottom: 4,
+    elevation: 1,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 2,
+  },
   sortRow: {
     flexDirection: "row",
     justifyContent: "flex-end",
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingTop: 8,
+    paddingBottom: 8,
     gap: 10,
   },
   sortBtn: {
@@ -273,6 +281,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,
+    overflow: "hidden",
   },
   sortActive: {
     backgroundColor: "black",
@@ -281,15 +290,16 @@ const styles = StyleSheet.create({
   categoryList: {
     paddingHorizontal: 10,
     gap: 10,
+    paddingTop: 6,
     paddingBottom: 12,
-    marginBottom: 100,
+    alignItems: "center",
   },
   category: {
     backgroundColor: "#eee",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-    
+    overflow: "hidden",
   },
   categoryActive: {
     backgroundColor: "black",
@@ -297,8 +307,8 @@ const styles = StyleSheet.create({
   },
   gridContent: {
     paddingHorizontal: 10,
-    paddingTop: 8,
-    paddingBottom: 96,
+    paddingTop: 10,
+    paddingBottom: 116,
   },
   gridRow: {
     justifyContent: "space-between",
@@ -334,15 +344,11 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
   },
-  heart: {
-    fontSize: 26,
-    color: "#bbb",
-  },
   heartButton: {
     paddingLeft: 8,
     paddingTop: 4,
   },
-  heartActive: {
-    color: "#ff2d55",
-  },
 });
+
+
+

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -180,6 +180,7 @@ export default function Register() {
 
         <TextInput
           style={styles.input}
+          placeholderTextColor="#000"
           placeholder="Tên đăng nhập"
           value={form.username}
           autoCapitalize="none"
@@ -190,6 +191,7 @@ export default function Register() {
 
         <TextInput
           style={styles.input}
+          placeholderTextColor="#000"
           placeholder="Email"
           value={form.email}
           autoCapitalize="none"
@@ -200,6 +202,7 @@ export default function Register() {
 
         <TextInput
           style={styles.input}
+          placeholderTextColor="#000"
           placeholder="Số điện thoại"
           keyboardType="numeric"
           value={form.phoneNumber}
@@ -214,6 +217,7 @@ export default function Register() {
         <View style={styles.passwordWrapper}>
           <TextInput
             style={styles.inputPassword}
+            placeholderTextColor="#000"
             placeholder="Mật khẩu"
             secureTextEntry={!showPassword}
             value={form.password}
@@ -242,6 +246,7 @@ export default function Register() {
         <View style={styles.passwordWrapper}>
           <TextInput
             style={styles.inputPassword}
+            placeholderTextColor="#000"
             placeholder="Xác nhận mật khẩu"
             secureTextEntry={!showConfirmPassword}
             value={form.confirmPassword}
@@ -367,3 +372,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 });
+
+
+

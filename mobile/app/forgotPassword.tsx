@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -139,7 +139,8 @@ export default function ForgotPasswordScreen() {
             <>
               <TextInput
                 style={styles.input}
-                placeholder="Nhập email đã đăng ký"
+          placeholderTextColor="#000"
+          placeholder="Nhập email đã đăng ký"
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -164,7 +165,8 @@ export default function ForgotPasswordScreen() {
             <>
               <TextInput
                 style={styles.input}
-                placeholder="Nhập mã OTP 6 chữ số"
+          placeholderTextColor="#000"
+          placeholder="Nhập mã OTP 6 chữ số"
                 value={otp}
                 onChangeText={setOtp}
                 keyboardType="number-pad"
@@ -189,7 +191,8 @@ export default function ForgotPasswordScreen() {
               <View style={styles.passwordWrapper}>
                 <TextInput
                   style={styles.inputPassword}
-                  placeholder="Mật khẩu mới"
+            placeholderTextColor="#000"
+            placeholder="Mật khẩu mới"
                   value={newPassword}
                   secureTextEntry={!showNewPassword}
                   autoCapitalize="none"
@@ -211,7 +214,8 @@ export default function ForgotPasswordScreen() {
               <View style={[styles.passwordWrapper, styles.inputGap]}>
                 <TextInput
                   style={styles.inputPassword}
-                  placeholder="Nhập lại mật khẩu mới"
+            placeholderTextColor="#000"
+            placeholder="Nhập lại mật khẩu mới"
                   value={confirmPassword}
                   secureTextEntry={!showConfirmPassword}
                   autoCapitalize="none"
@@ -339,3 +343,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+
+
+

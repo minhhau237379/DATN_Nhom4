@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -158,6 +158,7 @@ export default function Login() {
 
         <TextInput
           style={styles.input}
+          placeholderTextColor="#000"
           placeholder="Nhập tên đăng nhập hoặc email"
           value={form.username}
           autoCapitalize="none"
@@ -173,6 +174,7 @@ export default function Login() {
         <View style={styles.passwordWrapper}>
           <TextInput
             style={styles.inputPassword}
+            placeholderTextColor="#000"
             placeholder="Nhập mật khẩu"
             secureTextEntry={!showPassword}
             value={form.password}
@@ -306,3 +308,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 });
+
+
+
