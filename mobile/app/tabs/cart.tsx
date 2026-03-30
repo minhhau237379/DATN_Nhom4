@@ -245,24 +245,26 @@ export default function Cart() {
   );
 
   const renderCheckoutBar = () => (
-    <View style={styles.checkoutBar}>
-      <Text style={styles.totalLabel}>
-        Tổng tiền:{" "}
-        <Text style={styles.total}>
-          {selectedTotalPrice.toLocaleString("vi-VN")} VND
+    <View style={styles.checkoutBarSpacer}>
+      <View style={styles.checkoutBar}>
+        <Text style={styles.totalLabel}>
+          Tổng tiền:{" "}
+          <Text style={styles.total}>
+            {selectedTotalPrice.toLocaleString("vi-VN")} VND
+          </Text>
         </Text>
-      </Text>
 
-      <TouchableOpacity
-        style={[
-          styles.checkoutBtn,
-          selectedProductIds.length === 0 && styles.checkoutBtnDisabled,
-        ]}
-        onPress={checkout}
-        disabled={selectedProductIds.length === 0}
-      >
-        <Text style={styles.checkoutText}>Mua hàng</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.checkoutBtn,
+            selectedProductIds.length === 0 && styles.checkoutBtnDisabled,
+          ]}
+          onPress={checkout}
+          disabled={selectedProductIds.length === 0}
+        >
+          <Text style={styles.checkoutText}>Mua hàng</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -285,7 +287,8 @@ export default function Cart() {
           contentContainerStyle={[
             styles.listContent,
             {
-              paddingBottom: APP_BOTTOM_NAV_HEIGHT + insets.bottom + 24,
+              flexGrow: 1,
+              paddingBottom: APP_BOTTOM_NAV_HEIGHT + insets.bottom + 16,
             },
           ]}
           ListFooterComponent={renderCheckoutBar}
@@ -329,6 +332,9 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: 16,
     paddingTop: 14,
+  },
+  checkoutBarSpacer: {
+    marginTop: "auto",
   },
   checkoutBarFooter: {
     paddingHorizontal: 16,
@@ -422,8 +428,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 14,
     paddingBottom: 16,
-    marginBottom: 12,
-    borderRadius: 24,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     elevation: 14,
     shadowColor: "#000",
     shadowOpacity: 0.08,
@@ -441,7 +447,7 @@ const styles = StyleSheet.create({
   },
   checkoutBtn: {
     marginTop: 10,
-    backgroundColor: "#e30019",
+    backgroundColor: "#f0a3b0",
     paddingVertical: 15,
     borderRadius: 32,
     alignItems: "center",
@@ -450,7 +456,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f3a3ad",
   },
   checkoutText: {
-    color: "#fff7f7",
+    color: "#ffffff",
     fontWeight: "700",
     fontSize: 18,
   },
