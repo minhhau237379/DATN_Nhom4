@@ -9,10 +9,8 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import api from "../../services/api";
 import AppToast from "../../components/AppToast";
-import AppBottomNav, { APP_BOTTOM_NAV_HEIGHT } from "../../components/AppBottomNav";
 import { isLoggedIn } from "../../utils/auth";
 import { resolveImageUri } from "../../utils/productImage";
 
@@ -31,7 +29,6 @@ type CartItem = {
 
 export default function Cart() {
   const params = useLocalSearchParams<{ selectedProductId?: string }>();
-  const insets = useSafeAreaInsets();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [notice, setNotice] = useState({
@@ -257,6 +254,7 @@ export default function Cart() {
         <TouchableOpacity
           style={[
             styles.checkoutBtn,
+            selectedProductIds.length > 0 && styles.checkoutBtnActive,
             selectedProductIds.length === 0 && styles.checkoutBtnDisabled,
           ]}
           onPress={checkout}
@@ -288,7 +286,7 @@ export default function Cart() {
             styles.listContent,
             {
               flexGrow: 1,
-              paddingBottom: APP_BOTTOM_NAV_HEIGHT + insets.bottom + 16,
+              paddingBottom: 16,
             },
           ]}
           ListFooterComponent={renderCheckoutBar}
@@ -296,8 +294,6 @@ export default function Cart() {
           showsVerticalScrollIndicator={false}
         />
       )}
-
-      <AppBottomNav active="cart" />
 
       <AppToast
         visible={notice.visible}
@@ -337,8 +333,9 @@ const styles = StyleSheet.create({
     marginTop: "auto",
   },
   checkoutBarFooter: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     paddingTop: 12,
+    paddingBottom: 5,
   },
   item: {
     backgroundColor: "white",
@@ -451,6 +448,9 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderRadius: 32,
     alignItems: "center",
+  },
+  checkoutBtnActive: {
+    backgroundColor: "#e30019",
   },
   checkoutBtnDisabled: {
     backgroundColor: "#f3a3ad",
