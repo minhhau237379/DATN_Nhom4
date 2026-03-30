@@ -1,5 +1,6 @@
-import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { reloadCurrentPage } from "../utils/adminActions";
 import "./AdminLayout.css";
 
 const navItems = [
@@ -66,9 +67,9 @@ export default function AdminLayout() {
             <p className="eyebrow">Quản trị hệ thống</p>
             <h2>Quản lý app user và web admin trên cùng backend</h2>
           </div>
-          <Link to="/admin/dashboard" className="btn btn-primary">
-            Làm mới dashboard
-          </Link>
+          <button type="button" className="btn btn-primary" onClick={reloadCurrentPage}>
+            Làm mới
+          </button>
         </header>
 
         <main className="page">

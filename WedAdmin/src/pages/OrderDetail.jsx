@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../services/api";
+import { reloadCurrentPage } from "../utils/adminActions";
 import "./OrderDetail.css";
 
 const statusOptions = ["Chờ xác nhận", "Đã xác nhận", "Đang xử lý", "Đang giao hàng", "Hoàn tất", "Đã hủy"];
@@ -49,7 +50,8 @@ export default function OrderDetail() {
     try {
       await api.patch(`/admin/orders/${id}/status`, draft);
       setMessage("Cập nhật đơn hàng thành công");
-      await load();
+      reloadCurrentPage();
+      return;
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể cập nhật đơn hàng");
     }

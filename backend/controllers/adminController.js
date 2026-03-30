@@ -102,6 +102,13 @@ const buildPaymentStatusMatch = (value) => {
   };
 };
 
+const buildRevenueEligibleMatch = () => ({
+  $and: [
+    { paymentStatus: buildPaymentStatusMatch(PAYMENT_STATUS.PAID) },
+    { orderStatus: buildOrderStatusMatch(ORDER_STATUS.COMPLETED) },
+  ],
+});
+
 const getCategoryFolderName = (category) =>
   sanitizeFolderName(category?.name || category?._id || category?.description || "uncategorized");
 
@@ -684,6 +691,15 @@ exports.updateOrderStatus = async (req, res) => {
 
     order.orderStatus = nextStatus;
 
+    if (
+      order.paymentMethod === "COD" &&
+      nextStatus === ORDER_STATUS.COMPLETED &&
+      normalizePaymentStatus(order.paymentStatus) !== PAYMENT_STATUS.PAID
+    ) {
+      order.paymentStatus = PAYMENT_STATUS.PAID;
+      order.paidAt = order.paidAt || new Date();
+    }
+
     if (nextStatus === ORDER_STATUS.CANCELLED && currentStatus !== ORDER_STATUS.CANCELLED) {
       await restoreOrderStock(order);
     }
@@ -720,34 +736,28 @@ exports.dashboardStats = async (req, res) => {
       totalCategories,
       activeProducts,
       activeCategories,
-    totalOrders,
-    paidOrders,
-      allOrders,
-    recentOrders,
-    topProducts,
+      totalOrders,
+      qualifiedOrders,
+      recentOrders,
+      topProducts,
     ] = await Promise.all([
       require("../models/User").countDocuments({ role: { $ne: "admin" } }),
       Product.countDocuments(),
       Category.countDocuments(),
       Product.countDocuments({ status: 1 }),
       Category.countDocuments({ status: 1 }),
-      Order.countDocuments(),
-      Order.find({
-        $or: [
-          { paymentStatus: { $in: [PAYMENT_STATUS.PAID, "paid"] } },
-          { orderStatus: { $in: [ORDER_STATUS.COMPLETED, "completed"] } },
-        ],
-      }).select("totalPrice"),
-      Order.find().select("orderStatus paymentStatus totalPrice createdAt").lean(),
-      Order.find().sort({ createdAt: -1 }).limit(5).populate("user", "username").lean(),
+      Order.countDocuments(buildRevenueEligibleMatch()),
+      Order.find(buildRevenueEligibleMatch())
+        .select("orderStatus paymentStatus totalPrice createdAt")
+        .lean(),
+      Order.find(buildRevenueEligibleMatch())
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .populate("user", "username")
+        .lean(),
       Order.aggregate([
         {
-          $match: {
-            $or: [
-              { paymentStatus: { $in: [PAYMENT_STATUS.PAID, "paid"] } },
-              { orderStatus: { $in: [ORDER_STATUS.COMPLETED, "completed"] } },
-            ],
-          },
+          $match: buildRevenueEligibleMatch(),
         },
         { $unwind: "$items" },
         {
@@ -766,7 +776,7 @@ exports.dashboardStats = async (req, res) => {
       ]),
     ]);
 
-    const revenue = paidOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+    const revenue = qualifiedOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
     const normalizedRecentOrders = recentOrders.map((order) => ({
       ...order,
       orderStatus: normalizeOrderStatus(order.orderStatus),
@@ -793,7 +803,7 @@ exports.dashboardStats = async (req, res) => {
       }),
     );
 
-    allOrders.forEach((order) => {
+    qualifiedOrders.forEach((order) => {
       const orderStatus = normalizeOrderStatus(order.orderStatus);
       const paymentStatus = normalizePaymentStatus(order.paymentStatus);
 
@@ -819,7 +829,7 @@ exports.dashboardStats = async (req, res) => {
 
       bucket.orders += 1;
 
-      if (paymentStatus === PAYMENT_STATUS.PAID || orderStatus === ORDER_STATUS.COMPLETED) {
+      if (paymentStatus === PAYMENT_STATUS.PAID && orderStatus === ORDER_STATUS.COMPLETED) {
         bucket.revenue += Number(order.totalPrice || 0);
       }
     });

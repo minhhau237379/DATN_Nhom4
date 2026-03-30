@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
+import { reloadCurrentPage, scrollToTop } from "../utils/adminActions";
 import "./Categories.css";
 
 const emptyForm = {
@@ -49,6 +50,7 @@ export default function Categories() {
       status: String(category.status ?? 1),
     });
     setMessage("");
+    scrollToTop();
   };
 
   const submit = async (e) => {
@@ -68,8 +70,8 @@ export default function Categories() {
         : await api.post("/admin/categories", payload);
 
       setMessage(res.data?.message || "Lưu thành công");
-      openCreate();
-      await load();
+      reloadCurrentPage();
+      return;
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể lưu danh mục");
     } finally {
@@ -83,7 +85,6 @@ export default function Categories() {
         status: category.status === 1 ? 0 : 1,
       });
       setMessage(category.status === 1 ? "Đã ẩn danh mục" : "Đã hiển thị danh mục");
-      await load();
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể đổi trạng thái danh mục");
     }
@@ -122,11 +123,7 @@ export default function Categories() {
 
         {message && <div className="alert">{message}</div>}
 
-        <div className="actions-inline">
-          <button className="btn btn-primary" type="button" onClick={openCreate}>
-            Thêm danh mục mới
-          </button>
-        </div>
+        
       </section>
 
       <section className="panel">

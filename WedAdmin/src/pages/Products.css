@@ -173,7 +173,7 @@
 }
 
 .page-products .image-preview-panel {
-  width: 95%;
+  width: 100%;
   display: grid;
   gap: 16px;
   padding: 16px;
@@ -243,6 +243,11 @@
 
 .page-products .stock-input {
   width: 96px;
+}
+
+.page-products .stock-text {
+  font-weight: 700;
+  color: var(--text);
 }
 
 .page-products textarea {

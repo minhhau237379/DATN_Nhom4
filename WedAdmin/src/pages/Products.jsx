@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import api from "../services/api";
 import { getBackendOrigin } from "../services/baseUrl";
+import { reloadCurrentPage, scrollToTop } from "../utils/adminActions";
 import "./Products.css";
 
 const emptyForm = {
@@ -157,6 +158,7 @@ export default function Products() {
     setSelectedFiles([]);
     setFilePreviewUrls([]);
     setMessage("");
+    scrollToTop();
   };
 
   const handleChange = (e) => {
@@ -254,32 +256,20 @@ export default function Products() {
         : await api.post("/admin/products", formData);
 
       setMessage(res.data?.message || "Lưu thành công");
-      openCreate();
-      await load();
+      reloadCurrentPage();
+      return;
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể lưu sản phẩm");
     } finally {
       setSaving(false);
     }
   };
-
-  const updateStock = async (productId, stock) => {
-    try {
-      await api.patch(`/admin/products/${productId}/stock`, { stock });
-      setMessage("Cập nhật tồn kho thành công");
-      await load();
-    } catch (err) {
-      setMessage(err.response?.data?.message || "Không thể cập nhật tồn kho");
-    }
-  };
-
   const toggleStatus = async (product) => {
     try {
       await api.patch(`/admin/products/${product._id}/status`, {
         status: product.status === 1 ? 0 : 1,
       });
       setMessage(product.status === 1 ? "Đã ẩn sản phẩm" : "Đã hiển thị sản phẩm");
-      await load();
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể đổi trạng thái sản phẩm");
     }
@@ -304,22 +294,22 @@ export default function Products() {
         <form className="form-grid form-grid-wide" onSubmit={submit}>
           <label>
             Tên sản phẩm
-            <input style={{ width: "80%" }}  name="name" value={form.name} onChange={handleChange} required />
+            <input name="name" value={form.name} onChange={handleChange} required />
           </label>
 
           <label>
             Giá bán
-            <input style={{ width: "80%" }} name="price" type="number" min="0" value={form.price} onChange={handleChange} required />
+            <input name="price" type="number" min="0" value={form.price} onChange={handleChange} required />
           </label>
 
           <label>
             Tồn kho
-            <input style={{ width: "80%" }} name="stock" type="number" min="0" value={form.stock} onChange={handleChange} required />
+            <input name="stock" type="number" min="0" value={form.stock} onChange={handleChange} required />
           </label>
 
           <label>
             Danh mục
-            <select style={{ width: "80%" }} name="id_category" value={form.id_category} onChange={handleChange}>
+            <select name="id_category" value={form.id_category} onChange={handleChange}>
               <option value="">-- Chọn danh mục --</option>
               {categories.map((cat) => (
                 <option key={cat._id} value={cat._id}>
@@ -331,7 +321,7 @@ export default function Products() {
 
           <label>
             Trạng thái
-            <select style={{ width: "80%" }} name="status" value={form.status} onChange={handleChange}>
+            <select name="status" value={form.status} onChange={handleChange}>
               <option value="1">Hiện</option>
               <option value="0">Ẩn</option>
             </select>
@@ -353,73 +343,13 @@ export default function Products() {
                 <button type="button" className="chip-btn chip-danger" onClick={clearDescription}>
                   Xóa mô tả
                 </button>
-                <button type="button" className="chip-btn" onClick={() => insertDescriptionHtml("<p>", "</p>")}>
-                  P
-                </button>
-                <button
-                  type="button"
-                  className="chip-btn"
-                  onClick={() => insertDescriptionHtml("<strong>", "</strong>")}
-                >
-                  B
-                </button>
-                <button type="button" className="chip-btn" onClick={() => insertDescriptionHtml("<em>", "</em>")}>
-                  I
-                </button>
-                <button
-                  type="button"
-                  className="chip-btn"
-                  onClick={() => insertDescriptionHtml("<ul>\n  <li>", "</li>\n</ul>", "Mục")}
-                >
-                  UL
-                </button>
-                <button
-                  type="button"
-                  className="chip-btn"
-                  onClick={() => insertDescriptionHtml("<li>", "</li>", "Mục")}
-                >
-                  LI
-                </button>
-                <button
-                  type="button"
-                  className="chip-btn"
-                  onClick={() => insertDescriptionHtml("<p><strong>Chủ đề:</strong> ", "</p>", "Nội dung")}
-                >
-                  Chủ đề
-                </button>
-                <button
-                  type="button"
-                  className="chip-btn"
-                  onClick={() => insertDescriptionHtml("<p><strong>Độ tuổi:</strong> ", "</p>", "Nội dung")}
-                >
-                  Độ tuổi
-                </button>
-                <button
-                  type="button"
-                  className="chip-btn"
-                  onClick={() => insertDescriptionHtml("<p><strong>Giới tính:</strong> ", "</p>", "Nội dung")}
-                >
-                  Giới tính
-                </button>
-                <button
-                  type="button"
-                  className="chip-btn"
-                  onClick={() => insertDescriptionHtml("<p><strong>Thương hiệu:</strong> ", "</p>", "Nội dung")}
-                >
-                  Thương hiệu
-                </button>
-                <button
-                  type="button"
-                  className="chip-btn"
-                  onClick={() => insertDescriptionHtml("<p><strong>Xuất xứ:</strong> ", "</p>", "Nội dung")}
-                >
-                  Xuất xứ
-                </button>
+               
+                
               </div>
             </div>
 
             <textarea
-            style={{width: "95%"}}
+            style={{width:"90%"}}
               ref={descriptionRef}
               name="description"
               value={form.description}
@@ -431,10 +361,10 @@ export default function Products() {
 
           <label className="full">
             Ảnh sản phẩm
-            <input style={{width:"95%"}} type="file" accept="image/*" multiple onChange={handleFileChange} />
+            <input  style={{width:"90%"}} type="file" accept="image/*" multiple onChange={handleFileChange} />
           </label>
 
-          <div className="full image-preview-panel">
+          <div className="full image-preview-panel"  style={{width:"90%"}}>
             <div className="image-preview-head">
               <strong>Ảnh hiện có và ảnh mới</strong>
               <span>Chọn nhiều hình để lưu vào cùng một sản phẩm.</span>
@@ -502,7 +432,7 @@ export default function Products() {
 
         <div className="filter-row">
           <input
-          style={{width:"80%"}}
+           style={{width:"90%"}}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm tên sản phẩm"
@@ -564,15 +494,7 @@ export default function Products() {
                       </span>
                     </td>
                     <td>{Number(product.price || 0).toLocaleString("vi-VN")} đ</td>
-                    <td>
-                      <input
-                        className="stock-input"
-                        type="number"
-                        min="0"
-                        defaultValue={product.stock || 0}
-                        onBlur={(e) => updateStock(product._id, Number(e.target.value))}
-                      />
-                    </td>
+                    <td><span className="stock-text">{product.stock ?? 0}</span></td>
                     <td>
                       <div className="actions-inline">
                         <button type="button" className="btn btn-secondary" onClick={() => openEdit(product)}>
@@ -595,3 +517,4 @@ export default function Products() {
     </div>
   );
 }
+

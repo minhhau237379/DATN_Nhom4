@@ -41,11 +41,7 @@ export default function AdminLogin() {
           <p className="eyebrow">Admin portal</p>
           <h1>Đăng nhập quản trị</h1>
           <p>Trang quản trị dùng chung backend với app user, tối ưu cho màn hình lớn và thao tác nhanh.</p>
-          <div className="auth-badges">
-            <span className="status-pill status-confirmed">Sản phẩm</span>
-            <span className="status-pill status-processing">Danh mục</span>
-            <span className="status-pill status-paid">Đơn hàng</span>
-          </div>
+          
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>

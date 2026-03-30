@@ -1,5 +1,6 @@
 import { useEffect,  useState } from "react";
 import api from "../services/api";
+import { scrollToTop } from "../utils/adminActions";
 import "./Users.css";
 
 const statusTone = (value) => (value ? "status-cancelled" : "status-paid");
@@ -99,6 +100,7 @@ export default function Users() {
       });
       setMessage(locked ? "Đã khóa tài khoản" : "Đã mở khóa tài khoản");
       await refreshAll();
+      scrollToTop();
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể cập nhật tài khoản");
     }
@@ -135,7 +137,7 @@ export default function Users() {
         {message && <div className="alert">{message}</div>}
 
         <div className="filter-row">
-          <input style={{ width: "80%" }} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm theo tên, email, SĐT" />
+          <input  style={{width:"90%"}} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm theo tên, email, SĐT" />
           <select value={lockedFilter} onChange={(e) => setLockedFilter(e.target.value)}>
             <option value="">Tất cả trạng thái</option>
             <option value="false">Đang mở</option>
