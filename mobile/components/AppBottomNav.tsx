@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { isLoggedIn } from "../utils/auth";
 
 type TabKey = "home" | "favorite" | "cart" | "profile";
@@ -44,6 +45,8 @@ const tabs: {
 export const APP_BOTTOM_NAV_HEIGHT = 76;
 
 export default function AppBottomNav({ active }: AppBottomNavProps) {
+  const insets = useSafeAreaInsets();
+
   const handlePress = async (tab: (typeof tabs)[number]) => {
     const protectedTabs: TabKey[] = ["favorite", "cart", "profile"];
 
@@ -59,7 +62,15 @@ export default function AppBottomNav({ active }: AppBottomNavProps) {
   };
 
   return (
-    <View style={styles.wrapper}>
+    <View
+      style={[
+        styles.wrapper,
+        {
+          height: APP_BOTTOM_NAV_HEIGHT + insets.bottom,
+          paddingBottom: 8 + insets.bottom,
+        },
+      ]}
+    >
       {tabs.map((tab) => {
         const isActive = tab.key === active;
 
@@ -97,7 +108,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    paddingBottom: 8,
     paddingTop: 6,
   },
   item: {

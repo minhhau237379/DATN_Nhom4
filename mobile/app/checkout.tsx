@@ -13,7 +13,9 @@ import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import AppToast from "../components/AppToast";
 import AppBottomNav, { APP_BOTTOM_NAV_HEIGHT } from "../components/AppBottomNav";
+import BackHeader from "../components/BackHeader";
 import api from "../services/api";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -42,6 +44,7 @@ export default function CheckoutScreen() {
     paymentStatus?: string;
     paymentMessage?: string;
     orderId?: string;
+    directProductId?: string;
   }>();
   const [items, setItems] = useState<CheckoutItem[]>([]);
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
@@ -50,6 +53,7 @@ export default function CheckoutScreen() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [handledPaymentResult, setHandledPaymentResult] = useState(false);
+  const insets = useSafeAreaInsets();
   const [notice, setNotice] = useState({
     visible: false,
     title: "",
@@ -73,6 +77,9 @@ export default function CheckoutScreen() {
     ? params.paymentMessage[0]
     : params.paymentMessage;
   const orderId = Array.isArray(params.orderId) ? params.orderId[0] : params.orderId;
+  const directProductId = Array.isArray(params.directProductId)
+    ? params.directProductId[0]
+    : params.directProductId;
 
   const showNotice = (title: string, message: string, nextOrderId = "") => {
     setNotice({
@@ -124,22 +131,37 @@ export default function CheckoutScreen() {
     try {
       setLoading(true);
 
-      const [cartRes, addressRes] = await Promise.all([
-        api.get("/cart"),
-        api.get("/address/list"),
-      ]);
-
-      const cartItems: CheckoutItem[] = cartRes.data.items || [];
-      const filteredItems = cartItems.filter((item) =>
-        selectedProductIds.includes(item.product._id),
-      );
+      const addressRes = await api.get("/address/list");
       const addressItems: AddressItem[] = addressRes.data || [];
       const defaultAddress =
         addressItems.find((item) => item.isDefault) || addressItems[0];
 
-      setItems(filteredItems);
       setAddresses(addressItems);
       setSelectedAddressId(defaultAddress?._id || "");
+
+      if (directProductId) {
+        const productRes = await api.get(`/shop/product/${directProductId}`);
+        const directProduct = productRes.data.product;
+
+        setItems(
+          directProduct
+            ? [
+                {
+                  product: directProduct,
+                  quantity: 1,
+                },
+              ]
+            : [],
+        );
+      } else {
+        const cartRes = await api.get("/cart");
+        const cartItems: CheckoutItem[] = cartRes.data.items || [];
+        const filteredItems = cartItems.filter((item) =>
+          selectedProductIds.includes(item.product._id),
+        );
+
+        setItems(filteredItems);
+      }
 
       if (addressItems.length === 0) {
         showNotice("Thông báo", "Vui lòng thêm địa chỉ mới để thanh toán");
@@ -150,7 +172,7 @@ export default function CheckoutScreen() {
     } finally {
       setLoading(false);
     }
-  }, [selectedProductIds]);
+  }, [directProductId, selectedProductIds]);
 
   useFocusEffect(
     useCallback(() => {
@@ -180,7 +202,8 @@ export default function CheckoutScreen() {
       if (paymentMethod === "VNPAY") {
         const res = await api.post("/order/create-vnpay-payment", {
           addressId: selectedAddressId,
-          selectedProductIds,
+          selectedProductIds: directProductId ? [directProductId] : selectedProductIds,
+          directProductIds: directProductId ? [directProductId] : [],
           clientReturnUrl: getClientReturnUrl(),
         });
 
@@ -235,7 +258,8 @@ export default function CheckoutScreen() {
       const res = await api.post("/order/create", {
         addressId: selectedAddressId,
         paymentMethod,
-        selectedProductIds,
+        selectedProductIds: directProductId ? [directProductId] : selectedProductIds,
+        directProductIds: directProductId ? [directProductId] : [],
       });
 
       if (res.data.success) {
@@ -266,14 +290,15 @@ export default function CheckoutScreen() {
   return (
     <>
       <View style={styles.container}>
-        <View style={styles.headerWrap}>
-          <Text style={styles.header}>Thanh toán</Text>
-        </View>
+        <BackHeader title="Thanh toán" />
 
         <FlatList
           data={items}
           keyExtractor={(item) => item.product._id}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: APP_BOTTOM_NAV_HEIGHT + insets.bottom + 28 },
+          ]}
           ListHeaderComponent={
             <>
               <Text style={styles.sectionTitle}>Địa chỉ giao hàng</Text>

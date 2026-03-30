@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import BackHeader from "../../components/BackHeader";
 import AppToast from "../../components/AppToast";
 import api from "../../services/api";
 
@@ -108,9 +109,7 @@ export default function ChangePasswordScreen() {
   return (
     <>
       <View style={styles.container}>
-        <View style={styles.headerWrap}>
-          <Text style={styles.header}>Đổi mật khẩu</Text>
-        </View>
+        <BackHeader title="Đổi mật khẩu" />
 
         <View style={styles.card}>
           <Input
@@ -197,18 +196,6 @@ const Input = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f6f6f6" },
-  headerWrap: {
-    backgroundColor: "#d5001c",
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 14,
-  },
-  header: {
-    color: "#fff7f7",
-    fontSize: 20,
-    fontWeight: "700",
-    textAlign: "center",
-  },
   card: {
     margin: 16,
     backgroundColor: "white",

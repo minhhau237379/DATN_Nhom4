@@ -93,7 +93,13 @@ const getPublicBaseUrl = (req) => {
   };
 };
 
-const loadCheckoutContext = async ({ userId, addressId, selectedProductIds, session }) => {
+const loadCheckoutContext = async ({
+  userId,
+  addressId,
+  selectedProductIds,
+  directProductIds = [],
+  session,
+}) => {
   const addressDoc = await Address.findOne({ user: userId }).session(session);
 
   if (!addressDoc || !addressDoc.items?.length) {
@@ -107,6 +113,45 @@ const loadCheckoutContext = async ({ userId, addressId, selectedProductIds, sess
 
   if (!selectedAddress) {
     throw new Error("Khong tim thay dia chi giao hang");
+  }
+
+  const directIds = Array.isArray(directProductIds)
+    ? directProductIds.filter(Boolean)
+    : [];
+
+  if (directIds.length > 0) {
+    const products = await Product.find({ _id: { $in: directIds } }).session(session);
+
+    if (products.length !== directIds.length) {
+      throw new Error("Khong tim thay san pham da chon");
+    }
+
+    for (const product of products) {
+      if ((product.stock || 0) < 1) {
+        throw new Error(`San pham ${product.name} khong du hang`);
+      }
+    }
+
+    const orderItems = products.map((product) => ({
+      product: product._id,
+      name: product.name,
+      image: getPrimaryProductImage(product.image),
+      price: product.price,
+      quantity: 1,
+    }));
+
+    const totalPrice = orderItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0,
+    );
+
+    return {
+      cart: null,
+      cartItems: [],
+      orderItems,
+      totalPrice,
+      selectedAddress,
+    };
   }
 
   const cart = await Cart.findOne({ user: userId })
@@ -254,9 +299,17 @@ exports.createOrder = async (req, res) => {
     }
 
     const userId = req.session.user._id;
-    const { addressId, paymentMethod = "COD", selectedProductIds = [] } = req.body;
+    const {
+      addressId,
+      paymentMethod = "COD",
+      selectedProductIds = [],
+      directProductIds = [],
+    } = req.body;
 
-    if (!Array.isArray(selectedProductIds) || selectedProductIds.length === 0) {
+    if (
+      (!Array.isArray(selectedProductIds) || selectedProductIds.length === 0) &&
+      (!Array.isArray(directProductIds) || directProductIds.length === 0)
+    ) {
       throw new Error("Ban chua chon san pham nao");
     }
 
@@ -265,6 +318,7 @@ exports.createOrder = async (req, res) => {
         userId,
         addressId,
         selectedProductIds,
+        directProductIds,
         session,
       });
 
@@ -289,22 +343,34 @@ exports.createOrder = async (req, res) => {
       { session },
     );
 
-    await Promise.all(
-      cartItems.map((item) =>
-        Product.findByIdAndUpdate(
-          item.product._id,
-          { $inc: { stock: -item.quantity } },
-          { session },
+    if (cart && cartItems.length) {
+      await Promise.all(
+        cartItems.map((item) =>
+          Product.findByIdAndUpdate(
+            item.product._id,
+            { $inc: { stock: -item.quantity } },
+            { session },
+          ),
         ),
-      ),
-    );
+      );
 
-    cart.items = cart.items.filter(
-      (item) =>
-        !item.product || !selectedProductIds.includes(item.product._id.toString()),
-    );
+      cart.items = cart.items.filter(
+        (item) =>
+          !item.product || !selectedProductIds.includes(item.product._id.toString()),
+      );
 
-    await cart.save({ session });
+      await cart.save({ session });
+    } else {
+      await Promise.all(
+        orderItems.map((item) =>
+          Product.findByIdAndUpdate(
+            item.product,
+            { $inc: { stock: -item.quantity } },
+            { session },
+          ),
+        ),
+      );
+    }
 
     await session.commitTransaction();
 
@@ -336,11 +402,15 @@ exports.createVnpayPayment = async (req, res) => {
     const {
       addressId,
       selectedProductIds = [],
+      directProductIds = [],
       clientReturnUrl,
       bankCode = "",
     } = req.body;
 
-    if (!Array.isArray(selectedProductIds) || selectedProductIds.length === 0) {
+    if (
+      (!Array.isArray(selectedProductIds) || selectedProductIds.length === 0) &&
+      (!Array.isArray(directProductIds) || directProductIds.length === 0)
+    ) {
       throw new Error("Ban chua chon san pham nao");
     }
 
@@ -352,6 +422,7 @@ exports.createVnpayPayment = async (req, res) => {
       userId,
       addressId,
       selectedProductIds,
+      directProductIds,
       session,
     });
 

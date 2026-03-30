@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import api from "../../services/api";
 import AppToast from "../../components/AppToast";
 import { isLoggedIn } from "../../utils/auth";
@@ -30,6 +31,7 @@ type CartItem = {
 const CHECKOUT_BAR_HEIGHT = 150;
 
 export default function Cart() {
+  const insets = useSafeAreaInsets();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [notice, setNotice] = useState({
@@ -245,13 +247,18 @@ export default function Cart() {
           data={cartItems}
           keyExtractor={(item) => item.product._id}
           renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            {
+              paddingBottom: CHECKOUT_BAR_HEIGHT + 60 + insets.bottom + 16,
+            },
+          ]}
           showsVerticalScrollIndicator={false}
         />
       )}
 
       {cartItems.length > 0 && (
-        <View style={styles.checkoutBar}>
+        <View style={[styles.checkoutBar, { bottom: 60 + insets.bottom }]}>
           <Text style={styles.totalLabel}>
             Tổng tiền:{" "}
             <Text style={styles.total}>
@@ -391,7 +398,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: 0,
     backgroundColor: "white",
     paddingHorizontal: 16,
     paddingTop: 14,

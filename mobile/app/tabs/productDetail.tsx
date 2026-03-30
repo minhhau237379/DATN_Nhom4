@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
+import BackHeader from "../../components/BackHeader";
 import AppToast from "../../components/AppToast";
 import api from "../../services/api";
 import { isLoggedIn } from "../../utils/auth";
@@ -51,7 +52,7 @@ const descriptionFieldKeyMap: Record<string, string> = {
 
 const extractDescriptionFields = (html?: string) => {
   if (!html) {
-    return [] as Array<{ label: string; value: string }>;
+    return [] as { label: string; value: string }[];
   }
 
   const matches = Array.from(
@@ -178,6 +179,26 @@ export default function ProductDetail() {
     }
   };
 
+  const buyNow = async (productId: string) => {
+    try {
+      if (!(await isLoggedIn())) {
+        showNotice("Thông báo", "Bạn cần đăng nhập để mua hàng");
+        return;
+      }
+
+      router.push({
+        pathname: "/checkout",
+        params: {
+          selected: JSON.stringify([productId]),
+          directProductId: productId,
+        },
+      });
+    } catch (err) {
+      console.error(err);
+      showNotice("Lỗi", "Không thể mở trang thanh toán");
+    }
+  };
+
   if (!product) {
     return (
       <View style={styles.center}>
@@ -199,31 +220,46 @@ export default function ProductDetail() {
       return normalizedValue && !descriptionKeys.has(key);
     });
   const slideWidth = screenWidth - 20;
+  const slideGap = 6;
+  const slideInterval = slideWidth + slideGap;
 
   return (
     <>
       <ScrollView style={styles.container}>
+        <BackHeader
+          title="Chi tiết sản phẩm"
+          backgroundColor="#fff"
+          titleColor="#111"
+          iconColor="#111"
+          containerStyle={styles.headerBack}
+        />
         <View style={styles.imageBox}>
           <FlatList
             ref={imageListRef}
             data={productImages.length ? productImages : [""]}
             horizontal
             pagingEnabled
-            snapToInterval={slideWidth}
+            disableIntervalMomentum
+            snapToInterval={slideInterval}
             decelerationRate="fast"
             showsHorizontalScrollIndicator={false}
             keyExtractor={(item, index) => `${item || "image"}-${index}`}
             getItemLayout={(_, index) => ({
-              length: slideWidth,
-              offset: slideWidth * index,
+              length: slideInterval,
+              offset: slideInterval * index,
               index,
             })}
-            onMomentumScrollEnd={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
-              const nextIndex = Math.round(event.nativeEvent.contentOffset.x / slideWidth);
+            scrollEventThrottle={16}
+            onScroll={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
+              const nextIndex = Math.round(event.nativeEvent.contentOffset.x / slideInterval);
               setActiveImageIndex(nextIndex);
             }}
-            renderItem={({ item }) => (
-              <View style={[styles.slide, { width: slideWidth }]}>
+            onMomentumScrollEnd={(event: NativeSyntheticEvent<NativeScrollEvent>) => {
+              const nextIndex = Math.round(event.nativeEvent.contentOffset.x / slideInterval);
+              setActiveImageIndex(nextIndex);
+            }}
+            renderItem={({ item, index }) => (
+              <View style={[styles.slide, { width: slideWidth, marginRight: index === productImages.length - 1 ? 0 : slideGap }]}>
                 <Image source={{ uri: resolveImageUri(item) }} style={styles.image} />
               </View>
             )}
@@ -287,18 +323,30 @@ export default function ProductDetail() {
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={[styles.btn, isOutOfStock && styles.btnDisabled]}
-          onPress={() => addToCart(product._id)}
-          disabled={isOutOfStock}
-        >
-          <Text style={styles.btnText}>
-            {isOutOfStock ? "Hết hàng" : "Thêm vào giỏ hàng"}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.actionRow}>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.buyNowBtn, isOutOfStock && styles.btnDisabled]}
+            onPress={() => buyNow(product._id)}
+            disabled={isOutOfStock}
+          >
+            <Text style={styles.buyNowText}>
+              {isOutOfStock ? "Hết hàng" : "Mua thẳng"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.cartBtn, isOutOfStock && styles.btnDisabled]}
+            onPress={() => addToCart(product._id)}
+            disabled={isOutOfStock}
+          >
+            <Text style={styles.cartBtnText}>
+              {isOutOfStock ? "Hết hàng" : "Thêm vào giỏ hàng"}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.section}>
-          <Text style={styles.title}>Mô tả sản phẩm</Text>
+          <Text style={styles.title}>Thông tin sản phẩm</Text>
 
           {descriptionFields.length ? (
             <View style={styles.descriptionPanel}>
@@ -360,6 +408,10 @@ export default function ProductDetail() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  headerBack: {
+    margin: 10,
+    borderRadius: 16,
+  },
   imageBox: {
     backgroundColor: "white",
     padding: 15,
@@ -419,10 +471,31 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     alignItems: "center",
   },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginHorizontal: 10,
+    marginTop: 4,
+  },
+  actionBtn: {
+    flex: 1,
+    paddingVertical: 15,
+    borderRadius: 30,
+    alignItems: "center",
+  },
+  buyNowBtn: {
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#d5001c",
+  },
+  cartBtn: {
+    backgroundColor: "#d5001c",
+  },
   btnDisabled: {
     backgroundColor: "#bdbdbd",
   },
-  btnText: { color: "white", fontWeight: "bold" },
+  buyNowText: { color: "#d5001c", fontWeight: "bold" },
+  cartBtnText: { color: "white", fontWeight: "bold" },
   title: { fontWeight: "bold", marginBottom: 5 },
   descriptionPanel: {
     backgroundColor: "#f8fafc",

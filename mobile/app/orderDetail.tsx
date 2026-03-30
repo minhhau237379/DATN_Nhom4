@@ -9,8 +9,10 @@ import {
 } from "react-native";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import AppBottomNav, { APP_BOTTOM_NAV_HEIGHT } from "../components/AppBottomNav";
+import BackHeader from "../components/BackHeader";
 import AppToast from "../components/AppToast";
 import api from "../services/api";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type OrderItem = {
   name: string;
@@ -73,6 +75,7 @@ const canCancelOrder = (orderStatus?: string) =>
 
 export default function OrderDetailScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
+  const insets = useSafeAreaInsets();
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
@@ -164,14 +167,15 @@ export default function OrderDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerWrap}>
-        <Text style={styles.header}>Chi tiết đơn hàng</Text>
-      </View>
+      <BackHeader title="Chi tiết đơn hàng" />
 
       <FlatList
         data={order.items}
         keyExtractor={(item, index) => `${item.name}-${index}`}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: APP_BOTTOM_NAV_HEIGHT + insets.bottom + 24 },
+        ]}
         ListHeaderComponent={
           <>
             <View style={styles.card}>

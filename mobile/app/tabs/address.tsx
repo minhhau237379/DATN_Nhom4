@@ -9,7 +9,9 @@ import {
 import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import AppDialog from "../../components/AppDialog";
+import BackHeader from "../../components/BackHeader";
 import api from "../../services/api";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type AddressItem = {
   _id: string;
@@ -21,6 +23,7 @@ type AddressItem = {
 };
 
 export default function AddressScreen() {
+  const insets = useSafeAreaInsets();
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
   const [dialog, setDialog] = useState({
     visible: false,
@@ -80,9 +83,7 @@ export default function AddressScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerWrap}>
-        <Text style={styles.header}>Địa chỉ của tôi</Text>
-      </View>
+      <BackHeader title="Địa chỉ của tôi" />
 
       <FlatList
         data={addresses}
@@ -108,6 +109,18 @@ export default function AddressScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
+                style={[styles.actionBtn, styles.editBtn]}
+                onPress={() =>
+                  router.push({
+                    pathname: "/tabs/addressAdd",
+                    params: { id: item._id },
+                  })
+                }
+              >
+                <Text style={styles.editText}>Sửa</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 style={[styles.actionBtn, styles.deleteBtn]}
                 onPress={() => deleteAddress(item._id)}
               >
@@ -124,7 +137,7 @@ export default function AddressScreen() {
       />
 
       <TouchableOpacity
-        style={styles.addBtn}
+        style={[styles.addBtn, { bottom: 78 + insets.bottom }]}
         onPress={() => router.push("/tabs/addressAdd")}
       >
         <Text style={styles.addText}>+ Thêm địa chỉ</Text>
@@ -145,18 +158,6 @@ export default function AddressScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f6f6f6" },
-  headerWrap: {
-    backgroundColor: "#d5001c",
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 14,
-  },
-  header: {
-    color: "#fff7f7",
-    fontSize: 20,
-    fontWeight: "700",
-    textAlign: "center",
-  },
   listContent: {
     padding: 16,
     paddingBottom: 120,
@@ -192,6 +193,13 @@ const styles = StyleSheet.create({
   deleteBtn: {
     backgroundColor: "#ffe5e5",
   },
+  editBtn: {
+    backgroundColor: "#e8f2ff",
+  },
+  editText: {
+    color: "#1d4ed8",
+    fontWeight: "600",
+  },
   deleteText: {
     color: "#d5001c",
     fontWeight: "600",
@@ -200,7 +208,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 16,
     right: 16,
-    bottom: 78,
     backgroundColor: "#d5001c",
     borderRadius: 28,
     paddingVertical: 14,

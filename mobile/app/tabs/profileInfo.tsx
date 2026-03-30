@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import BackHeader from "../../components/BackHeader";
 import AppToast from "../../components/AppToast";
 import api from "../../services/api";
 
@@ -80,9 +81,7 @@ export default function ProfileInfo() {
   return (
     <>
       <ScrollView style={styles.container}>
-        <View style={styles.headerWrap}>
-          <Text style={styles.header}>Thông tin cá nhân</Text>
-        </View>
+        <BackHeader title="Thông tin cá nhân" />
 
         <View style={styles.card}>
           <View style={styles.avatar}>
@@ -184,18 +183,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f6f6f6",
-  },
-  headerWrap: {
-    backgroundColor: "#d5001c",
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 14,
-  },
-  header: {
-    color: "#fff7f7",
-    fontSize: 20,
-    fontWeight: "700",
-    textAlign: "center",
   },
   card: {
     backgroundColor: "#fff",

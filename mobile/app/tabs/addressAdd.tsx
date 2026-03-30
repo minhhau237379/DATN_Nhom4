@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -6,11 +6,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import AppToast from "../../components/AppToast";
+import BackHeader from "../../components/BackHeader";
 import api from "../../services/api";
 
 export default function AddressAddScreen() {
+  const params = useLocalSearchParams<{ id?: string }>();
+  const addressId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const isEdit = Boolean(addressId);
   const [form, setForm] = useState({
     fullName: "",
     phone: "",
@@ -43,6 +47,32 @@ export default function AddressAddScreen() {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  useEffect(() => {
+    if (!addressId) {
+      return;
+    }
+
+    const loadAddress = async () => {
+      try {
+        const res = await api.get("/address/list");
+        const address = (res.data || []).find((item: any) => item._id === addressId);
+
+        if (address) {
+          setForm({
+            fullName: address.fullName || "",
+            phone: address.phone || "",
+            address: address.address || "",
+            city: address.city || "",
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    void loadAddress();
+  }, [addressId]);
+
   const submit = async () => {
     if (!form.fullName || !form.phone || !form.address || !form.city) {
       showNotice("Thông báo", "Vui lòng nhập đầy đủ thông tin");
@@ -50,7 +80,9 @@ export default function AddressAddScreen() {
     }
 
     try {
-      const res = await api.post("/address/add", form);
+      const res = isEdit
+        ? await api.post(`/address/update/${addressId}`, form)
+        : await api.post("/address/add", form);
       if (res.data.success) {
         router.back();
       }
@@ -63,9 +95,7 @@ export default function AddressAddScreen() {
   return (
     <>
       <View style={styles.container}>
-        <View style={styles.headerWrap}>
-          <Text style={styles.header}>Thêm địa chỉ</Text>
-        </View>
+        <BackHeader title={isEdit ? "Sửa địa chỉ" : "Thêm địa chỉ"} />
 
         <View style={styles.form}>
           <Input
@@ -90,7 +120,9 @@ export default function AddressAddScreen() {
           />
 
           <TouchableOpacity style={styles.submitBtn} onPress={submit}>
-            <Text style={styles.submitText}>Lưu địa chỉ</Text>
+            <Text style={styles.submitText}>
+              {isEdit ? "Cập nhật địa chỉ" : "Lưu địa chỉ"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -122,18 +154,6 @@ const Input = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f6f6f6" },
-  headerWrap: {
-    backgroundColor: "#d5001c",
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 14,
-  },
-  header: {
-    color: "#fff7f7",
-    fontSize: 20,
-    fontWeight: "700",
-    textAlign: "center",
-  },
   form: {
     padding: 16,
   },

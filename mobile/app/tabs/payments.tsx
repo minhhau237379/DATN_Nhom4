@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import BackHeader from "../../components/BackHeader";
 import api from "../../services/api";
 
 type PaymentItem = {
@@ -35,9 +36,7 @@ export default function PaymentsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerWrap}>
-        <Text style={styles.header}>Lịch sử thanh toán</Text>
-      </View>
+      <BackHeader title="Lịch sử thanh toán" />
 
       <FlatList
         data={payments}
@@ -80,18 +79,6 @@ export default function PaymentsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f6f6f6" },
-  headerWrap: {
-    backgroundColor: "#d5001c",
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 14,
-  },
-  header: {
-    color: "#fff7f7",
-    fontSize: 20,
-    fontWeight: "700",
-    textAlign: "center",
-  },
   listContent: {
     padding: 16,
   },
