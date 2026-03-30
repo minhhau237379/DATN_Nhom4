@@ -35,6 +35,8 @@
 
 .page-products .form-grid,
 .page-products .form-grid-wide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px 26px;
 }
 
@@ -44,14 +46,21 @@
   display: grid;
   gap: 12px;
   align-items: start;
+  min-width: 0;
+  width: 100%;
 }
 
 .page-products .form-grid label input,
 .page-products .form-grid label select,
 .page-products .form-grid label textarea,
+.page-products .form-grid-wide label input,
+.page-products .form-grid-wide label select,
+.page-products .form-grid-wide label textarea,
 .page-products .spec-grid label input {
   min-width: 0;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .page-products .field-help {

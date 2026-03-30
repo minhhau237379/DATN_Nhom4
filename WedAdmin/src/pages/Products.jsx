@@ -304,22 +304,22 @@ export default function Products() {
         <form className="form-grid form-grid-wide" onSubmit={submit}>
           <label>
             Tên sản phẩm
-            <input name="name" value={form.name} onChange={handleChange} required />
+            <input style={{ width: "80%" }}  name="name" value={form.name} onChange={handleChange} required />
           </label>
 
           <label>
             Giá bán
-            <input name="price" type="number" min="0" value={form.price} onChange={handleChange} required />
+            <input style={{ width: "80%" }} name="price" type="number" min="0" value={form.price} onChange={handleChange} required />
           </label>
 
           <label>
             Tồn kho
-            <input name="stock" type="number" min="0" value={form.stock} onChange={handleChange} required />
+            <input style={{ width: "80%" }} name="stock" type="number" min="0" value={form.stock} onChange={handleChange} required />
           </label>
 
           <label>
             Danh mục
-            <select name="id_category" value={form.id_category} onChange={handleChange}>
+            <select style={{ width: "80%" }} name="id_category" value={form.id_category} onChange={handleChange}>
               <option value="">-- Chọn danh mục --</option>
               {categories.map((cat) => (
                 <option key={cat._id} value={cat._id}>
@@ -331,7 +331,7 @@ export default function Products() {
 
           <label>
             Trạng thái
-            <select name="status" value={form.status} onChange={handleChange}>
+            <select style={{ width: "80%" }} name="status" value={form.status} onChange={handleChange}>
               <option value="1">Hiện</option>
               <option value="0">Ẩn</option>
             </select>
