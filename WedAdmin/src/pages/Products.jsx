@@ -39,14 +39,14 @@ const normalizeImages = (value) => {
   return [value].filter(Boolean);
 };
 
-const stripHtml = (value) => {
-  if (!value) return "";
+// const stripHtml = (value) => {
+//   if (!value) return "";
 
-  return String(value)
-    .replace(/<[^>]*>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-};
+//   return String(value)
+//     .replace(/<[^>]*>/g, " ")
+//     .replace(/\s+/g, " ")
+//     .trim();
+// };
 
 const toImageUrl = (value) => {
   const firstImage = normalizeImages(value)[0];
@@ -419,6 +419,7 @@ export default function Products() {
             </div>
 
             <textarea
+            style={{width: "95%"}}
               ref={descriptionRef}
               name="description"
               value={form.description}
@@ -430,7 +431,7 @@ export default function Products() {
 
           <label className="full">
             Ảnh sản phẩm
-            <input type="file" accept="image/*" multiple onChange={handleFileChange} />
+            <input style={{width:"95%"}} type="file" accept="image/*" multiple onChange={handleFileChange} />
           </label>
 
           <div className="full image-preview-panel">
@@ -501,6 +502,7 @@ export default function Products() {
 
         <div className="filter-row">
           <input
+          style={{width:"80%"}}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm tên sản phẩm"
