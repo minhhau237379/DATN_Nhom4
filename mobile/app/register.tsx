@@ -1,7 +1,9 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -96,8 +98,8 @@ export default function Register() {
     });
   };
 
-  const handleChange = (name: string, value: string) => {
-    setForm({ ...form, [name]: value });
+  const handleChange = (name: keyof RegisterForm, value: string) => {
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const validatePassword = () => {
@@ -169,127 +171,135 @@ export default function Register() {
 
   return (
     <>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Image
-          source={require("../assets/images/logo.jpg")}
-          style={styles.logo}
-        />
-
-        <Text style={styles.title}>Tạo tài khoản</Text>
-        <Text style={styles.subtitle}>Tham gia cùng chúng tôi ngay hôm nay</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholderTextColor="#000"
-          placeholder="Tên đăng nhập"
-          value={form.username}
-          autoCapitalize="none"
-          autoCorrect={false}
-          autoComplete="username"
-          onChangeText={(value) => handleChange("username", value)}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholderTextColor="#000"
-          placeholder="Email"
-          value={form.email}
-          autoCapitalize="none"
-          autoCorrect={false}
-          autoComplete="email"
-          onChangeText={(value) => handleChange("email", value)}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholderTextColor="#000"
-          placeholder="Số điện thoại"
-          keyboardType="numeric"
-          value={form.phoneNumber}
-          autoComplete="tel"
-          onChangeText={(value) => handleChange("phoneNumber", value)}
-        />
-
-        {errors.phoneNumber ? (
-          <Text style={styles.error}>{errors.phoneNumber}</Text>
-        ) : null}
-
-        <View style={styles.passwordWrapper}>
-          <TextInput
-            style={styles.inputPassword}
-            placeholderTextColor="#000"
-            placeholder="Mật khẩu"
-            secureTextEntry={!showPassword}
-            value={form.password}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="new-password"
-            onChangeText={(value) => handleChange("password", value)}
+      <KeyboardAvoidingView
+        style={styles.screen}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
+          <Image
+            source={require("../assets/images/logo.jpg")}
+            style={styles.logo}
           />
 
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Image
-              source={
-                showPassword
-                  ? require("../assets/images/show.jpg")
-                  : require("../assets/images/hide.jpg")
-              }
-              style={styles.eye}
+          <Text style={styles.title}>Tạo tài khoản</Text>
+          <Text style={styles.subtitle}>Tham gia cùng chúng tôi ngay hôm nay</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholderTextColor="#000"
+            placeholder="Tên đăng nhập"
+            value={form.username}
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="username"
+            onChangeText={(value) => handleChange("username", value)}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholderTextColor="#000"
+            placeholder="Email"
+            value={form.email}
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="email"
+            onChangeText={(value) => handleChange("email", value)}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholderTextColor="#000"
+            placeholder="Số điện thoại"
+            keyboardType="numeric"
+            value={form.phoneNumber}
+            autoComplete="tel"
+            onChangeText={(value) => handleChange("phoneNumber", value)}
+          />
+
+          {errors.phoneNumber ? (
+            <Text style={styles.error}>{errors.phoneNumber}</Text>
+          ) : null}
+
+          <View style={styles.passwordWrapper}>
+            <TextInput
+              style={styles.inputPassword}
+              placeholderTextColor="#000"
+              placeholder="Mật khẩu"
+              secureTextEntry={!showPassword}
+              value={form.password}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="new-password"
+              onChangeText={(value) => handleChange("password", value)}
             />
-          </TouchableOpacity>
-        </View>
 
-        {errors.password ? (
-          <Text style={styles.error}>{errors.password}</Text>
-        ) : null}
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+              <Image
+                source={
+                  showPassword
+                    ? require("../assets/images/show.jpg")
+                    : require("../assets/images/hide.jpg")
+                }
+                style={styles.eye}
+              />
+            </TouchableOpacity>
+          </View>
 
-        <View style={styles.passwordWrapper}>
-          <TextInput
-            style={styles.inputPassword}
-            placeholderTextColor="#000"
-            placeholder="Xác nhận mật khẩu"
-            secureTextEntry={!showConfirmPassword}
-            value={form.confirmPassword}
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="new-password"
-            onChangeText={(value) => handleChange("confirmPassword", value)}
-          />
+          {errors.password ? <Text style={styles.error}>{errors.password}</Text> : null}
+
+          <View style={styles.passwordWrapper}>
+            <TextInput
+              style={styles.inputPassword}
+              placeholderTextColor="#000"
+              placeholder="Xác nhận mật khẩu"
+              secureTextEntry={!showConfirmPassword}
+              value={form.confirmPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="new-password"
+              onChangeText={(value) => handleChange("confirmPassword", value)}
+            />
+
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              <Image
+                source={
+                  showConfirmPassword
+                    ? require("../assets/images/show.jpg")
+                    : require("../assets/images/hide.jpg")
+                }
+                style={styles.eye}
+              />
+            </TouchableOpacity>
+          </View>
+
+          {errors.confirmPassword ? (
+            <Text style={styles.error}>{errors.confirmPassword}</Text>
+          ) : null}
 
           <TouchableOpacity
-            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            style={styles.button}
+            onPress={handleSubmit}
+            disabled={loading}
           >
-            <Image
-              source={
-                showConfirmPassword
-                  ? require("../assets/images/show.jpg")
-                  : require("../assets/images/hide.jpg")
-              }
-              style={styles.eye}
-            />
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Tạo tài khoản</Text>
+            )}
           </TouchableOpacity>
-        </View>
 
-        {errors.confirmPassword ? (
-          <Text style={styles.error}>{errors.confirmPassword}</Text>
-        ) : null}
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleSubmit}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Tạo tài khoản</Text>
-          )}
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => router.push("/login")}>
-          <Text style={styles.link}>Đã có tài khoản? Đăng nhập</Text>
-        </TouchableOpacity>
-      </ScrollView>
+          <TouchableOpacity onPress={() => router.push("/login")}>
+            <Text style={styles.link}>Đã có tài khoản? Đăng nhập</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <AppToast
         visible={notice.visible}
@@ -302,6 +312,10 @@ export default function Register() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+  },
   container: {
     flexGrow: 1,
     justifyContent: "center",
@@ -372,6 +386,3 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 });
-
-
-

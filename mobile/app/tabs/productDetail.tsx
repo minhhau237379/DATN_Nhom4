@@ -187,10 +187,9 @@ export default function ProductDetail() {
       }
 
       router.push({
-        pathname: "/checkout",
+        pathname: "/tabs/cart",
         params: {
-          selected: JSON.stringify([productId]),
-          directProductId: productId,
+          selectedProductId: productId,
         },
       });
     } catch (err) {

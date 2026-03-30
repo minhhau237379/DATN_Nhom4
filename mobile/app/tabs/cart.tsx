@@ -7,7 +7,7 @@ import {
   StyleSheet,
   FlatList,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import api from "../../services/api";
@@ -31,6 +31,7 @@ type CartItem = {
 const CHECKOUT_BAR_HEIGHT = 150;
 
 export default function Cart() {
+  const params = useLocalSearchParams<{ selectedProductId?: string }>();
   const insets = useSafeAreaInsets();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
@@ -81,6 +82,20 @@ export default function Cart() {
   useEffect(() => {
     loadCart();
   }, [loadCart]);
+
+  useEffect(() => {
+    const selectedProductId = Array.isArray(params.selectedProductId)
+      ? params.selectedProductId[0]
+      : params.selectedProductId;
+
+    if (!selectedProductId) {
+      return;
+    }
+
+    setSelectedProductIds((prev) =>
+      prev.includes(selectedProductId) ? prev : [...prev, selectedProductId],
+    );
+  }, [params.selectedProductId]);
 
   useFocusEffect(
     useCallback(() => {
