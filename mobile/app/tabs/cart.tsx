@@ -12,6 +12,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import api from "../../services/api";
 import AppToast from "../../components/AppToast";
+import AppBottomNav, { APP_BOTTOM_NAV_HEIGHT } from "../../components/AppBottomNav";
 import { isLoggedIn } from "../../utils/auth";
 import { resolveImageUri } from "../../utils/productImage";
 
@@ -27,8 +28,6 @@ type CartItem = {
   product: Product;
   quantity: number;
 };
-
-const CHECKOUT_BAR_HEIGHT = 150;
 
 export default function Cart() {
   const params = useLocalSearchParams<{ selectedProductId?: string }>();
@@ -88,9 +87,7 @@ export default function Cart() {
       ? params.selectedProductId[0]
       : params.selectedProductId;
 
-    if (!selectedProductId) {
-      return;
-    }
+    if (!selectedProductId) return;
 
     setSelectedProductIds((prev) =>
       prev.includes(selectedProductId) ? prev : [...prev, selectedProductId],
@@ -247,6 +244,28 @@ export default function Cart() {
     </View>
   );
 
+  const renderCheckoutBar = () => (
+    <View style={styles.checkoutBar}>
+      <Text style={styles.totalLabel}>
+        Tổng tiền:{" "}
+        <Text style={styles.total}>
+          {selectedTotalPrice.toLocaleString("vi-VN")} VND
+        </Text>
+      </Text>
+
+      <TouchableOpacity
+        style={[
+          styles.checkoutBtn,
+          selectedProductIds.length === 0 && styles.checkoutBtnDisabled,
+        ]}
+        onPress={checkout}
+        disabled={selectedProductIds.length === 0}
+      >
+        <Text style={styles.checkoutText}>Mua hàng</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.headerWrap}>
@@ -262,37 +281,20 @@ export default function Cart() {
           data={cartItems}
           keyExtractor={(item) => item.product._id}
           renderItem={renderItem}
+          style={styles.list}
           contentContainerStyle={[
             styles.listContent,
             {
-              paddingBottom: CHECKOUT_BAR_HEIGHT + 60 + insets.bottom + 16,
+              paddingBottom: APP_BOTTOM_NAV_HEIGHT + insets.bottom + 24,
             },
           ]}
+          ListFooterComponent={renderCheckoutBar}
+          ListFooterComponentStyle={styles.checkoutBarFooter}
           showsVerticalScrollIndicator={false}
         />
       )}
 
-      {cartItems.length > 0 && (
-        <View style={[styles.checkoutBar, { bottom: 60 + insets.bottom }]}>
-          <Text style={styles.totalLabel}>
-            Tổng tiền:{" "}
-            <Text style={styles.total}>
-              {selectedTotalPrice.toLocaleString("vi-VN")} VND
-            </Text>
-          </Text>
-
-          <TouchableOpacity
-            style={[
-              styles.checkoutBtn,
-              selectedProductIds.length === 0 && styles.checkoutBtnDisabled,
-            ]}
-            onPress={checkout}
-            disabled={selectedProductIds.length === 0}
-          >
-            <Text style={styles.checkoutText}>Mua hàng</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      <AppBottomNav active="cart" />
 
       <AppToast
         visible={notice.visible}
@@ -321,10 +323,16 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
+  list: {
+    flex: 1,
+  },
   listContent: {
     paddingHorizontal: 16,
     paddingTop: 14,
-    paddingBottom: CHECKOUT_BAR_HEIGHT,
+  },
+  checkoutBarFooter: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
   item: {
     backgroundColor: "white",
@@ -410,15 +418,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   checkoutBar: {
-    position: "absolute",
-    left: 0,
-    right: 0,
     backgroundColor: "white",
     paddingHorizontal: 16,
     paddingTop: 14,
     paddingBottom: 16,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    marginBottom: 12,
+    borderRadius: 24,
     elevation: 14,
     shadowColor: "#000",
     shadowOpacity: 0.08,

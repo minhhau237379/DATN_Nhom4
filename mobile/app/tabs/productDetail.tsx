@@ -1,7 +1,9 @@
+import { Ionicons } from "@expo/vector-icons";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
-  FlatList,
   Dimensions,
+  FlatList,
   Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -11,7 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
 import BackHeader from "../../components/BackHeader";
 import AppToast from "../../components/AppToast";
 import api from "../../services/api";
@@ -40,8 +41,6 @@ const specLabelMap: Record<string, string> = {
   theme: "Chủ đề",
 };
 
-const formatSpecLabel = (key: string) => specLabelMap[key] || key;
-
 const descriptionFieldKeyMap: Record<string, string> = {
   "Chủ đề": "theme",
   "Độ tuổi": "age",
@@ -50,10 +49,10 @@ const descriptionFieldKeyMap: Record<string, string> = {
   "Xuất xứ": "origin",
 };
 
+const formatSpecLabel = (key: string) => specLabelMap[key] || key;
+
 const extractDescriptionFields = (html?: string) => {
-  if (!html) {
-    return [] as { label: string; value: string }[];
-  }
+  if (!html) return [] as { label: string; value: string }[];
 
   const matches = Array.from(
     html.matchAll(/<p>\s*<strong>([^<:]+):<\/strong>\s*([\s\S]*?)<\/p>/gi),
@@ -70,20 +69,14 @@ const extractDescriptionFields = (html?: string) => {
     }))
     .filter((item) => item.label && item.value);
 
-  if (parsed.length) {
-    return parsed;
-  }
+  if (parsed.length) return parsed;
 
-  const text = html
-    .replace(/<[^>]*>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
+  const text = html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
   return text ? [{ label: "Mô tả", value: text }] : [];
 };
 
 export default function ProductDetail() {
-  const { id } = useLocalSearchParams();
+  const { id } = useLocalSearchParams<{ id?: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -96,19 +89,11 @@ export default function ProductDetail() {
   });
 
   const showNotice = (title: string, message: string) => {
-    setNotice({
-      visible: true,
-      title,
-      message,
-    });
+    setNotice({ visible: true, title, message });
   };
 
   const closeNotice = () => {
-    setNotice({
-      visible: false,
-      title: "",
-      message: "",
-    });
+    setNotice({ visible: false, title: "", message: "" });
   };
 
   useEffect(() => {
@@ -168,10 +153,7 @@ export default function ProductDetail() {
       if (res.data.success) {
         showNotice("Thành công", "Đã thêm vào giỏ hàng");
       } else {
-        showNotice(
-          "Thông báo",
-          res.data.message || "Không thể thêm vào giỏ hàng",
-        );
+        showNotice("Thông báo", res.data.message || "Không thể thêm vào giỏ hàng");
       }
     } catch (err) {
       console.error(err);
@@ -186,6 +168,13 @@ export default function ProductDetail() {
         return;
       }
 
+      const res = await api.post("/cart/add", { productId });
+
+      if (!res.data.success) {
+        showNotice("Thông báo", res.data.message || "Không thể thêm vào giỏ hàng");
+        return;
+      }
+
       router.push({
         pathname: "/tabs/cart",
         params: {
@@ -194,7 +183,7 @@ export default function ProductDetail() {
       });
     } catch (err) {
       console.error(err);
-      showNotice("Lỗi", "Không thể mở trang thanh toán");
+      showNotice("Lỗi", "Không thể mở trang giỏ hàng");
     }
   };
 
@@ -218,6 +207,7 @@ export default function ProductDetail() {
       const normalizedValue = String(value ?? "").trim();
       return normalizedValue && !descriptionKeys.has(key);
     });
+
   const slideWidth = screenWidth - 20;
   const slideGap = 6;
   const slideInterval = slideWidth + slideGap;
@@ -232,6 +222,7 @@ export default function ProductDetail() {
           iconColor="#111"
           containerStyle={styles.headerBack}
         />
+
         <View style={styles.imageBox}>
           <FlatList
             ref={imageListRef}
@@ -258,7 +249,15 @@ export default function ProductDetail() {
               setActiveImageIndex(nextIndex);
             }}
             renderItem={({ item, index }) => (
-              <View style={[styles.slide, { width: slideWidth, marginRight: index === productImages.length - 1 ? 0 : slideGap }]}>
+              <View
+                style={[
+                  styles.slide,
+                  {
+                    width: slideWidth,
+                    marginRight: index === productImages.length - 1 ? 0 : slideGap,
+                  },
+                ]}
+              >
                 <Image source={{ uri: resolveImageUri(item) }} style={styles.image} />
               </View>
             )}
@@ -306,14 +305,11 @@ export default function ProductDetail() {
               style={styles.favoriteButton}
               onPress={() => toggleFav(product._id)}
             >
-              <Text
-                style={[
-                  styles.favoriteIcon,
-                  isFavorite && styles.favoriteIconActive,
-                ]}
-              >
-                {isFavorite ? "♥" : "♡"}
-              </Text>
+              <Ionicons
+                name={isFavorite ? "heart" : "heart-outline"}
+                size={30}
+                color={isFavorite ? "#ff2d55" : "#9b9b9b"}
+              />
             </TouchableOpacity>
           </View>
 
@@ -360,7 +356,8 @@ export default function ProductDetail() {
             <Text style={styles.descFallback}>Chưa có thông tin</Text>
           )}
 
-          {specEntries && specEntries.length > 0 &&
+          {specEntries &&
+            specEntries.length > 0 &&
             specEntries.map(([key, value]) => (
               <View key={key} style={styles.specRow}>
                 <Text style={styles.specKey}>{formatSpecLabel(key)}</Text>
@@ -418,7 +415,6 @@ const styles = StyleSheet.create({
     margin: 10,
   },
   slide: {
-    marginRight: 6,
     borderRadius: 18,
     overflow: "hidden",
   },
@@ -446,13 +442,6 @@ const styles = StyleSheet.create({
     marginRight: -4,
     marginTop: -4,
   },
-  favoriteIcon: {
-    fontSize: 32,
-    color: "#9b9b9b",
-  },
-  favoriteIconActive: {
-    color: "#ff2d55",
-  },
   inStock: {
     marginTop: 10,
     color: "#2e7d32",
@@ -462,13 +451,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: "#d5001c",
     fontWeight: "700",
-  },
-  btn: {
-    backgroundColor: "#d5001c",
-    margin: 10,
-    padding: 15,
-    borderRadius: 30,
-    alignItems: "center",
   },
   actionRow: {
     flexDirection: "row",
