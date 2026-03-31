@@ -736,7 +736,7 @@ exports.dashboardStats = async (req, res) => {
       totalCategories,
       activeProducts,
       activeCategories,
-      totalOrders,
+      allOrders,
       qualifiedOrders,
       recentOrders,
       topProducts,
@@ -746,11 +746,13 @@ exports.dashboardStats = async (req, res) => {
       Category.countDocuments(),
       Product.countDocuments({ status: 1 }),
       Category.countDocuments({ status: 1 }),
-      Order.countDocuments(buildRevenueEligibleMatch()),
-      Order.find(buildRevenueEligibleMatch())
+      Order.find({})
         .select("orderStatus paymentStatus totalPrice createdAt")
         .lean(),
       Order.find(buildRevenueEligibleMatch())
+        .select("orderStatus paymentStatus totalPrice createdAt")
+        .lean(),
+      Order.find({})
         .sort({ createdAt: -1 })
         .limit(5)
         .populate("user", "username")
@@ -803,7 +805,7 @@ exports.dashboardStats = async (req, res) => {
       }),
     );
 
-    qualifiedOrders.forEach((order) => {
+    allOrders.forEach((order) => {
       const orderStatus = normalizeOrderStatus(order.orderStatus);
       const paymentStatus = normalizePaymentStatus(order.paymentStatus);
 
@@ -842,7 +844,7 @@ exports.dashboardStats = async (req, res) => {
         totalCategories,
         activeProducts,
         activeCategories,
-        totalOrders,
+        totalOrders: allOrders.length,
         revenue,
         recentOrders: normalizedRecentOrders,
         topProducts,
