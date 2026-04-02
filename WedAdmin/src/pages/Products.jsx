@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
+import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import { getBackendOrigin } from "../services/baseUrl";
 import { reloadCurrentPage, scrollToTop } from "../utils/adminActions";
@@ -22,8 +24,8 @@ const emptyForm = {
   },
 };
 
-
-const descriptionTemplate = `<p><strong>Chủ đề:</strong> </p>
+const descriptionTemplate = `<h4>Thông tin nổi bật</h4>
+<p><strong>Chủ đề:</strong> </p>
 <p><strong>Độ tuổi:</strong> </p>
 <p><strong>Giới tính:</strong> </p>
 <p><strong>Thương hiệu:</strong> </p>
@@ -39,15 +41,6 @@ const normalizeImages = (value) => {
   if (Array.isArray(value)) return value.filter(Boolean);
   return [value].filter(Boolean);
 };
-
-// const stripHtml = (value) => {
-//   if (!value) return "";
-
-//   return String(value)
-//     .replace(/<[^>]*>/g, " ")
-//     .replace(/\s+/g, " ")
-//     .trim();
-// };
 
 const toImageUrl = (value) => {
   const firstImage = normalizeImages(value)[0];
@@ -71,7 +64,6 @@ export default function Products() {
   const [form, setForm] = useState(emptyForm);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [filePreviewUrls, setFilePreviewUrls] = useState([]);
-  const descriptionRef = useRef(null);
 
   const editing = useMemo(() => Boolean(form._id), [form._id]);
 
@@ -108,15 +100,16 @@ export default function Products() {
     load();
   }, [debouncedSearch, categoryFilter, statusFilter]);
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       filePreviewUrls.forEach((url) => {
         if (url.startsWith("blob:")) {
           URL.revokeObjectURL(url);
         }
       });
-    };
-  }, [filePreviewUrls]);
+    },
+    [filePreviewUrls],
+  );
 
   const openCreate = () => {
     filePreviewUrls.forEach((url) => {
@@ -124,6 +117,7 @@ export default function Products() {
         URL.revokeObjectURL(url);
       }
     });
+
     setForm({
       ...emptyForm,
       description: descriptionTemplate,
@@ -139,6 +133,7 @@ export default function Products() {
         URL.revokeObjectURL(url);
       }
     });
+
     const images = normalizeImages(product.image);
 
     setForm({
@@ -177,34 +172,6 @@ export default function Products() {
 
     setSelectedFiles(files);
     setFilePreviewUrls(files.map((file) => URL.createObjectURL(file)));
-  };
-
-
-
-  const insertDescriptionHtml = (before, after = "", placeholder = "Nội dung") => {
-    const textarea = descriptionRef.current;
-    const current = form.description || "";
-
-    if (!textarea) {
-      setForm((prev) => ({
-        ...prev,
-        description: `${prev.description || ""}${before}${placeholder}${after}`,
-      }));
-      return;
-    }
-
-    const start = textarea.selectionStart ?? current.length;
-    const end = textarea.selectionEnd ?? current.length;
-    const selected = current.slice(start, end) || placeholder;
-    const nextValue = `${current.slice(0, start)}${before}${selected}${after}${current.slice(end)}`;
-
-    setForm((prev) => ({ ...prev, description: nextValue }));
-
-    requestAnimationFrame(() => {
-      textarea.focus();
-      const cursor = start + before.length + selected.length + after.length;
-      textarea.setSelectionRange(cursor, cursor);
-    });
   };
 
   const fillDescriptionTemplate = () => {
@@ -257,19 +224,20 @@ export default function Products() {
 
       setMessage(res.data?.message || "Lưu thành công");
       reloadCurrentPage();
-      return;
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể lưu sản phẩm");
     } finally {
       setSaving(false);
     }
   };
+
   const toggleStatus = async (product) => {
     try {
       await api.patch(`/admin/products/${product._id}/status`, {
         status: product.status === 1 ? 0 : 1,
       });
       setMessage(product.status === 1 ? "Đã ẩn sản phẩm" : "Đã hiển thị sản phẩm");
+      reloadCurrentPage();
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể đổi trạng thái sản phẩm");
     }
@@ -278,6 +246,7 @@ export default function Products() {
   const activeCount = products.filter((item) => item.status === 1).length;
   const hiddenCount = products.filter((item) => item.status === 0).length;
   const previewImages = [...(form.imagePaths || []), ...filePreviewUrls];
+  const descriptionPreview = form.description?.trim() || "<p>Chưa có nội dung mô tả.</p>";
 
   return (
     <div className="stack page-products">
@@ -330,41 +299,73 @@ export default function Products() {
           <div className="full html-editor-panel">
             <div className="field-head">
               <div>
-                <span className="field-label">Mô tả HTML</span>
+                <span className="field-label">Mô tả sản phẩm</span>
                 <small className="field-help">
-                  Mô tả được lưu dưới dạng HTML để app user render đẹp hơn.
+                  Soạn thảo trực quan, không cần tự viết HTML thủ công.
                 </small>
               </div>
 
               <div className="html-toolbar">
                 <button type="button" className="chip-btn chip-primary" onClick={fillDescriptionTemplate}>
-                  Mẫu 5 trường
+                  Chèn mẫu
                 </button>
                 <button type="button" className="chip-btn chip-danger" onClick={clearDescription}>
-                  Xóa mô tả
+                  Xóa nội dung
                 </button>
-               
-                
               </div>
             </div>
 
-            <textarea
-            style={{width:"90%"}}
-              ref={descriptionRef}
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              rows="7"
-              placeholder="Ví dụ: <p><strong>Chất liệu:</strong> Nhựa ABS</p>"
-            />
+            <div className="ckeditor-wrap">
+              <CKEditor
+                editor={ClassicEditor}
+                data={form.description || ""}
+                config={{
+                  licenseKey: "GPL",
+                  toolbar: [
+                    "undo",
+                    "redo",
+                    "|",
+                    "heading",
+                    "|",
+                    "bold",
+                    "italic",
+                    "link",
+                    "|",
+                    "bulletedList",
+                    "numberedList",
+                    "blockQuote",
+                    "|",
+                    "insertTable",
+                    "mediaEmbed",
+                    "|",
+                    "removeFormat",
+                  ],
+                }}
+                onChange={(_, editor) => {
+                  const data = editor.getData();
+                  setForm((prev) => ({ ...prev, description: data }));
+                }}
+              />
+            </div>
+
+            <div className="description-preview">
+              <div className="preview-head">
+                <strong>Xem trước nội dung</strong>
+                <span>Kết quả hiển thị gần giống trang chi tiết sản phẩm.</span>
+              </div>
+              <div
+                className="preview-body ck-content"
+                dangerouslySetInnerHTML={{ __html: descriptionPreview }}
+              />
+            </div>
           </div>
 
           <label className="full">
             Ảnh sản phẩm
-            <input  style={{width:"90%"}} type="file" accept="image/*" multiple onChange={handleFileChange} />
+            <input type="file" accept="image/*" multiple onChange={handleFileChange} />
           </label>
 
-          <div className="full image-preview-panel"  style={{width:"90%"}}>
+          <div className="full image-preview-panel">
             <div className="image-preview-head">
               <strong>Ảnh hiện có và ảnh mới</strong>
               <span>Chọn nhiều hình để lưu vào cùng một sản phẩm.</span>
@@ -432,7 +433,6 @@ export default function Products() {
 
         <div className="filter-row">
           <input
-           style={{width:"90%"}}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm tên sản phẩm"
@@ -456,7 +456,9 @@ export default function Products() {
       <section className="panel">
         <div className="panel-header">
           <h3>Danh sách sản phẩm</h3>
-          <p className="muted-text">Bấm vào nút trạng thái để ẩn/hiện nhanh mà không mất dữ liệu.</p>
+          <p className="muted-text">
+            Bấm vào nút trạng thái để ẩn/hiện nhanh mà không mất dữ liệu.
+          </p>
         </div>
 
         {loading ? (
@@ -483,9 +485,6 @@ export default function Products() {
                     </td>
                     <td>
                       <strong>{product.name}</strong>
-                      {/* <div className="muted-text small-text">
-                        {stripHtml(product.description) || "Chưa có mô tả"}
-                      </div> */}
                     </td>
                     <td>{product.id_category?.name || "Chưa có"}</td>
                     <td>
@@ -494,7 +493,9 @@ export default function Products() {
                       </span>
                     </td>
                     <td>{Number(product.price || 0).toLocaleString("vi-VN")} đ</td>
-                    <td><span className="stock-text">{product.stock ?? 0}</span></td>
+                    <td>
+                      <span className="stock-text">{product.stock ?? 0}</span>
+                    </td>
                     <td>
                       <div className="actions-inline">
                         <button type="button" className="btn btn-secondary" onClick={() => openEdit(product)}>
@@ -512,8 +513,6 @@ export default function Products() {
           </div>
         )}
       </section>
-
-    
     </div>
   );
 }

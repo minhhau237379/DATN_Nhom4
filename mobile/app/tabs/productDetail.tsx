@@ -11,8 +11,10 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from "react-native";
+import RenderHTML from "react-native-render-html";
 import BackHeader from "../../components/BackHeader";
 import AppToast from "../../components/AppToast";
 import api from "../../services/api";
@@ -87,6 +89,7 @@ export default function ProductDetail() {
     title: "",
     message: "",
   });
+  const { width: contentWidth } = useWindowDimensions();
 
   const showNotice = (title: string, message: string) => {
     setNotice({ visible: true, title, message });
@@ -343,14 +346,27 @@ export default function ProductDetail() {
         <View style={styles.section}>
           <Text style={styles.title}>Thông tin sản phẩm</Text>
 
-          {descriptionFields.length ? (
-            <View style={styles.descriptionPanel}>
-              {descriptionFields.map((field) => (
-                <View key={field.label} style={styles.descriptionRow}>
-                  <Text style={styles.descriptionLabel}>{field.label}</Text>
-                  <Text style={styles.descriptionValue}>{field.value}</Text>
-                </View>
-              ))}
+          {product.description?.trim() ? (
+            <View style={styles.descriptionBodyPanel}>
+              <RenderHTML
+                contentWidth={contentWidth - 52}
+                source={{ html: product.description }}
+                baseStyle={styles.descriptionBody}
+                tagsStyles={{
+                  h1: styles.renderHeading,
+                  h2: styles.renderHeading,
+                  h3: styles.renderHeading,
+                  h4: styles.renderHeading,
+                  p: styles.renderParagraph,
+                  ul: styles.renderList,
+                  ol: styles.renderList,
+                  li: styles.renderListItem,
+                  blockquote: styles.renderQuote,
+                  strong: styles.renderStrong,
+                  th: styles.renderCell,
+                  td: styles.renderCell,
+                }}
+              />
             </View>
           ) : (
             <Text style={styles.descFallback}>Chưa có thông tin</Text>
@@ -487,6 +503,14 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 10,
   },
+  descriptionBodyPanel: {
+    backgroundColor: "#f8fafc",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    padding: 12,
+    marginBottom: 10,
+  },
   descriptionRow: {
     flexDirection: "row",
     gap: 12,
@@ -501,6 +525,44 @@ const styles = StyleSheet.create({
     flex: 1,
     color: "#334155",
     lineHeight: 21,
+  },
+  descriptionBody: {
+    color: "#334155",
+    lineHeight: 22,
+  },
+  renderHeading: {
+    color: "#0f172a",
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  renderParagraph: {
+    color: "#334155",
+    marginBottom: 10,
+    lineHeight: 22,
+  },
+  renderList: {
+    marginBottom: 10,
+    paddingLeft: 18,
+  },
+  renderListItem: {
+    color: "#334155",
+    marginBottom: 6,
+    lineHeight: 22,
+  },
+  renderQuote: {
+    borderLeftWidth: 3,
+    borderLeftColor: "#d5001c",
+    paddingLeft: 12,
+    color: "#475569",
+    marginBottom: 10,
+  },
+  renderStrong: {
+    color: "#0f172a",
+  },
+  renderCell: {
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    padding: 8,
   },
   descFallback: {
     color: "#64748b",
