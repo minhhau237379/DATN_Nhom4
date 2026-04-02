@@ -3,6 +3,17 @@ import api from "../services/api";
 import { getBackendOrigin } from "../services/baseUrl";
 import "./Dashboard.css";
 
+const ORDER_STATUS_LABELS = [
+  "Chờ xác nhận",
+  "Đã xác nhận",
+  "Đang xử lý",
+  "Đang giao hàng",
+  "Hoàn tất",
+  "Đã hủy",
+];
+
+const PAYMENT_STATUS_LABELS = ["Chưa thanh toán", "Đã thanh toán"];
+
 const resolveImageUrl = (value) => {
   if (!value) {
     return `${getBackendOrigin()}/images/no-image.png`;
@@ -58,6 +69,21 @@ const getPaymentTone = (value) => {
 const sumSeries = (series) =>
   series.reduce((sum, item) => sum + Number(item?.value || 0), 0);
 
+const countByLabels = (items, labels, key) =>
+  labels.map((label) => ({
+    label,
+    value: items.filter((item) => item?.[key] === label).length,
+  }));
+
+const computeRevenue = (orders) =>
+  orders.reduce((sum, order) => {
+    if (order?.paymentStatus === "Đã thanh toán" && order?.orderStatus === "Hoàn tất") {
+      return sum + Number(order?.totalPrice || 0);
+    }
+
+    return sum;
+  }, 0);
+
 const BarChart = ({ title, series, tone = "chart-blue" }) => {
   const total = sumSeries(series);
   const peak = Math.max(...series.map((item) => Number(item.value || 0)), 1);
@@ -92,6 +118,24 @@ const BarChart = ({ title, series, tone = "chart-blue" }) => {
     </section>
   );
 };
+
+const StatusSummary = ({ title, series }) => (
+  <section className="panel chart-panel status-summary-panel">
+    <div className="panel-header">
+      <h3>{title}</h3>
+      <p className="muted-text">Hiển thị đầy đủ tất cả trạng thái, kể cả khi số lượng bằng 0.</p>
+    </div>
+
+    <div className="status-summary-list">
+      {series.map((item) => (
+        <div className="status-summary-item" key={item.label}>
+          <span>{item.label}</span>
+          <strong>{item.value}</strong>
+        </div>
+      ))}
+    </div>
+  </section>
+);
 
 const TrendChart = ({ title, series }) => {
   const width = 620;
@@ -196,13 +240,19 @@ const TrendChart = ({ title, series }) => {
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await api.get("/admin/stats/overview");
-        setStats(res.data.stats);
+        const [statsRes, ordersRes] = await Promise.all([
+          api.get("/admin/stats/overview"),
+          api.get("/admin/orders"),
+        ]);
+
+        setStats(statsRes.data.stats);
+        setOrders(ordersRes.data.orders || []);
       } finally {
         setLoading(false);
       }
@@ -212,9 +262,18 @@ export default function Dashboard() {
   }, []);
 
   const dashboardStats = stats || {};
-  const orderStatusBreakdown = dashboardStats.orderStatusBreakdown || [];
-  const paymentStatusBreakdown = dashboardStats.paymentStatusBreakdown || [];
+  const orderStatusBreakdown = useMemo(
+    () => countByLabels(orders, ORDER_STATUS_LABELS, "orderStatus"),
+    [orders],
+  );
+  const paymentStatusBreakdown = useMemo(
+    () => countByLabels(orders, PAYMENT_STATUS_LABELS, "paymentStatus"),
+    [orders],
+  );
   const monthlyOrders = dashboardStats.monthlyOrders || [];
+  const recentOrders = useMemo(() => orders.slice(0, 5), [orders]);
+  const totalOrders = orders.length || dashboardStats.totalOrders || 0;
+  const revenue = useMemo(() => computeRevenue(orders), [orders]);
 
   const topProductSummary = useMemo(
     () => (dashboardStats.topProducts || []).map((item, index) => ({ ...item, rank: index + 1 })),
@@ -239,11 +298,11 @@ export default function Dashboard() {
         <div className="stats-inline">
           <div className="mini-stat">
             <span>Đơn hàng</span>
-            <strong>{dashboardStats.totalOrders || 0}</strong>
+            <strong>{totalOrders}</strong>
           </div>
           <div className="mini-stat">
             <span>Doanh thu</span>
-            <strong>{Number(dashboardStats.revenue || 0).toLocaleString("vi-VN")} ₫</strong>
+            <strong>{Number(revenue || dashboardStats.revenue || 0).toLocaleString("vi-VN")} ₫</strong>
           </div>
         </div>
       </section>
@@ -268,6 +327,11 @@ export default function Dashboard() {
         <TrendChart title="Xu hướng đơn hàng" series={monthlyOrders} />
       </div>
 
+      <div className="dashboard-status-summary">
+        <StatusSummary title="Tóm tắt trạng thái đơn hàng" series={orderStatusBreakdown} />
+        <StatusSummary title="Tóm tắt trạng thái thanh toán" series={paymentStatusBreakdown} />
+      </div>
+
       <div className="dashboard-duo">
         <section className="panel">
           <div className="panel-header">
@@ -285,7 +349,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {(dashboardStats.recentOrders || []).map((order) => (
+                {recentOrders.map((order) => (
                   <tr key={order._id}>
                     <td>#{order.orderNumber || order._id.slice(-6)}</td>
                     <td>{order.user?.username || "N/A"}</td>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "./AdminLogin.css";
@@ -8,6 +8,10 @@ export default function AdminLogin() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = "HoppyStore88 | Admin";
+  }, []);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -38,7 +42,7 @@ export default function AdminLogin() {
     <div className="auth-screen">
       <div className="auth-card">
         <div className="auth-hero">
-          <p className="eyebrow">Admin portal</p>
+          <p className="eyebrow">HoppyStore88 Admin</p>
           <h1>Đăng nhập quản trị</h1>
           <p>Trang quản trị dùng chung backend với app user, tối ưu cho màn hình lớn và thao tác nhanh.</p>
           

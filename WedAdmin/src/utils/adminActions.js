@@ -3,6 +3,5 @@ export const scrollToTop = () => {
 };
 
 export const reloadCurrentPage = () => {
-  scrollToTop();
   window.location.reload();
 };

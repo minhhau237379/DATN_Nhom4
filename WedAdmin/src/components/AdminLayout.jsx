@@ -1,4 +1,5 @@
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { reloadCurrentPage } from "../utils/adminActions";
 import "./AdminLayout.css";
@@ -13,7 +14,16 @@ const navItems = [
 
 export default function AdminLayout() {
   const navigate = useNavigate();
+  const location = useLocation();
   const adminUser = JSON.parse(localStorage.getItem("adminUser") || "null");
+
+  useEffect(() => {
+    document.title = "HoppyStore88";
+  }, []);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [location.pathname]);
 
   const handleLogout = async () => {
     try {
@@ -31,10 +41,10 @@ export default function AdminLayout() {
     <div className="admin-shell">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark">WA</div>
+          
           <div>
-            <h1>Wed Admin</h1>
-            <p>Unified backend</p>
+            <h1>HoppyStore88</h1>
+            <p className="muted-text">Quản trị hệ thống</p>
           </div>
         </div>
 
@@ -65,7 +75,7 @@ export default function AdminLayout() {
         <header className="topbar">
           <div>
             <p className="eyebrow">Quản trị hệ thống</p>
-            <h2>Quản lý app user và web admin trên cùng backend</h2>
+            <h2>Quản lý HoppyStore88 trên cùng backend</h2>
           </div>
           <button type="button" className="btn btn-primary" onClick={reloadCurrentPage}>
             Làm mới
