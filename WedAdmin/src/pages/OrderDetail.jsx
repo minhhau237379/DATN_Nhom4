@@ -34,16 +34,27 @@ export default function OrderDetail() {
   const [draft, setDraft] = useState({ orderStatus: "" });
   const [message, setMessage] = useState("");
 
-  const load = async () => {
-    const res = await api.get(`/admin/orders/${id}`);
-    setOrder(res.data.order);
-    setDraft({
-      orderStatus: res.data.order?.orderStatus || "",
-    });
-  };
-
   useEffect(() => {
+    let isMounted = true;
+
+    const load = async () => {
+      const res = await api.get(`/admin/orders/${id}`);
+
+      if (!isMounted) {
+        return;
+      }
+
+      setOrder(res.data.order);
+      setDraft({
+        orderStatus: res.data.order?.orderStatus || "",
+      });
+    };
+
     load();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   const save = async () => {

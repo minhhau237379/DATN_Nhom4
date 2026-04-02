@@ -143,9 +143,7 @@ export default function Users() {
             <option value="false">Đang mở</option>
             <option value="true">Đang khóa</option>
           </select>
-          <button className="btn btn-secondary" type="button" onClick={loadUsers}>
-            Tải lại
-          </button>
+          
         </div>
       </section>
 

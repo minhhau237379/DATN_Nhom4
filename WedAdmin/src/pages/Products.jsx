@@ -246,7 +246,7 @@ export default function Products() {
   const activeCount = products.filter((item) => item.status === 1).length;
   const hiddenCount = products.filter((item) => item.status === 0).length;
   const previewImages = [...(form.imagePaths || []), ...filePreviewUrls];
-  const descriptionPreview = form.description?.trim() || "<p>Chưa có nội dung mô tả.</p>";
+  // const descriptionPreview = form.description?.trim() || "<p>Chưa có nội dung mô tả.</p>";
 
   return (
     <div className="stack page-products">
@@ -347,17 +347,6 @@ export default function Products() {
                 }}
               />
             </div>
-
-            <div className="description-preview">
-              <div className="preview-head">
-                <strong>Xem trước nội dung</strong>
-                <span>Kết quả hiển thị gần giống trang chi tiết sản phẩm.</span>
-              </div>
-              <div
-                className="preview-body ck-content"
-                dangerouslySetInnerHTML={{ __html: descriptionPreview }}
-              />
-            </div>
           </div>
 
           <label className="full">
@@ -433,6 +422,7 @@ export default function Products() {
 
         <div className="filter-row">
           <input
+          style={{width:"90%"}}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm tên sản phẩm"

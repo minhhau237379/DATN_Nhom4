@@ -85,6 +85,7 @@ export default function Categories() {
         status: category.status === 1 ? 0 : 1,
       });
       setMessage(category.status === 1 ? "Đã ẩn danh mục" : "Đã hiển thị danh mục");
+      reloadCurrentPage();
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể đổi trạng thái danh mục");
     }

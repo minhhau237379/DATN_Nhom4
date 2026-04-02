@@ -119,23 +119,23 @@ const BarChart = ({ title, series, tone = "chart-blue" }) => {
   );
 };
 
-const StatusSummary = ({ title, series }) => (
-  <section className="panel chart-panel status-summary-panel">
-    <div className="panel-header">
-      <h3>{title}</h3>
-      <p className="muted-text">Hiển thị đầy đủ tất cả trạng thái, kể cả khi số lượng bằng 0.</p>
-    </div>
+// const StatusSummary = ({ title, series }) => (
+//   <section className="panel chart-panel status-summary-panel">
+//     <div className="panel-header">
+//       <h3>{title}</h3>
+//       <p className="muted-text">Hiển thị đầy đủ tất cả trạng thái, kể cả khi số lượng bằng 0.</p>
+//     </div>
 
-    <div className="status-summary-list">
-      {series.map((item) => (
-        <div className="status-summary-item" key={item.label}>
-          <span>{item.label}</span>
-          <strong>{item.value}</strong>
-        </div>
-      ))}
-    </div>
-  </section>
-);
+//     <div className="status-summary-list">
+//       {series.map((item) => (
+//         <div className="status-summary-item" key={item.label}>
+//           <span>{item.label}</span>
+//           <strong>{item.value}</strong>
+//         </div>
+//       ))}
+//     </div>
+//   </section>
+// );
 
 const TrendChart = ({ title, series }) => {
   const width = 620;
@@ -327,10 +327,7 @@ export default function Dashboard() {
         <TrendChart title="Xu hướng đơn hàng" series={monthlyOrders} />
       </div>
 
-      <div className="dashboard-status-summary">
-        <StatusSummary title="Tóm tắt trạng thái đơn hàng" series={orderStatusBreakdown} />
-        <StatusSummary title="Tóm tắt trạng thái thanh toán" series={paymentStatusBreakdown} />
-      </div>
+      
 
       <div className="dashboard-duo">
         <section className="panel">
