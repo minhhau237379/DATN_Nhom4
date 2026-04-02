@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import api from "../../services/api";
 import AppToast from "../../components/AppToast";
 import { isLoggedIn } from "../../utils/auth";
@@ -29,6 +30,7 @@ type CartItem = {
 
 export default function Cart() {
   const params = useLocalSearchParams<{ selectedProductId?: string }>();
+  const tabBarHeight = useBottomTabBarHeight();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [notice, setNotice] = useState({
@@ -242,7 +244,7 @@ export default function Cart() {
   );
 
   const renderCheckoutBar = () => (
-    <View style={styles.checkoutBarSpacer}>
+    <View style={[styles.checkoutBarWrap, { bottom: tabBarHeight + 2 }]}>
       <View style={styles.checkoutBar}>
         <Text style={styles.totalLabel}>
           Tổng tiền:{" "}
@@ -277,22 +279,24 @@ export default function Cart() {
           <Text style={styles.emptyText}>Giỏ hàng trống</Text>
         </View>
       ) : (
-        <FlatList
-          data={cartItems}
-          keyExtractor={(item) => item.product._id}
-          renderItem={renderItem}
-          style={styles.list}
-          contentContainerStyle={[
-            styles.listContent,
-            {
-              flexGrow: 1,
-              paddingBottom: 16,
-            },
-          ]}
-          ListFooterComponent={renderCheckoutBar}
-          ListFooterComponentStyle={styles.checkoutBarFooter}
-          showsVerticalScrollIndicator={false}
-        />
+        <View style={styles.listArea}>
+          <FlatList
+            data={cartItems}
+            keyExtractor={(item) => item.product._id}
+            renderItem={renderItem}
+            style={styles.list}
+            contentContainerStyle={[
+              styles.listContent,
+              {
+                flexGrow: 1,
+                paddingBottom: 180,
+              },
+            ]}
+            showsVerticalScrollIndicator={false}
+          />
+
+          {renderCheckoutBar()}
+        </View>
       )}
 
       <AppToast
@@ -325,17 +329,17 @@ const styles = StyleSheet.create({
   list: {
     flex: 1,
   },
+  listArea: {
+    flex: 1,
+  },
   listContent: {
     paddingHorizontal: 16,
     paddingTop: 14,
   },
-  checkoutBarSpacer: {
-    marginTop: "auto",
-  },
-  checkoutBarFooter: {
-    paddingHorizontal: 8,
-    paddingTop: 12,
-    paddingBottom: 5,
+  checkoutBarWrap: {
+    position: "absolute",
+    left: 8,
+    right: 8,
   },
   item: {
     backgroundColor: "white",
@@ -422,12 +426,11 @@ const styles = StyleSheet.create({
   },
   checkoutBar: {
     backgroundColor: "white",
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 16,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    elevation: 14,
+    paddingHorizontal: 10,
+    paddingTop: 10,
+    paddingBottom: 12,
+    borderRadius: 14,
+    elevation: 12,
     shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -435,18 +438,18 @@ const styles = StyleSheet.create({
   },
   totalLabel: {
     color: "#333",
-    fontSize: 17,
+    fontSize: 15,
   },
   total: {
     color: "#d5001c",
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: "700",
   },
   checkoutBtn: {
     marginTop: 10,
     backgroundColor: "#f0a3b0",
-    paddingVertical: 15,
-    borderRadius: 32,
+    paddingVertical: 12,
+    borderRadius: 24,
     alignItems: "center",
   },
   checkoutBtnActive: {
@@ -458,7 +461,7 @@ const styles = StyleSheet.create({
   checkoutText: {
     color: "#ffffff",
     fontWeight: "700",
-    fontSize: 18,
+    fontSize: 16,
   },
   empty: {
     flex: 1,
