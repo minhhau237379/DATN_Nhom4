@@ -66,6 +66,56 @@ const buildOrderFilterByStatus = (value) => {
   return normalized;
 };
 
+const normalizeCheckoutItems = (items = []) =>
+  items
+    .map((item) => ({
+      product: item.product?._id?.toString?.() || item.product?.toString?.() || item.product,
+      quantity: Number(item.quantity || 0),
+    }))
+    .filter((item) => item.product)
+    .sort((a, b) => {
+      if (a.product === b.product) {
+        return a.quantity - b.quantity;
+      }
+
+      return String(a.product).localeCompare(String(b.product));
+    });
+
+const sameCheckoutItems = (existingItems = [], nextItems = []) => {
+  const left = normalizeCheckoutItems(existingItems);
+  const right = normalizeCheckoutItems(nextItems);
+
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((item, index) => {
+    const other = right[index];
+    return item.product === other.product && item.quantity === other.quantity;
+  });
+};
+
+const findReusableCheckoutOrder = async ({ userId, selectedAddressId, orderItems, session }) => {
+  const candidates = await Order.find({
+    user: userId,
+    paymentMethod: "VNPAY",
+    paymentStatus: { $ne: PAYMENT_STATUS.PAID },
+  })
+    .sort({ createdAt: -1 })
+    .session(session);
+
+  return candidates.find((order) => {
+    const existingAddressId = order.shippingAddress?.addressId?.toString?.() || "";
+    const nextAddressId = selectedAddressId?.toString?.() || "";
+
+    if (existingAddressId !== nextAddressId) {
+      return false;
+    }
+
+    return sameCheckoutItems(order.items || [], orderItems);
+  });
+};
+
 const getPublicBaseUrl = (req) => {
   const envBaseUrl = process.env.PUBLIC_BACKEND_URL || process.env.APP_PUBLIC_URL;
 
@@ -322,26 +372,51 @@ exports.createOrder = async (req, res) => {
         session,
       });
 
-    const order = await Order.create(
-      [
-        {
-          user: userId,
-          items: orderItems,
-          totalPrice,
-          shippingAddress: {
-            addressId: selectedAddress._id,
-            fullName: selectedAddress.fullName,
-            phone: selectedAddress.phone,
-            address: selectedAddress.address,
-            city: selectedAddress.city,
+    const reusableOrder = await findReusableCheckoutOrder({
+      userId,
+      selectedAddressId: selectedAddress._id,
+      orderItems,
+      session,
+    });
+
+    const orderData = {
+      items: orderItems,
+      totalPrice,
+      shippingAddress: {
+        addressId: selectedAddress._id,
+        fullName: selectedAddress.fullName,
+        phone: selectedAddress.phone,
+        address: selectedAddress.address,
+        city: selectedAddress.city,
+      },
+      paymentMethod,
+      paymentStatus: PAYMENT_STATUS.UNPAID,
+      orderStatus: ORDER_STATUS.WAITING_CONFIRM,
+      paymentTxnRef: undefined,
+      paymentTransactionNo: undefined,
+      paymentResponseCode: undefined,
+      paymentReturnUrl: undefined,
+      paidAt: undefined,
+    };
+
+    let savedOrder;
+
+    if (reusableOrder) {
+      Object.assign(reusableOrder, orderData);
+      savedOrder = await reusableOrder.save({ session });
+    } else {
+      const createdOrders = await Order.create(
+        [
+          {
+            user: userId,
+            ...orderData,
           },
-          paymentMethod,
-          paymentStatus: PAYMENT_STATUS.UNPAID,
-          orderStatus: ORDER_STATUS.WAITING_CONFIRM,
-        },
-      ],
-      { session },
-    );
+        ],
+        { session },
+      );
+
+      savedOrder = createdOrders[0];
+    }
 
     if (cart && cartItems.length) {
       await Promise.all(
@@ -377,7 +452,7 @@ exports.createOrder = async (req, res) => {
     res.json({
       success: true,
       message: "Dat hang thanh cong",
-      order: normalizeOrderRecord(order[0].toObject()),
+      order: normalizeOrderRecord(savedOrder.toObject()),
     });
   } catch (err) {
     await session.abortTransaction();
@@ -426,29 +501,44 @@ exports.createVnpayPayment = async (req, res) => {
       session,
     });
 
-    const createdOrders = await Order.create(
-      [
-        {
-          user: userId,
-          items: orderItems,
-          totalPrice,
-          shippingAddress: {
-            addressId: selectedAddress._id,
-            fullName: selectedAddress.fullName,
-            phone: selectedAddress.phone,
-            address: selectedAddress.address,
-            city: selectedAddress.city,
-          },
-          paymentMethod: "VNPAY",
-          paymentStatus: PAYMENT_STATUS.UNPAID,
-          orderStatus: ORDER_STATUS.WAITING_CONFIRM,
-          paymentReturnUrl: clientReturnUrl,
-        },
-      ],
-      { session },
-    );
+    const reusableOrder = await findReusableCheckoutOrder({
+      userId,
+      selectedAddressId: selectedAddress._id,
+      orderItems,
+      session,
+    });
 
-    const order = createdOrders[0];
+    const orderPayload = {
+      user: userId,
+      items: orderItems,
+      totalPrice,
+      shippingAddress: {
+        addressId: selectedAddress._id,
+        fullName: selectedAddress.fullName,
+        phone: selectedAddress.phone,
+        address: selectedAddress.address,
+        city: selectedAddress.city,
+      },
+      paymentMethod: "VNPAY",
+      paymentStatus: PAYMENT_STATUS.UNPAID,
+      orderStatus: ORDER_STATUS.WAITING_CONFIRM,
+      paymentReturnUrl: clientReturnUrl,
+      paymentTxnRef: undefined,
+      paymentTransactionNo: undefined,
+      paymentResponseCode: undefined,
+      paidAt: undefined,
+    };
+
+    let order;
+
+    if (reusableOrder) {
+      Object.assign(reusableOrder, orderPayload);
+      order = await reusableOrder.save({ session });
+    } else {
+      const createdOrders = await Order.create([orderPayload], { session });
+      order = createdOrders[0];
+    }
+
     const tmnCode = process.env.VNP_TMNCODE;
     const hashSecret = process.env.VNP_HASHSECRET;
     const vnpUrl = process.env.VNP_URL;

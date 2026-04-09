@@ -18,7 +18,7 @@ const orderRoutes = require("./routes/orderRoutes");
 const addressRoutes = require("./routes/address");
 const paymentRoutes = require("./routes/paymentRoutes");
 
-const corsOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:5174,http://localhost:8081")
+const corsOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:5174,http://localhost:8081,http://14.225.224.132,http://14.225.224.132:3003")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);

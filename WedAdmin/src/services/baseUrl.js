@@ -8,7 +8,9 @@ export const getBackendOrigin = () => {
   }
 
   if (typeof window !== "undefined" && window.location?.origin) {
-    return stripTrailingSlash(window.location.origin);
+    const { protocol, hostname } = window.location;
+
+    return stripTrailingSlash(`${protocol}//${hostname}:3003`);
   }
 
   return "http://localhost:3003";
