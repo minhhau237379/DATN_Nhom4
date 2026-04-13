@@ -336,7 +336,7 @@
 .page-products .panel-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 8px;
+  margin-bottom: 3px;
 }
 
 .page-products .product-dialog-backdrop {

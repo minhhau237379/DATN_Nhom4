@@ -261,17 +261,7 @@ export default function Products() {
 
   return (
     <div className="stack page-products">
-      <section className="panel panel-hero">
-        <div className="panel-header">
-          <h3>Thêm sản phẩm mới</h3>
-        </div>
-
-        <div className="panel-actions">
-          <button type="button" className="btn btn-primary" onClick={openCreate}>
-            Thêm mới
-          </button>
-        </div>
-      </section>
+      
 
       <section className="panel panel-hero">
         <div className="panel-header">
@@ -318,6 +308,11 @@ export default function Products() {
             <option value="1">Hiện</option>
             <option value="0">Ẩn</option>
           </select>
+          <div className="panel-actions">
+          <button type="button" className="btn btn-primary" onClick={openCreate}>
+            Thêm mới
+          </button>
+        </div>
         </div>
       </section>
 
