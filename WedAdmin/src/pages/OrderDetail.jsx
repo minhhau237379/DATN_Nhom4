@@ -123,7 +123,7 @@ export default function OrderDetail() {
           </div>
           <div className="mini-stat">
             <span>Tổng tiền</span>
-            <strong>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} â‚«</strong>
+            <strong>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} ₫</strong>
           </div>
         </div>
       </section>
@@ -194,8 +194,8 @@ export default function OrderDetail() {
                 <tr key={`${item.product?._id || item.name}-${item.quantity}`}>
                   <td>{item.product?.name || item.name}</td>
                   <td>{item.quantity}</td>
-                  <td>{Number(item.price || 0).toLocaleString("vi-VN")} â‚«</td>
-                  <td>{Number((item.price || 0) * item.quantity).toLocaleString("vi-VN")} â‚«</td>
+                  <td>{Number(item.price || 0).toLocaleString("vi-VN")} ₫</td>
+                  <td>{Number((item.price || 0) * item.quantity).toLocaleString("vi-VN")} ₫</td>
                 </tr>
               ))}
             </tbody>
