@@ -328,7 +328,7 @@ export default function ProductDetail() {
             disabled={isOutOfStock}
           >
             <Text style={styles.buyNowText}>
-              {isOutOfStock ? "Hết hàng" : "Mua thẳng"}
+              {isOutOfStock ? "Hết hàng" : "Mua ngay"}
             </Text>
           </TouchableOpacity>
 

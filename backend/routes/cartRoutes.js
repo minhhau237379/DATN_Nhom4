@@ -2,13 +2,31 @@ const express = require("express");
 const router = express.Router();
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
+const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 
-const getUserInfo = (req) => {
+const buildLockedResponse = (user) => ({
+  success: false,
+  code: "ACCOUNT_LOCKED",
+  message: "Tai khoan da bi khoa",
+  lockReason: user.lockReason || "",
+});
+
+const getUserInfo = async (req) => {
   if (req.session?.user?._id) {
+    const user = await User.findById(req.session.user._id).lean();
+
+    if (!user) {
+      return null;
+    }
+
+    if (user.isLocked) {
+      return { locked: true, lockReason: user.lockReason || "" };
+    }
+
     return {
-      id: req.session.user._id,
-      username: req.session.user.username,
+      id: user._id,
+      username: user.username,
     };
   }
 
@@ -20,9 +38,19 @@ const getUserInfo = (req) => {
   try {
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "secret");
+    const user = await User.findById(decoded.id).lean();
+
+    if (!user) {
+      return null;
+    }
+
+    if (user.isLocked) {
+      return { locked: true, lockReason: user.lockReason || "" };
+    }
+
     return {
-      id: decoded.id,
-      username: decoded.username,
+      id: user._id,
+      username: user.username,
     };
   } catch (err) {
     return null;
@@ -31,13 +59,17 @@ const getUserInfo = (req) => {
 
 router.get("/", async (req, res) => {
   try {
-    const userInfo = getUserInfo(req);
+    const userInfo = await getUserInfo(req);
 
     if (!userInfo) {
       return res.status(401).json({
         success: false,
         message: "Need login",
       });
+    }
+
+    if (userInfo.locked) {
+      return res.status(403).json(buildLockedResponse(userInfo));
     }
 
     const cart = await Cart.findOne({
@@ -76,13 +108,17 @@ router.get("/", async (req, res) => {
 
 router.post("/add", async (req, res) => {
   try {
-    const userInfo = getUserInfo(req);
+    const userInfo = await getUserInfo(req);
 
     if (!userInfo) {
       return res.json({
         success: false,
         message: "Not logged in",
       });
+    }
+
+    if (userInfo.locked) {
+      return res.status(403).json(buildLockedResponse(userInfo));
     }
 
     const { productId } = req.body;
@@ -147,13 +183,17 @@ router.post("/add", async (req, res) => {
 
 router.post("/update", async (req, res) => {
   try {
-    const userInfo = getUserInfo(req);
+    const userInfo = await getUserInfo(req);
 
     if (!userInfo) {
       return res.json({
         success: false,
         message: "Ban can dang nhap",
       });
+    }
+
+    if (userInfo.locked) {
+      return res.status(403).json(buildLockedResponse(userInfo));
     }
 
     const { productId, change } = req.body;
@@ -230,10 +270,14 @@ router.post("/update", async (req, res) => {
 
 router.post("/delete", async (req, res) => {
   try {
-    const userInfo = getUserInfo(req);
+    const userInfo = await getUserInfo(req);
 
     if (!userInfo) {
       return res.json({ success: false });
+    }
+
+    if (userInfo.locked) {
+      return res.status(403).json(buildLockedResponse(userInfo));
     }
 
     const { productId } = req.body;

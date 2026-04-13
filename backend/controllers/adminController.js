@@ -210,7 +210,7 @@ exports.listProducts = async (req, res) => {
     console.error("ADMIN LIST PRODUCTS ERROR:", err);
     res.status(500).json({
       success: false,
-      message: "Khong the tai danh sach san pham",
+      message: "Không thể tải danh sách sản phẩm",
     });
   }
 };
@@ -242,14 +242,14 @@ exports.createProduct = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Tao san pham thanh cong",
+      message: "Tạo sản phẩm thành công",
       product: savedProduct,
     });
   } catch (err) {
     console.error("ADMIN CREATE PRODUCT ERROR:", err);
     res.status(400).json({
       success: false,
-      message: err.message || "Khong the tao san pham",
+      message: err.message || "Không thể tạo sản phẩm",
     });
   }
 };
@@ -262,7 +262,7 @@ exports.updateProduct = async (req, res) => {
     if (!currentProduct) {
       return res.status(404).json({
         success: false,
-        message: "Khong tim thay san pham",
+        message: "Không tìm thấy sản phẩm",
       });
     }
 
@@ -297,20 +297,20 @@ exports.updateProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Khong tim thay san pham",
+        message: "Không tìm thấy sản phẩm",
       });
     }
 
     res.json({
       success: true,
-      message: "Cap nhat san pham thanh cong",
+      message: "Cập nhật sản phẩm thành công",
       product,
     });
   } catch (err) {
     console.error("ADMIN UPDATE PRODUCT ERROR:", err);
     res.status(400).json({
       success: false,
-      message: err.message || "Khong the cap nhat san pham",
+      message: err.message || "Không thể cập nhật sản phẩm",
     });
   }
 };
@@ -322,19 +322,19 @@ exports.deleteProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Khong tim thay san pham",
+        message: "Không tìm thấy sản phẩm",
       });
     }
 
     res.json({
       success: true,
-      message: "Xoa san pham thanh cong",
+      message: "Xóa sản phẩm thành công",
     });
   } catch (err) {
     console.error("ADMIN DELETE PRODUCT ERROR:", err);
     res.status(500).json({
       success: false,
-      message: "Khong the xoa san pham",
+      message: "Không thể xóa sản phẩm",
     });
   }
 };
@@ -346,7 +346,7 @@ exports.updateProductStock = async (req, res) => {
     if (stock === undefined) {
       return res.status(400).json({
         success: false,
-        message: "Stock khong hop le",
+        message: "Stock không hợp lệ",
       });
     }
 
@@ -359,20 +359,20 @@ exports.updateProductStock = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Khong tim thay san pham",
+        message: "Không tìm thấy sản phẩm",
       });
     }
 
     res.json({
       success: true,
-      message: "Cap nhat ton kho thanh cong",
+      message: "Cập nhật tồn kho thành công",
       product,
     });
   } catch (err) {
     console.error("ADMIN UPDATE STOCK ERROR:", err);
     res.status(500).json({
       success: false,
-      message: "Khong the cap nhat ton kho",
+      message: "Không thể cập nhật tồn kho",
     });
   }
 };
@@ -397,20 +397,20 @@ exports.updateProductStatus = async (req, res) => {
     if (!product) {
       return res.status(404).json({
         success: false,
-        message: "Khong tim thay san pham",
+        message: "Không tìm thấy sản phẩm",
       });
     }
 
     res.json({
       success: true,
-      message: status === 1 ? "Da hien san pham" : "Da an san pham",
+      message: status === 1 ? "Đã hiển thị sản phẩm" : "Đã ẩn sản phẩm",
       product,
     });
   } catch (err) {
     console.error("ADMIN UPDATE PRODUCT STATUS ERROR:", err);
     res.status(500).json({
       success: false,
-      message: "Khong the cap nhat trang thai san pham",
+      message: "Không thể cập nhật trạng thái sản phẩm",
     });
   }
 };
@@ -427,7 +427,7 @@ exports.listCategories = async (req, res) => {
     console.error("ADMIN LIST CATEGORIES ERROR:", err);
     res.status(500).json({
       success: false,
-      message: "Khong the tai danh sach danh muc",
+      message: "Không thể tải danh sách danh mục",
     });
   }
 };
@@ -453,14 +453,14 @@ exports.createCategory = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Tao danh muc thanh cong",
+      message: "Tạo danh mục thành công",
       category,
     });
   } catch (err) {
     console.error("ADMIN CREATE CATEGORY ERROR:", err);
     res.status(400).json({
       success: false,
-      message: err.message || "Khong the tao danh muc",
+      message: err.message || "Không thể tạo danh mục",
     });
   }
 };
@@ -480,20 +480,20 @@ exports.updateCategory = async (req, res) => {
     if (!category) {
       return res.status(404).json({
         success: false,
-        message: "Khong tim thay danh muc",
+        message: "Không tìm thấy danh mục",
       });
     }
 
     res.json({
       success: true,
-      message: "Cap nhat danh muc thanh cong",
+      message: "Cập nhật danh mục thành công",
       category,
     });
   } catch (err) {
     console.error("ADMIN UPDATE CATEGORY ERROR:", err);
     res.status(400).json({
       success: false,
-      message: err.message || "Khong the cap nhat danh muc",
+      message: err.message || "Không thể cập nhật danh mục",
     });
   }
 };
@@ -505,7 +505,7 @@ exports.updateCategoryStatus = async (req, res) => {
     if (status === undefined) {
       return res.status(400).json({
         success: false,
-        message: "Status khong hop le",
+        message: "Status không hợp lệ",
       });
     }
 
@@ -518,20 +518,20 @@ exports.updateCategoryStatus = async (req, res) => {
     if (!category) {
       return res.status(404).json({
         success: false,
-        message: "Khong tim thay danh muc",
+        message: "Không tìm thấy danh mục",
       });
     }
 
     res.json({
       success: true,
-      message: status === 1 ? "Da hien danh muc" : "Da an danh muc",
+      message: status === 1 ? "Đã hiển thị danh mục" : "Đã ẩn danh mục",
       category,
     });
   } catch (err) {
     console.error("ADMIN UPDATE CATEGORY STATUS ERROR:", err);
     res.status(500).json({
       success: false,
-      message: "Khong the cap nhat trang thai danh muc",
+      message: "Không thể cập nhật trạng thái danh mục",
     });
   }
 };
@@ -543,7 +543,7 @@ exports.deleteCategory = async (req, res) => {
     if (linkedProduct) {
       return res.status(400).json({
         success: false,
-        message: "Danh muc dang duoc su dung boi san pham",
+        message: "Danh mục đang được sử dụng bởi sản phẩm",
       });
     }
 
@@ -552,19 +552,19 @@ exports.deleteCategory = async (req, res) => {
     if (!category) {
       return res.status(404).json({
         success: false,
-        message: "Khong tim thay danh muc",
+        message: "Không tìm thấy danh mục",
       });
     }
 
     res.json({
       success: true,
-      message: "Xoa danh muc thanh cong",
+      message: "Xóa danh mục thành công",
     });
   } catch (err) {
     console.error("ADMIN DELETE CATEGORY ERROR:", err);
     res.status(500).json({
       success: false,
-      message: "Khong the xoa danh muc",
+      message: "Không thể xóa danh mục",
     });
   }
 };
@@ -604,7 +604,7 @@ exports.listOrders = async (req, res) => {
     console.error("ADMIN LIST ORDERS ERROR:", err);
     res.status(500).json({
       success: false,
-      message: "Khong the tai danh sach don hang",
+      message: "Không thể tải danh sách đơn hàng",
     });
   }
 };
@@ -619,7 +619,7 @@ exports.getOrderDetail = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: "Khong tim thay don hang",
+        message: "Không tìm thấy đơn hàng",
       });
     }
 
@@ -635,7 +635,7 @@ exports.getOrderDetail = async (req, res) => {
     console.error("ADMIN ORDER DETAIL ERROR:", err);
     res.status(500).json({
       success: false,
-      message: "Khong the tai chi tiet don hang",
+      message: "Không thể tải chi tiết đơn hàng",
     });
   }
 };
@@ -645,7 +645,7 @@ exports.updateOrderStatus = async (req, res) => {
     if (req.body.paymentStatus) {
       return res.status(400).json({
         success: false,
-        message: "Trang thai thanh toan duoc cap nhat tu dong",
+        message: "Trạng thái thanh toán được cập nhật tự động",
       });
     }
 
@@ -656,7 +656,7 @@ exports.updateOrderStatus = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: "Khong tim thay don hang",
+        message: "Không tìm thấy đơn hàng",
       });
     }
 
@@ -666,7 +666,7 @@ exports.updateOrderStatus = async (req, res) => {
     if (isFinalOrderStatus(currentStatus)) {
       return res.status(400).json({
         success: false,
-        message: "Don hang da hoan tat hoac da huy nen khong the chinh sua",
+        message: "Đơn hàng đã hoàn tất hoặc đã hủy nên không thể chỉnh sửa",
       });
     }
 
@@ -677,7 +677,14 @@ exports.updateOrderStatus = async (req, res) => {
     if (req.body.orderStatus && !canMoveForward(currentStatus, nextStatus)) {
       return res.status(400).json({
         success: false,
-        message: "Khong the quay lai trang thai truoc do",
+        message: "Không thể quay lại trạng thái trước đó",
+      });
+    }
+
+    if (nextStatus === ORDER_STATUS.CANCELLED && currentStatus !== ORDER_STATUS.WAITING_CONFIRM) {
+      return res.status(400).json({
+        success: false,
+        message: "Đơn hàng đã được xác nhận nên không thể hủy",
       });
     }
 
@@ -712,7 +719,7 @@ exports.updateOrderStatus = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Cap nhat don hang thanh cong",
+      message: "Cập nhật đơn hàng thành công",
       order: {
         ...populatedOrder.toObject(),
         orderStatus: normalizeOrderStatus(populatedOrder.orderStatus),
@@ -723,7 +730,7 @@ exports.updateOrderStatus = async (req, res) => {
     console.error("ADMIN UPDATE ORDER ERROR:", err);
     res.status(400).json({
       success: false,
-      message: err.message || "Khong the cap nhat don hang",
+      message: err.message || "Không thể cập nhật đơn hàng",
     });
   }
 };
@@ -895,7 +902,7 @@ exports.listUsers = async (req, res) => {
     console.error("ADMIN LIST USERS ERROR:", err);
     res.status(500).json({
       success: false,
-      message: "Khong the tai danh sach nguoi dung",
+      message: "Không thể tải danh sách người dùng",
     });
   }
 };
@@ -907,7 +914,7 @@ exports.getUserDetail = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Khong tim thay nguoi dung",
+        message: "Không tìm thấy người dùng",
       });
     }
 
@@ -934,7 +941,7 @@ exports.getUserDetail = async (req, res) => {
     console.error("ADMIN USER DETAIL ERROR:", err);
     res.status(500).json({
       success: false,
-      message: "Khong the tai chi tiet nguoi dung",
+      message: "Không thể tải chi tiết người dùng",
     });
   }
 };
@@ -957,20 +964,20 @@ exports.updateUserLockStatus = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Khong tim thay nguoi dung",
+        message: "Không tìm thấy người dùng",
       });
     }
 
     res.json({
       success: true,
-      message: locked ? "Da khoa tai khoan" : "Da mo khoa tai khoan",
+      message: locked ? "Đã khóa tài khoản" : "Đã mở khóa tài khoản",
       user,
     });
   } catch (err) {
     console.error("ADMIN UPDATE USER LOCK ERROR:", err);
     res.status(500).json({
       success: false,
-      message: "Khong the cap nhat trang thai tai khoan",
+      message: "Không thể cập nhật trạng thái tài khoản",
     });
   }
 };

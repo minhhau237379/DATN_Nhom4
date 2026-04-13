@@ -113,22 +113,23 @@ export default function Profile() {
           onPress={() => router.push("/tabs/changePassword")}
         />
         <Item
+          label="Đơn hàng của tôi"
+          onPress={() => router.push("/tabs/orders")}
+        />
+         <Item
           label="Đăng xuất"
           onPress={() => setShowLogout(true)}
           isLogout
         />
-      </View>
-
-      <View style={styles.card}>
-        <Item
-          label="Đơn hàng của tôi"
-          onPress={() => router.push("/tabs/orders")}
-        />
-        <Item
+        {/* <Item
           label="Lịch sử thanh toán"
           onPress={() => router.push("/tabs/payments")}
-        />
+        /> */}
       </View>
+
+      
+        
+      
 
       <AppDialog
         visible={showLogout}

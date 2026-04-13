@@ -4,7 +4,18 @@ import api from "../services/api";
 import { reloadCurrentPage } from "../utils/adminActions";
 import "./OrderDetail.css";
 
-const statusOptions = ["Chờ xác nhận", "Đã xác nhận", "Đang xử lý", "Đang giao hàng", "Hoàn tất", "Đã hủy"];
+const getAllowedStatusOptions = (currentStatus) => {
+  const map = {
+    "Chờ xác nhận": ["Chờ xác nhận", "Đã xác nhận", "Đã hủy"],
+    "Đã xác nhận": ["Đã xác nhận", "Đang xử lý"],
+    "Đang xử lý": ["Đang xử lý", "Đang giao hàng"],
+    "Đang giao hàng": ["Đang giao hàng", "Hoàn tất"],
+    "Hoàn tất": ["Hoàn tất"],
+    "Đã hủy": ["Đã hủy"],
+  };
+
+  return map[currentStatus] || [currentStatus];
+};
 
 const getStatusTone = (value) => {
   const map = {
@@ -77,6 +88,8 @@ export default function OrderDetail() {
     return <div className="panel">Đang tải chi tiết đơn hàng...</div>;
   }
 
+  const allowedStatuses = getAllowedStatusOptions(order.orderStatus);
+
   return (
     <div className="stack page-order-detail">
       <section className="panel panel-hero">
@@ -84,7 +97,9 @@ export default function OrderDetail() {
           <div>
             <p className="eyebrow">Chi tiết đơn hàng</p>
             <h3>#{order.orderNumber || order._id.slice(-6)}</h3>
-            <p className="muted-text">Theo dõi toàn bộ trạng thái đơn, thanh toán và sản phẩm trong đơn.</p>
+            <p className="muted-text">
+              Theo dõi toàn bộ trạng thái đơn, thanh toán và sản phẩm trong đơn.
+            </p>
           </div>
           <Link to="/admin/orders" className="btn btn-secondary">
             Quay lại
@@ -108,7 +123,7 @@ export default function OrderDetail() {
           </div>
           <div className="mini-stat">
             <span>Tổng tiền</span>
-            <strong>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} ₫</strong>
+            <strong>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} â‚«</strong>
           </div>
         </div>
       </section>
@@ -146,7 +161,7 @@ export default function OrderDetail() {
               value={draft.orderStatus}
               onChange={(e) => setDraft((prev) => ({ ...prev, orderStatus: e.target.value }))}
             >
-              {statusOptions.map((status) => (
+              {allowedStatuses.map((status) => (
                 <option key={status} value={status}>
                   {status}
                 </option>
@@ -156,7 +171,7 @@ export default function OrderDetail() {
         </div>
 
         <button className="btn btn-primary" onClick={save}>
-          Lưu thay đổi
+          LƯu thay đổi
         </button>
       </section>
 
@@ -179,8 +194,8 @@ export default function OrderDetail() {
                 <tr key={`${item.product?._id || item.name}-${item.quantity}`}>
                   <td>{item.product?.name || item.name}</td>
                   <td>{item.quantity}</td>
-                  <td>{Number(item.price || 0).toLocaleString("vi-VN")} ₫</td>
-                  <td>{Number((item.price || 0) * item.quantity).toLocaleString("vi-VN")} ₫</td>
+                  <td>{Number(item.price || 0).toLocaleString("vi-VN")} â‚«</td>
+                  <td>{Number((item.price || 0) * item.quantity).toLocaleString("vi-VN")} â‚«</td>
                 </tr>
               ))}
             </tbody>

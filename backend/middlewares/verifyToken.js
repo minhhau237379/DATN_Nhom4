@@ -30,7 +30,9 @@ module.exports = async (req, res, next) => {
     if (user.isLocked) {
       return res.status(403).json({
         success: false,
-        message: "Tai khoan da bi khoa"
+        code: "ACCOUNT_LOCKED",
+        message: "Tai khoan da bi khoa",
+        lockReason: user.lockReason || "",
       });
     }
 

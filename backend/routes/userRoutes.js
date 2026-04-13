@@ -8,7 +8,11 @@ const getUserInfo = async (req) => {
   if (req.session?.user?._id) {
     const user = await User.findById(req.session.user._id).lean();
     if (!user || user.isLocked) {
-      return null;
+      if (!user) {
+        return null;
+      }
+
+      return { locked: true, lockReason: user.lockReason || "" };
     }
 
     return {
@@ -28,7 +32,11 @@ const getUserInfo = async (req) => {
     const user = await User.findById(decoded.id).lean();
 
     if (!user || user.isLocked) {
-      return null;
+      if (!user) {
+        return null;
+      }
+
+      return { locked: true, lockReason: user.lockReason || "" };
     }
 
     return {
@@ -47,6 +55,15 @@ const requireLogin = async (req, res, next) => {
     return res.status(401).json({
       success: false,
       message: "Vui long dang nhap de truy cap trang nay",
+    });
+  }
+
+  if (userInfo.locked) {
+    return res.status(403).json({
+      success: false,
+      code: "ACCOUNT_LOCKED",
+      message: "Tai khoan da bi khoa",
+      lockReason: userInfo.lockReason || "",
     });
   }
 

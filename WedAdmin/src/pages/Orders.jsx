@@ -4,7 +4,27 @@ import api from "../services/api";
 import { reloadCurrentPage } from "../utils/adminActions";
 import "./Orders.css";
 
-const statusOptions = ["Chờ xác nhận", "Đã xác nhận", "Đang xử lý", "Đang giao hàng", "Hoàn tất", "Đã hủy"];
+const statusOptions = [
+  "Chờ xác nhận",
+  "Đã xác nhận",
+  "Đang xử lý",
+  "Đang giao hàng",
+  "Hoàn tất",
+  "Đã hủy",
+];
+
+const getAllowedStatusOptions = (currentStatus) => {
+  const map = {
+    "Chờ xác nhận": ["Chờ xác nhận", "Đã xác nhận", "Đã hủy"],
+    "Đã xác nhận": ["Đã xác nhận", "Đang xử lý"],
+    "Đang xử lý": ["Đang xử lý", "Đang giao hàng"],
+    "Đang giao hàng": ["Đang giao hàng", "Hoàn tất"],
+    "Hoàn tất": ["Hoàn tất"],
+    "Đã hủy": ["Đã hủy"],
+  };
+
+  return map[currentStatus] || [currentStatus];
+};
 
 const getStatusTone = (value) => {
   const map = {
@@ -92,7 +112,6 @@ export default function Orders() {
           <div>
             <p className="eyebrow">Quản lý đơn hàng</p>
             <h3>Theo dõi thanh toán và trạng thái xử lý</h3>
-           
           </div>
 
           <div className="stats-inline">
@@ -118,8 +137,19 @@ export default function Orders() {
         {message && <div className="alert">{message}</div>}
 
         <div className="filter-row">
-          <input style={{ width: "45%" }} name="search" value={filters.search} onChange={handleFilterChange} placeholder="Mã đơn" />
-          <select style={{ width: "50%" }} name="status" value={filters.status} onChange={handleFilterChange}>
+          <input
+            style={{ width: "45%" }}
+            name="search"
+            value={filters.search}
+            onChange={handleFilterChange}
+            placeholder="Mã đơn..."
+          />
+          <select
+            style={{ width: "50%" }}
+            name="status"
+            value={filters.status}
+            onChange={handleFilterChange}
+          >
             <option value="">Tất cả trạng thái</option>
             {statusOptions.map((status) => (
               <option key={status} value={status}>
@@ -128,14 +158,14 @@ export default function Orders() {
             ))}
           </select>
           <button className="btn btn-secondary" type="button" onClick={load}>
-            Lọc
+            Lá»c
           </button>
         </div>
       </section>
 
       <section className="panel">
         {loading ? (
-          <p>Đang tải...</p>
+          <p>Äang táº£i...</p>
         ) : (
           <div className="table-wrap">
             <table>
@@ -158,7 +188,9 @@ export default function Orders() {
                   return (
                     <tr key={order._id}>
                       <td>
-                        <Link to={`/admin/orders/${order._id}`}>#{order.orderNumber || order._id.slice(-6)}</Link>
+                        <Link to={`/admin/orders/${order._id}`}>
+                          #{order.orderNumber || order._id.slice(-6)}
+                        </Link>
                       </td>
                       <td>
                         <strong>{order.user?.username || "N/A"}</strong>
@@ -174,21 +206,25 @@ export default function Orders() {
                           {order.orderStatus}
                         </span>
                       </td>
-                      <td>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} ₫</td>
+                      <td>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} â‚«</td>
                       <td>
                         <div className="actions-inline">
                           <select
                             value={draft.orderStatus || ""}
                             onChange={(e) => setDraft(order._id, "orderStatus", e.target.value)}
                           >
-                            {statusOptions.map((status) => (
+                            {getAllowedStatusOptions(order.orderStatus).map((status) => (
                               <option key={status} value={status}>
                                 {status}
                               </option>
                             ))}
                           </select>
-                          <button className="btn btn-primary" type="button" onClick={() => updateOrder(order._id)}>
-                            Lưu
+                          <button
+                            className="btn btn-primary"
+                            type="button"
+                            onClick={() => updateOrder(order._id)}
+                          >
+                            LÆ°u
                           </button>
                         </div>
                       </td>

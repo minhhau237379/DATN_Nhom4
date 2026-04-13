@@ -20,6 +20,21 @@ type LoginForm = {
   password: string;
 };
 
+const formatLockMessage = (data?: {
+  code?: string;
+  message?: string;
+  lockReason?: string;
+}) => {
+  if (data?.code === "ACCOUNT_LOCKED") {
+    const reason = data.lockReason?.trim();
+    return reason
+      ? `Tài khoản đã bị khóa. Lý do: ${reason}`
+      : "Tài khoản đã bị khóa";
+  }
+
+  return data?.message || "Đã xảy ra lỗi kết nối";
+};
+
 export default function Login() {
   const [form, setForm] = useState<LoginForm>({
     username: "",
@@ -111,9 +126,12 @@ export default function Login() {
       console.log(err);
 
       if (isAxiosError(err)) {
-        const serverMessage = err.response?.data?.message;
+        const serverData = err.response?.data;
+        const serverMessage = formatLockMessage(serverData);
 
-        if (serverMessage) {
+        if (serverData?.code === "ACCOUNT_LOCKED") {
+          setMessage(serverMessage);
+        } else if (serverMessage) {
           setMessage(serverMessage);
 
           const normalizedMessage = serverMessage.toLowerCase();

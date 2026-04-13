@@ -24,6 +24,8 @@ type RegisterForm = {
 };
 
 type Errors = {
+  username?: string;
+  email?: string;
   password?: string;
   confirmPassword?: string;
   phoneNumber?: string;
@@ -102,6 +104,34 @@ export default function Register() {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  const validateEmail = () => {
+    const email = form.email.trim();
+
+    if (!email) {
+      return "Vui lòng nhập email";
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return "Email không đúng định dạng";
+    }
+
+    return null;
+  };
+
+  const validateUsername = () => {
+    const username = form.username.trim();
+
+    if (!username) {
+      return "Vui lòng nhập tên đăng nhập";
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      return "Tên đăng nhập không được chứa dấu hoặc ký tự đặc biệt";
+    }
+
+    return null;
+  };
+
   const validatePassword = () => {
     const { password } = form;
 
@@ -124,8 +154,12 @@ export default function Register() {
     setErrors({});
 
     const newErrors: Errors = {};
+    const usernameError = validateUsername();
+    const emailError = validateEmail();
     const passwordError = validatePassword();
 
+    if (usernameError) newErrors.username = usernameError;
+    if (emailError) newErrors.email = emailError;
     if (passwordError) newErrors.password = passwordError;
     if (form.password !== form.confirmPassword) {
       newErrors.confirmPassword = "Mật khẩu không khớp";
@@ -143,8 +177,8 @@ export default function Register() {
 
     try {
       const res = await api.post("/auth/register", {
-        username: form.username,
-        email: form.email,
+        username: form.username.trim(),
+        email: form.email.trim().toLowerCase(),
         phoneNumber: form.phoneNumber,
         password: form.password,
       });
@@ -200,6 +234,10 @@ export default function Register() {
             onChangeText={(value) => handleChange("username", value)}
           />
 
+          {errors.username ? (
+            <Text style={styles.error}>{errors.username}</Text>
+          ) : null}
+
           <TextInput
             style={styles.input}
             placeholderTextColor="#000"
@@ -210,6 +248,8 @@ export default function Register() {
             autoComplete="email"
             onChangeText={(value) => handleChange("email", value)}
           />
+
+          {errors.email ? <Text style={styles.error}>{errors.email}</Text> : null}
 
           <TextInput
             style={styles.input}

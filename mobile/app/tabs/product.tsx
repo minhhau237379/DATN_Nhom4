@@ -2,6 +2,9 @@
 import {
   FlatList,
   Image,
+  Modal,
+  Platform,
+  KeyboardAvoidingView,
   StyleSheet,
   Text,
   TextInput,
@@ -11,6 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import { isAxiosError } from "axios";
 import AppToast from "../../components/AppToast";
 import api from "../../services/api";
 import { isLoggedIn } from "../../utils/auth";
@@ -36,8 +40,11 @@ export default function Shop() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sort, setSort] = useState("");
   const [category, setCategory] = useState("");
-  const [minPrice] = useState("");
-  const [maxPrice] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [priceDialogVisible, setPriceDialogVisible] = useState(false);
+  const [priceDraft, setPriceDraft] = useState({ min: "", max: "" });
+  const [refreshing, setRefreshing] = useState(false);
   const [notice, setNotice] = useState({
     visible: false,
     title: "",
@@ -78,6 +85,15 @@ export default function Shop() {
       const res = await api.get("/favorite/list");
       setFavorites(res.data.favorites || []);
     } catch (err) {
+      if (isAxiosError(err)) {
+        const status = err.response?.status;
+        const code = err.response?.data?.code;
+
+        if (status === 401 || status === 403 || code === "ACCOUNT_LOCKED") {
+          return;
+        }
+      }
+
       console.error(err);
     }
   }, []);
@@ -91,6 +107,15 @@ export default function Shop() {
       setProducts(res.data.products);
       setCategories(res.data.categories);
     } catch (err) {
+      if (isAxiosError(err)) {
+        const status = err.response?.status;
+        const code = err.response?.data?.code;
+
+        if (status === 401 || status === 403 || code === "ACCOUNT_LOCKED") {
+          return;
+        }
+      }
+
       console.error(err);
     }
   }, [debouncedSearch, sort, category, minPrice, maxPrice]);
@@ -98,6 +123,16 @@ export default function Shop() {
   useEffect(() => {
     fetchProducts();
     loadFavorites();
+  }, [fetchProducts, loadFavorites]);
+
+  const refreshProducts = useCallback(async () => {
+    setRefreshing(true);
+
+    try {
+      await Promise.all([fetchProducts(), loadFavorites()]);
+    } finally {
+      setRefreshing(false);
+    }
   }, [fetchProducts, loadFavorites]);
 
   useFocusEffect(
@@ -109,7 +144,7 @@ export default function Shop() {
   const toggleFav = async (id: string) => {
     try {
       if (!(await isLoggedIn())) {
-        showNotice("ThÃ´ng bÃ¡o", "Báº¡n cáº§n Ä‘Äƒng nháº­p Ä‘á»ƒ sá»­ dá»¥ng yÃªu thÃ­ch");
+        showNotice("Thông báo", "Bạn cần đăng nhập để sử dụng tính năng này");
         return;
       }
 
@@ -121,12 +156,74 @@ export default function Shop() {
         );
       }
     } catch (err) {
+      if (isAxiosError(err)) {
+        const status = err.response?.status;
+        const code = err.response?.data?.code;
+
+        if (status === 401 || status === 403 || code === "ACCOUNT_LOCKED") {
+          return;
+        }
+      }
+
       console.error(err);
     }
   };
 
   const toggleSort = (nextSort: string) => {
     setSort((prev) => (prev === nextSort ? "" : nextSort));
+  };
+
+  const openPriceDialog = () => {
+    setPriceDraft({
+      min: minPrice,
+      max: maxPrice,
+    });
+    setPriceDialogVisible(true);
+  };
+
+  const closePriceDialog = () => {
+    setPriceDialogVisible(false);
+  };
+
+  const applyPriceFilter = () => {
+    const min = priceDraft.min.trim();
+    const max = priceDraft.max.trim();
+
+    if (!min && !max) {
+      setMinPrice("");
+      setMaxPrice("");
+      closePriceDialog();
+      return;
+    }
+
+    if (!min || !max) {
+      showNotice("Lọc giá", "Vui lòng nhập cả giá từ và giá đến");
+      return;
+    }
+
+    const minNumber = Number(min);
+    const maxNumber = Number(max);
+
+    if (Number.isNaN(minNumber) || Number.isNaN(maxNumber) || minNumber < 0 || maxNumber < 0) {
+      showNotice("Lọc giá", "Khoảng giá không hợp lệ");
+      return;
+    }
+
+    if (minNumber > maxNumber) {
+      showNotice("Lọc giá", "Giá từ phải nhỏ hơn hoặc bằng giá đến");
+      return;
+    }
+
+    setMinPrice(String(minNumber));
+    setMaxPrice(String(maxNumber));
+    closePriceDialog();
+  };
+
+  const clearPriceFilter = () => {
+    setPriceDraft({ min: "", max: "" });
+    setMinPrice("");
+    setMaxPrice("");
+    closePriceDialog();
   };
 
   const renderItem = ({ item }: { item: Product }) => (
@@ -196,6 +293,18 @@ export default function Shop() {
                 Giá ↓
               </Text>
             </TouchableOpacity>
+
+            <TouchableOpacity onPress={openPriceDialog}>
+              <Text
+                style={[
+                  styles.sortBtn,
+                  (minPrice || maxPrice) && styles.sortActive,
+                  styles.priceFilterBtn,
+                ]}
+              >
+                Lọc giá
+              </Text>
+            </TouchableOpacity>
           </View>
 
           <FlatList
@@ -229,8 +338,68 @@ export default function Shop() {
           contentContainerStyle={styles.gridContent}
           columnWrapperStyle={styles.gridRow}
           showsVerticalScrollIndicator={false}
+          refreshing={refreshing}
+          onRefresh={refreshProducts}
         />
       </View>
+
+      <Modal
+        visible={priceDialogVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closePriceDialog}
+      >
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : undefined}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+            style={styles.modalKeyboardWrap}
+          >
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Lọc theo khoảng giá</Text>
+              <Text style={styles.modalDesc}>Nhập giá từ và giá đến để lọc sản phẩm.</Text>
+
+              <View style={styles.modalFields}>
+                <View style={styles.modalField}>
+                  <Text style={styles.modalLabel}>Giá từ</Text>
+                  <TextInput
+                    value={priceDraft.min}
+                    onChangeText={(text) =>
+                      setPriceDraft((prev) => ({ ...prev, min: text.replace(/[^0-9]/g, "") }))
+                    }
+                    keyboardType={Platform.OS === "ios" ? "number-pad" : "numeric"}
+                    placeholder="Ví dụ: 100000"
+                    style={styles.modalInput}
+                  />
+                </View>
+
+                <View style={styles.modalField}>
+                  <Text style={styles.modalLabel}>Giá đến</Text>
+                  <TextInput
+                    value={priceDraft.max}
+                    onChangeText={(text) =>
+                      setPriceDraft((prev) => ({ ...prev, max: text.replace(/[^0-9]/g, "") }))
+                    }
+                    keyboardType={Platform.OS === "ios" ? "number-pad" : "numeric"}
+                    placeholder="Ví dụ: 500000"
+                    style={styles.modalInput}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={styles.modalSecondaryBtn} onPress={clearPriceFilter}>
+                  <Text style={styles.modalSecondaryText}>Xóa lọc</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.modalPrimaryBtn} onPress={applyPriceFilter}>
+                  <Text style={styles.modalPrimaryText}>Áp dụng</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
 
       <AppToast
         visible={notice.visible}
@@ -250,7 +419,7 @@ const styles = StyleSheet.create({
   header: {
     backgroundColor: "#d5001c",
     paddingHorizontal: 10,
-    paddingTop: 10,
+    paddingTop: Platform.OS === "ios" ? 18 : 12,
     paddingBottom: 12,
   },
   input: {
@@ -267,6 +436,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowOffset: { width: 0, height: 1 },
     shadowRadius: 2,
+    
   },
   sortRow: {
     flexDirection: "row",
@@ -282,6 +452,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 10,
     overflow: "hidden",
+  },
+  priceFilterBtn: {
+    minWidth: 72,
+    textAlign: "center",
   },
   sortActive: {
     backgroundColor: "black",
@@ -347,6 +521,78 @@ const styles = StyleSheet.create({
   heartButton: {
     paddingLeft: 8,
     paddingTop: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "flex-start",
+    paddingTop: 120,
+    paddingHorizontal: 20,
+  },
+  modalKeyboardWrap: {
+    width: "100%",
+  },
+  modalCard: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 18,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#111",
+  },
+  modalDesc: {
+    marginTop: 6,
+    color: "#666",
+    lineHeight: 20,
+  },
+  modalFields: {
+    gap: 12,
+    marginTop: 16,
+  },
+  modalField: {
+    gap: 8,
+  },
+  modalLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#333",
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: "#fafafa",
+  },
+  modalActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 18,
+  },
+  modalSecondaryBtn: {
+    flex: 1,
+    backgroundColor: "#eee",
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  modalSecondaryText: {
+    color: "#333",
+    fontWeight: "700",
+  },
+  modalPrimaryBtn: {
+    flex: 1,
+    backgroundColor: "#d5001c",
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  modalPrimaryText: {
+    color: "#fff",
+    fontWeight: "700",
   },
 });
 

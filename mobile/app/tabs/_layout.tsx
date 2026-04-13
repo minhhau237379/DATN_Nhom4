@@ -1,4 +1,5 @@
 import { useCallback, useState } from "react";
+import { Platform } from "react-native";
 import { Tabs, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
@@ -42,6 +43,7 @@ export default function RootLayout() {
           tabBarStyle: {
             height: 60,
             paddingBottom: 8,
+            marginBottom: Platform.OS === "android" ? 20 : 0,
           },
         }}
       >

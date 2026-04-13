@@ -4,6 +4,13 @@ const { sendPasswordResetOtp } = require("../utils/mailer");
 
 const generateOtp = () => `${Math.floor(100000 + Math.random() * 900000)}`;
 
+const buildLockedResponse = (user, message = "Tai khoan da bi khoa") => ({
+  success: false,
+  code: "ACCOUNT_LOCKED",
+  message,
+  lockReason: user.lockReason || "",
+});
+
 const buildToken = (user) =>
   jwt.sign(
     {
@@ -70,8 +77,7 @@ const loginUser = async (req, res) => {
 
     if (user.isLocked) {
       return res.status(403).json({
-        success: false,
-        message: "Tai khoan da bi khoa",
+        ...buildLockedResponse(user),
       });
     }
 
@@ -133,8 +139,7 @@ const adminLogin = async (req, res) => {
 
     if (user.isLocked) {
       return res.status(403).json({
-        success: false,
-        message: "Tai khoan admin da bi khoa",
+        ...buildLockedResponse(user, "Tai khoan admin da bi khoa"),
       });
     }
 

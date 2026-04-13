@@ -26,7 +26,7 @@ const requireAdmin = (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Chua dang nhap admin",
+        message: "Chưa đăng nhập admin",
       });
     }
 
@@ -35,7 +35,7 @@ const requireAdmin = (req, res, next) => {
     if (decoded.role !== "admin") {
       return res.status(403).json({
         success: false,
-        message: "Khong co quyen truy cap",
+        message: "Không có quyền truy cập",
       });
     }
 
@@ -44,7 +44,7 @@ const requireAdmin = (req, res, next) => {
   } catch (err) {
     return res.status(401).json({
       success: false,
-      message: "Token khong hop le",
+      message: "Token không hợp lệ",
     });
   }
 };
