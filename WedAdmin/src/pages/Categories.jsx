@@ -16,6 +16,7 @@ export default function Categories() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [showDialog, setShowDialog] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -40,6 +41,13 @@ export default function Categories() {
   const openCreate = () => {
     setForm(emptyForm);
     setMessage("");
+    setShowDialog(true);
+  };
+
+  const closeDialog = () => {
+    setShowDialog(false);
+    setForm(emptyForm);
+    setMessage("");
   };
 
   const edit = (category) => {
@@ -50,6 +58,7 @@ export default function Categories() {
       status: String(category.status ?? 1),
     });
     setMessage("");
+    setShowDialog(true);
     scrollToTop();
   };
 
@@ -70,6 +79,8 @@ export default function Categories() {
         : await api.post("/admin/categories", payload);
 
       setMessage(res.data?.message || "Lưu thành công");
+      setShowDialog(false);
+      setForm(emptyForm);
       reloadCurrentPage();
       return;
     } catch (err) {
@@ -124,49 +135,11 @@ export default function Categories() {
 
         {message && <div className="alert">{message}</div>}
 
-        
-      </section>
-
-      <section className="panel">
-        <div className="panel-header">
-          <h3>{editing ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}</h3>
-          {editing && (
-            <button type="button" className="btn btn-secondary" onClick={openCreate}>
-              Hủy chỉnh sửa
-            </button>
-          )}
+        <div className="panel-actions">
+          <button type="button" className="btn btn-primary" onClick={openCreate}>
+            Thêm mới
+          </button>
         </div>
-
-        <form className="form-grid" onSubmit={submit}>
-          <label>
-            Tên danh mục
-            <input style={{ width: "70%" }} name="name" value={form.name} onChange={handleChange} required />
-          </label>
-
-          <label>
-            Trạng thái
-            <select style={{ width: "70%" }} name="status" value={form.status} onChange={handleChange}>
-              <option value="1">Hiện</option>
-              <option value="0">Ẩn</option>
-            </select>
-          </label>
-
-          <label className="full">
-            Mô tả
-            <textarea style={{ width: "70%" }} name="description" value={form.description} onChange={handleChange} rows="2" />
-          </label>
-
-          <div className="full actions-inline">
-            <button className="btn btn-primary" type="submit" disabled={saving}>
-              {saving ? "Đang lưu..." : editing ? "Cập nhật" : "Thêm mới"}
-            </button>
-            {editing && (
-              <button type="button" className="btn btn-secondary" onClick={openCreate}>
-                Hủy sửa
-              </button>
-            )}
-          </div>
-        </form>
       </section>
 
       <section className="panel">
@@ -214,6 +187,51 @@ export default function Categories() {
           </div>
         )}
       </section>
+
+      {showDialog && (
+        <div className="category-dialog-backdrop" onClick={closeDialog}>
+          <div className="category-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="category-dialog-header">
+              <div>
+                <p className="eyebrow">{editing ? "Chỉnh sửa danh mục" : "Thêm danh mục mới"}</p>
+                <h3>{editing ? form.name || "Danh mục" : "Tạo danh mục"}</h3>
+              </div>
+              <button type="button" className="category-dialog-close" onClick={closeDialog}>
+                ×
+              </button>
+            </div>
+
+            <form className="category-dialog-form" onSubmit={submit}>
+              <label>
+                Tên danh mục
+                <input name="name" value={form.name} onChange={handleChange} required />
+              </label>
+
+              <label>
+                Trạng thái
+                <select name="status" value={form.status} onChange={handleChange}>
+                  <option value="1">Hiện</option>
+                  <option value="0">Ẩn</option>
+                </select>
+              </label>
+
+              <label className="full">
+                Mô tả
+                <textarea name="description" value={form.description} onChange={handleChange} rows="4" />
+              </label>
+
+              <div className="dialog-actions">
+                <button className="btn btn-primary" type="submit" disabled={saving}>
+                  {saving ? "Đang lưu..." : editing ? "Cập nhật" : "Thêm"}
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={closeDialog}>
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

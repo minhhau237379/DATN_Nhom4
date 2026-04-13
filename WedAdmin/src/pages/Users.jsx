@@ -1,4 +1,4 @@
-import { useEffect,  useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../services/api";
 import { scrollToTop } from "../utils/adminActions";
 import "./Users.css";
@@ -14,6 +14,7 @@ export default function Users() {
   const [search, setSearch] = useState("");
   const [lockedFilter, setLockedFilter] = useState("");
   const [message, setMessage] = useState("");
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -36,6 +37,7 @@ export default function Users() {
       } else {
         setSelectedId("");
         setDetail(null);
+        setShowDetailDialog(false);
       }
     } finally {
       setLoading(false);
@@ -72,14 +74,14 @@ export default function Users() {
     }
   }, [selectedId]);
 
-  // const selectedUser = useMemo(
-  //   () => users.find((user) => user._id === selectedId) || null,
-  //   [users, selectedId],
-  // );
-
   const handleSelect = (id) => {
     setSelectedId(id);
+    setShowDetailDialog(true);
     setMessage("");
+  };
+
+  const closeDetailDialog = () => {
+    setShowDetailDialog(false);
   };
 
   const refreshAll = async () => {
@@ -105,6 +107,87 @@ export default function Users() {
       setMessage(err.response?.data?.message || "Không thể cập nhật tài khoản");
     }
   };
+
+  const detailContent = detail?.user ? (
+    <div className="user-detail">
+      <div className="user-summary">
+        <div>
+          <p className="eyebrow">Thông tin chung</p>
+          <h4>{detail.user.username}</h4>
+        </div>
+        <span className={`status-pill ${statusTone(detail.user.isLocked)}`}>
+          {detail.user.isLocked ? "Đã khóa" : "Đang mở"}
+        </span>
+      </div>
+
+      <div className="detail-grid detail-grid-user">
+        <div>
+          <strong>Email</strong>
+          <p>{detail.user.email}</p>
+        </div>
+        <div>
+          <strong>Số điện thoại</strong>
+          <p>{detail.user.phoneNumber || "-"}</p>
+        </div>
+        <div>
+          <strong>Role</strong>
+          <p>{detail.user.role || "user"}</p>
+        </div>
+        <div>
+          <strong>Tổng đơn</strong>
+          <p>{detail.stats?.totalOrders || 0}</p>
+        </div>
+      </div>
+
+      <div className="detail-block">
+        <strong>Địa chỉ giao hàng</strong>
+        {detail.addresses?.length ? (
+          <div className="address-grid">
+            {detail.addresses.map((address) => (
+              <div key={address._id} className="address-card">
+                <div className="address-card-head">
+                  <strong>{address.fullName}</strong>
+                  {address.isDefault && <span className="address-default">Mặc định</span>}
+                </div>
+                <p>{address.phone}</p>
+                <p>{address.address}</p>
+                <p>{address.city}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>Chưa có địa chỉ nào.</p>
+        )}
+      </div>
+
+      <div className="detail-block">
+        <strong>Đơn hàng gần đây</strong>
+        {detail.recentOrders?.length ? (
+          <div className="recent-order-list">
+            {detail.recentOrders.map((order) => (
+              <div key={order._id} className="recent-order-item">
+                <div>
+                  <p>#{order.orderNumber || order._id.slice(-6)}</p>
+                  <small>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} đ</small>
+                </div>
+                <span
+                  className={`status-pill ${
+                    order.paymentStatus === "Đã thanh toán" ? "status-paid" : "status-pending"
+                  }`}
+                >
+                  {order.paymentStatus}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p>Chưa có đơn hàng.</p>
+        )}
+      </div>
+    </div>
+  ) : (
+    <p>Chọn một người dùng để xem chi tiết.</p>
+  );
 
   return (
     <div className="stack page-users">
@@ -137,170 +220,107 @@ export default function Users() {
         {message && <div className="alert">{message}</div>}
 
         <div className="filter-row">
-          <input  style={{width:"90%"}} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Tìm theo tên, email, SĐT" />
+          <input
+            style={{ width: "90%" }}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm theo tên, email, SĐT"
+          />
           <select value={lockedFilter} onChange={(e) => setLockedFilter(e.target.value)}>
             <option value="">Tất cả trạng thái</option>
             <option value="false">Đang mở</option>
             <option value="true">Đang khóa</option>
           </select>
-          
         </div>
       </section>
 
-      <div className="users-grid">
-        <section className="panel">
-          <div className="panel-header">
-            <h3>Danh sách người dùng</h3>
-          </div>
+      <section className="panel">
+        <div className="panel-header">
+          <h3>Danh sách người dùng</h3>
+        </div>
 
-          {loading ? (
-            <p>Đang tải...</p>
-          ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Tài khoản</th>
-                    <th>Email</th>
-                    <th>SĐT</th>
-                    <th>Trạng thái</th>
-                    <th>Hành động</th>
+        {loading ? (
+          <p>Đang tải...</p>
+        ) : (
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tài khoản</th>
+                  <th>Email</th>
+                  <th>SĐT</th>
+                  <th>Trạng thái</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr
+                    key={user._id}
+                    className={selectedId === user._id ? "row-selected" : ""}
+                    onClick={() => handleSelect(user._id)}
+                  >
+                    <td>
+                      <strong className="user-name-link" onClick={() => handleSelect(user._id)}>
+                        {user.username}
+                      </strong>
+                    </td>
+                    <td>{user.email}</td>
+                    <td>{user.phoneNumber || "-"}</td>
+                    <td>
+                      <span className={`status-pill ${statusTone(user.isLocked)}`}>
+                        {user.isLocked ? "Đã khóa" : "Đang mở"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="actions-inline">
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelect(user._id);
+                          }}
+                        >
+                          Xem
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleLock(user);
+                          }}
+                        >
+                          {user.isLocked ? "Mở khóa" : "Khóa"}
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {users.map((user) => (
-                    <tr
-                      key={user._id}
-                      className={selectedId === user._id ? "row-selected" : ""}
-                      onClick={() => handleSelect(user._id)}
-                    >
-                      <td>
-                        <strong>{user.username}</strong>
-                      </td>
-                      <td>{user.email}</td>
-                      <td>{user.phoneNumber || "-"}</td>
-                      <td>
-                        <span className={`status-pill ${statusTone(user.isLocked)}`}>
-                          {user.isLocked ? "Đã khóa" : "Đang mở"}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="actions-inline">
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelect(user._id);
-                            }}
-                          >
-                            Xem
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn-secondary"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleLock(user);
-                            }}
-                          >
-                            {user.isLocked ? "Mở khóa" : "Khóa"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </section>
-
-        <section className="panel user-detail-panel">
-          <div className="panel-header">
-            <h3>Chi tiết người dùng</h3>
+                ))}
+              </tbody>
+            </table>
           </div>
+        )}
+      </section>
 
-          {detailLoading ? (
-            <p>Đang tải chi tiết...</p>
-          ) : detail?.user ? (
-            <div className="user-detail">
-              <div className="user-summary">
-                <div>
-                  <p className="eyebrow">Thông tin chung</p>
-                  <h4>{detail.user.username}</h4>
-                </div>
-                <span className={`status-pill ${statusTone(detail.user.isLocked)}`}>
-                  {detail.user.isLocked ? "Đã khóa" : "Đang mở"}
-                </span>
+      {showDetailDialog && (
+        <div className="user-dialog-backdrop" onClick={closeDetailDialog}>
+          <div className="user-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="user-dialog-header">
+              <div>
+                <p className="eyebrow">Chi tiết người dùng</p>
+                <h3>{detail?.user?.username || "Đang tải..."}</h3>
               </div>
-
-              <div className="detail-grid detail-grid-user">
-                <div>
-                  <strong>Email</strong>
-                  <p>{detail.user.email}</p>
-                </div>
-                <div>
-                  <strong>Số điện thoại</strong>
-                  <p>{detail.user.phoneNumber || "-"}</p>
-                </div>
-                <div>
-                  <strong>Role</strong>
-                  <p>{detail.user.role || "user"}</p>
-                </div>
-                <div>
-                  <strong>Tổng đơn</strong>
-                  <p>{detail.stats?.totalOrders || 0}</p>
-                </div>
-              </div>
-
-              <div className="detail-block">
-                <strong>Địa chỉ giao hàng</strong>
-                {detail.addresses?.length ? (
-                  <div className="address-grid">
-                    {detail.addresses.map((address) => (
-                      <div key={address._id} className="address-card">
-                        <div className="address-card-head">
-                          <strong>{address.fullName}</strong>
-                          {address.isDefault && <span className="address-default">Mặc định</span>}
-                        </div>
-                        <p>{address.phone}</p>
-                        <p>{address.address}</p>
-                        <p>{address.city}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p>Chưa có địa chỉ nào.</p>
-                )}
-              </div>
-
-              <div className="detail-block">
-                <strong>Đơn hàng gần đây</strong>
-                {detail.recentOrders?.length ? (
-                  <div className="recent-order-list">
-                    {detail.recentOrders.map((order) => (
-                      <div key={order._id} className="recent-order-item">
-                        <div>
-                          <p>#{order.orderNumber || order._id.slice(-6)}</p>
-                          <small>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} đ</small>
-                        </div>
-                        <span className={`status-pill ${order.paymentStatus === "Đã thanh toán" ? "status-paid" : "status-pending"}`}>
-                          {order.paymentStatus}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p>Chưa có đơn hàng.</p>
-                )}
-              </div>
+              <button type="button" className="user-dialog-close" onClick={closeDetailDialog}>
+                ×
+              </button>
             </div>
-          ) : (
-            <p>Chọn một người dùng để xem chi tiết.</p>
-          )}
-        </section>
-      </div>
+
+            {detailLoading ? <p>Đang tải chi tiết...</p> : detailContent}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

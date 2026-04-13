@@ -24,3 +24,89 @@
 .full {
   width: 100%;
 }
+
+.page-categories .panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.page-categories .category-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+}
+
+.page-categories .category-dialog {
+  width: min(760px, 100%);
+  max-height: min(88vh, 900px);
+  overflow: auto;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7fbff 100%);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+  padding: 24px;
+}
+
+.page-categories .category-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.page-categories .category-dialog-close {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(15, 139, 141, 0.1);
+  color: var(--primary-strong);
+  font-size: 26px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.page-categories .category-dialog-close:hover {
+  background: rgba(15, 139, 141, 0.18);
+}
+
+.page-categories .category-dialog-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.page-categories .category-dialog-form label {
+  display: grid;
+  gap: 10px;
+}
+
+.page-categories .category-dialog-form label input,
+.page-categories .category-dialog-form label select,
+.page-categories .category-dialog-form label textarea {
+  width: 100%;
+}
+
+.page-categories .category-dialog-form .full {
+  grid-column: 1 / -1;
+}
+
+.page-categories .dialog-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+@media (max-width: 720px) {
+  .page-categories .category-dialog-form {
+    grid-template-columns: 1fr;
+  }
+}
