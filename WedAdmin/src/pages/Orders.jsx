@@ -15,9 +15,9 @@ const statusOptions = [
 
 const getAllowedStatusOptions = (currentStatus) => {
   const map = {
-    "Chờ xác nhận": ["Chờ xác nhận", "Đã xác nhận", "Đã hủy"],
-    "Đã xác nhận": ["Đã xác nhận", "Đang xử lý"],
-    "Đang xử lý": ["Đang xử lý", "Đang giao hàng"],
+    "Chờ xác nhận": ["Chờ xác nhận", "Đã xác nhận","Đang xử lý", "Đang giao hàng", "Hoàn tất", "Đã hủy"],
+    "Đã xác nhận": ["Đã xác nhận", "Đang xử lý", "Đang giao hàng", "Hoàn tất"],
+    "Đang xử lý": ["Đang xử lý", "Đang giao hàng","Hoàn tất"],
     "Đang giao hàng": ["Đang giao hàng", "Hoàn tất"],
     "Hoàn tất": ["Hoàn tất"],
     "Đã hủy": ["Đã hủy"],
@@ -158,14 +158,14 @@ export default function Orders() {
             ))}
           </select>
           <button className="btn btn-secondary" type="button" onClick={load}>
-            Lá»c
+            Lọc
           </button>
         </div>
       </section>
 
       <section className="panel">
         {loading ? (
-          <p>Äang táº£i...</p>
+          <p>Đang tải...</p>
         ) : (
           <div className="table-wrap">
             <table>
@@ -206,7 +206,7 @@ export default function Orders() {
                           {order.orderStatus}
                         </span>
                       </td>
-                      <td>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} â‚«</td>
+                      <td>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} ₫</td>
                       <td>
                         <div className="actions-inline">
                           <select
@@ -224,7 +224,7 @@ export default function Orders() {
                             type="button"
                             onClick={() => updateOrder(order._id)}
                           >
-                            LÆ°u
+                            Lưu
                           </button>
                         </div>
                       </td>

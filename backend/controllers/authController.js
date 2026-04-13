@@ -33,7 +33,7 @@ const registerUser = async (req, res) => {
     if (existed) {
       return res.status(400).json({
         success: false,
-        message: "Username hoac email da ton tai",
+        message: "Username hoặc email đã tồn tại",
       });
     }
 
@@ -48,14 +48,14 @@ const registerUser = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Dang ky thanh cong",
+      message: "Đăng ký thành công",
     });
   } catch (error) {
     console.error("Registration error:", error);
 
     res.status(500).json({
       success: false,
-      message: "Error registering user",
+      message: "Đăng ký thất bại",
     });
   }
 };
@@ -71,7 +71,7 @@ const loginUser = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Tai khoan khong ton tai",
+        message: "Tài khoản không tồn tại",
       });
     }
 
@@ -86,7 +86,7 @@ const loginUser = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "Mat khau khong dung",
+        message: "Mật khẩu không đúng",
       });
     }
 
@@ -100,7 +100,7 @@ const loginUser = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Dang nhap thanh cong",
+      message: "Đăng nhập thành công",
       data: {
         token,
         user: {
@@ -116,7 +116,7 @@ const loginUser = async (req, res) => {
 
     res.status(500).json({
       success: false,
-      message: "Error logging in",
+      message: "Lỗi khi đăng nhập",
     });
   }
 };
@@ -133,13 +133,13 @@ const adminLogin = async (req, res) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "Tai khoan admin khong ton tai",
+        message: "Tài khoản admin không tồn tại",
       });
     }
 
     if (user.isLocked) {
       return res.status(403).json({
-        ...buildLockedResponse(user, "Tai khoan admin da bi khoa"),
+        ...buildLockedResponse(user, "Tài khoản admin đã bị khóa"),
       });
     }
 
@@ -148,7 +148,7 @@ const adminLogin = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "Mat khau khong dung",
+        message: "Mật khẩu không đúng",
       });
     }
 
@@ -162,7 +162,7 @@ const adminLogin = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Dang nhap admin thanh cong",
+      message: "Đăng nhập admin thành công",
       data: {
         token,
         user: {
@@ -177,7 +177,7 @@ const adminLogin = async (req, res) => {
     console.error("Admin login error:", error);
     res.status(500).json({
       success: false,
-      message: "Error logging in admin",
+      message: "Lỗi khi đăng nhập admin",
     });
   }
 };
@@ -186,7 +186,7 @@ const logoutUser = (req, res) => {
   req.session.destroy(() => {
     res.json({
       success: true,
-      message: "Dang xuat thanh cong",
+      message: "Đăng xuất thành công",
     });
   });
 };
@@ -198,7 +198,7 @@ const forgotPassword = async (req, res) => {
     if (!email) {
       return res.status(400).json({
         success: false,
-        message: "Vui long nhap email",
+        message: "Vui lòng nhập email",
       });
     }
 
@@ -207,7 +207,7 @@ const forgotPassword = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Email khong ton tai trong he thong",
+        message: "Email không tồn tại trong hệ thống",
       });
     }
 
@@ -234,7 +234,7 @@ const forgotPassword = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Ma xac nhan da duoc gui toi email cua ban",
+      message: "Mã xác nhận đã được gửi tới email của bạn",
     });
   } catch (error) {
     console.error("Forgot password error:", error);
@@ -242,13 +242,13 @@ const forgotPassword = async (req, res) => {
     if (error.message === "EMAIL_NOT_CONFIGURED") {
       return res.status(500).json({
         success: false,
-        message: "He thong gui email chua duoc cau hinh",
+        message: "Hệ thống gửi email chưa được cấu hình",
       });
     }
 
     res.status(500).json({
       success: false,
-      message: "Khong the gui ma xac nhan",
+      message: "Không thể gửi mã xác nhận",
     });
   }
 };
@@ -260,7 +260,7 @@ const verifyOtp = async (req, res) => {
     if (!email || !otp) {
       return res.status(400).json({
         success: false,
-        message: "Thieu email hoac OTP",
+        message: "Thiếu email hoặc OTP",
       });
     }
 
@@ -269,21 +269,21 @@ const verifyOtp = async (req, res) => {
     if (!user || !user.resetPasswordOtp || !user.resetPasswordOtpExpires) {
       return res.status(400).json({
         success: false,
-        message: "Ma OTP khong hop le",
+        message: "Mã OTP không hợp lệ",
       });
     }
 
     if (user.resetPasswordOtpExpires.getTime() < Date.now()) {
       return res.status(400).json({
         success: false,
-        message: "Ma OTP da het han",
+        message: "Mã OTP đã hết hạn",
       });
     }
 
     if (user.resetPasswordOtp !== otp.trim()) {
       return res.status(400).json({
         success: false,
-        message: "Ma OTP khong dung",
+        message: "Mã OTP không đúng",
       });
     }
 
@@ -292,13 +292,13 @@ const verifyOtp = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Xac nhan OTP thanh cong",
+      message: "Xác nhận OTP thành công",
     });
   } catch (error) {
     console.error("Verify OTP error:", error);
     res.status(500).json({
       success: false,
-      message: "Khong the xac nhan OTP",
+      message: "Không thể xác nhận OTP",
     });
   }
 };
@@ -310,28 +310,28 @@ const resetPassword = async (req, res) => {
     if (!email || !newPassword) {
       return res.status(400).json({
         success: false,
-        message: "Thieu email hoac mat khau moi",
+        message: "Thiếu email hoặc mật khẩu mới",
       });
     }
 
     if (newPassword.length < 8 || newPassword.length > 16) {
       return res.status(400).json({
         success: false,
-        message: "Mat khau phai tu 8-16 ky tu",
+        message: "Mật khẩu phải từ 8-16 ký tự",
       });
     }
 
     if (!/[A-Z]/.test(newPassword)) {
       return res.status(400).json({
         success: false,
-        message: "Mat khau phai co it nhat 1 chu hoa",
+        message: "Mật khẩu phải có ít nhất 1 chữ hoa",
       });
     }
 
     if (!/[!@#$%^&*]/.test(newPassword)) {
       return res.status(400).json({
         success: false,
-        message: "Mat khau phai co it nhat 1 ky tu dac biet",
+        message: "Mật khẩu phải có ít nhất 1 ký tự đặc biệt",
       });
     }
 
@@ -340,14 +340,14 @@ const resetPassword = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Email khong ton tai trong he thong",
+        message: "Email không tồn tại trong hệ thống",
       });
     }
 
     if (!user.resetPasswordVerified) {
       return res.status(400).json({
         success: false,
-        message: "Ban chua xac nhan OTP",
+        message: "Bạn chưa xác nhận OTP",
       });
     }
 
@@ -359,13 +359,13 @@ const resetPassword = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Dat lai mat khau thanh cong",
+      message: "Đặt lại mật khẩu thành công",
     });
   } catch (error) {
     console.error("Reset password error:", error);
     res.status(500).json({
       success: false,
-      message: "Khong the dat lai mat khau",
+      message: "Không thể đặt lại mật khẩu",
     });
   }
 };

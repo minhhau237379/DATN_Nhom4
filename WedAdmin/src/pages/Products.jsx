@@ -482,7 +482,7 @@ export default function Products() {
                         {statusText[product.status ?? 1]}
                       </span>
                     </td>
-                    <td>{Number(product.price || 0).toLocaleString("vi-VN")} đ</td>
+                    <td>{Number(product.price || 0).toLocaleString("vi-VN")} ₫</td>
                     <td>
                       <span className="stock-text">{product.stock ?? 0}</span>
                     </td>

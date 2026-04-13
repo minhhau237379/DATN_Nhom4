@@ -218,16 +218,16 @@ const loadCheckoutContext = async ({
   );
 
   if (!cartItems.length) {
-    throw new Error("Khong tim thay san pham da chon trong gio hang");
+    throw new Error("Không tìm thấy sản phẩm đã chọn trong giỏ hàng");
   }
 
   for (const item of cartItems) {
     if (!item.product) {
-      throw new Error("San pham khong ton tai");
+      throw new Error("Sản phẩm không tồn tại");
     }
 
     if ((item.product.stock || 0) < item.quantity) {
-      throw new Error(`San pham ${item.product.name} khong du hang`);
+      throw new Error(`Sản phẩm ${item.product.name} không đủ hàng`);
     }
   }
 
@@ -274,11 +274,11 @@ const finalizePaidOrder = async (order) => {
       const product = await Product.findById(item.product).session(session);
 
       if (!product) {
-        throw new Error(`San pham ${item.name} khong ton tai`);
+        throw new Error(`Sản phẩm ${item.name} không tồn tại`);
       }
 
       if ((product.stock || 0) < item.quantity) {
-        throw new Error(`San pham ${item.name} khong du hang`);
+        throw new Error(`Sản phẩm ${item.name} không đủ hàng`);
       }
     }
 
@@ -345,7 +345,7 @@ exports.createOrder = async (req, res) => {
     session.startTransaction();
 
     if (!req.session?.user?._id) {
-      throw new Error("Ban chua dang nhap");
+      throw new Error("Bạn chưa đăng nhập");
     }
 
     const userId = req.session.user._id;
@@ -460,7 +460,7 @@ exports.createOrder = async (req, res) => {
 
     res.status(400).json({
       success: false,
-      message: err.message || "Tao don that bai",
+      message: err.message || "Tạo đơn thất bại",
     });
   } finally {
     session.endSession();
@@ -486,11 +486,11 @@ exports.createVnpayPayment = async (req, res) => {
       (!Array.isArray(selectedProductIds) || selectedProductIds.length === 0) &&
       (!Array.isArray(directProductIds) || directProductIds.length === 0)
     ) {
-      throw new Error("Ban chua chon san pham nao");
+      throw new Error("Bạn chưa chọn sản phẩm nào");
     }
 
     if (!clientReturnUrl) {
-      throw new Error("Thieu duong dan quay lai ung dung");
+      throw new Error("Thiếu đường dẫn quay lại ứng dụng");
     }
 
     const { orderItems, totalPrice, selectedAddress } = await loadCheckoutContext({
@@ -588,7 +588,7 @@ exports.createVnpayPayment = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Tao link thanh toan thanh cong",
+      message: "Tạo link thanh toán thành công",
       order: normalizeOrderRecord(order.toObject()),
       paymentUrl,
     });
@@ -598,7 +598,7 @@ exports.createVnpayPayment = async (req, res) => {
 
     res.status(400).json({
       success: false,
-      message: err.message || "Khong the tao thanh toan online",
+      message: err.message || "Không thể tạo thanh toán online",
     });
   } finally {
     session.endSession();
@@ -613,7 +613,7 @@ exports.listOrders = async (req, res) => {
     res.json({ success: true, orders });
   } catch (err) {
     console.error("LIST ORDERS ERROR:", err);
-    res.status(500).json({ success: false, message: "Khong the tai don hang" });
+    res.status(500).json({ success: false, message: "không thể tải đơn hàng" });
   }
 };
 
@@ -627,7 +627,7 @@ exports.getOrderDetail = async (req, res) => {
     if (!order) {
       return res.status(404).json({
         success: false,
-        message: "Khong tim thay don hang",
+        message: "Không tìm thấy đơn hàng",
       });
     }
 
@@ -636,7 +636,7 @@ exports.getOrderDetail = async (req, res) => {
     console.error("GET ORDER DETAIL ERROR:", err);
     res.status(500).json({
       success: false,
-      message: "Khong the tai chi tiet don hang",
+      message: "Không thể tải chi tiết đơn hàng",
     });
   }
 };
@@ -653,17 +653,17 @@ exports.cancelOrder = async (req, res) => {
     }).session(session);
 
     if (!order) {
-      throw new Error("Khong tim thay don hang");
+      throw new Error("Không tìm thấy đơn hàng");
     }
 
     const currentStatus = normalizeOrderStatus(order.orderStatus);
 
     if (currentStatus === ORDER_STATUS.CANCELLED || currentStatus === ORDER_STATUS.COMPLETED) {
-      throw new Error("Don hang khong the huy");
+      throw new Error("Đơn hàng không thể hủy");
     }
 
     if (currentStatus !== ORDER_STATUS.WAITING_CONFIRM) {
-      throw new Error("Don hang da duoc xac nhan nen khong the huy");
+      throw new Error("Đơn hàng đã được xác nhận nên không thể hủy");
     }
 
     const currentPayment = normalizePaymentStatus(order.paymentStatus);
@@ -677,7 +677,7 @@ exports.cancelOrder = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Da huy don hang",
+      message: "Đã hủy đơn hàng",
       order: normalizeOrderRecord(order.toObject()),
     });
   } catch (err) {
@@ -685,7 +685,7 @@ exports.cancelOrder = async (req, res) => {
     console.error("CANCEL ORDER ERROR:", err);
     res.status(400).json({
       success: false,
-      message: err.message || "Khong the huy don hang",
+      message: err.message || "Không thể hủy đơn hàng",
     });
   } finally {
     session.endSession();
@@ -702,7 +702,7 @@ const handleVnpayCallback = async ({ query }) => {
     return {
       success: false,
       code: "97",
-      message: "Chu ky khong hop le",
+      message: "Chữ ký không hợp lệ",
     };
   }
 
@@ -712,7 +712,7 @@ const handleVnpayCallback = async ({ query }) => {
     return {
       success: false,
       code: "01",
-      message: "Khong tim thay don hang",
+      message: "Không tìm thấy đơn hàng",
     };
   }
 
@@ -724,7 +724,7 @@ const handleVnpayCallback = async ({ query }) => {
     return {
       success: true,
       code: "00",
-      message: "Thanh toan thanh cong",
+      message: "Thanh toán thành công",
       order: normalizeOrderRecord(paidOrder.toObject()),
     };
   }
@@ -734,7 +734,7 @@ const handleVnpayCallback = async ({ query }) => {
   return {
     success: false,
     code: query.vnp_ResponseCode || "99",
-    message: "Thanh toan that bai hoac bi huy",
+    message: "Thanh toán thất bại hoặc bị hủy",
     order: normalizeOrderRecord(failedOrder.toObject()),
   };
 };
