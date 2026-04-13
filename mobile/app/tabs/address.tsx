@@ -83,7 +83,7 @@ export default function AddressScreen() {
 
   return (
     <View style={styles.container}>
-      <BackHeader title="Địa chỉ của tôi" />
+      <BackHeader title="Địa chỉ của tôi" onBack={() => router.replace("/tabs/profile")} />
 
       <FlatList
         data={addresses}

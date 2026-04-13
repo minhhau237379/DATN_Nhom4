@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
+import BackHeader from "../../components/BackHeader";
 import api from "../../services/api";
 
 type OrderItem = {
@@ -38,9 +39,7 @@ export default function OrdersScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerWrap}>
-        <Text style={styles.header}>Đơn hàng của tôi</Text>
-      </View>
+      <BackHeader title="Đơn hàng của tôi" onBack={() => router.replace("/tabs/profile")} />
 
       <FlatList
         data={orders}
@@ -91,18 +90,6 @@ export default function OrdersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f6f6f6" },
-  headerWrap: {
-    backgroundColor: "#d5001c",
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 14,
-  },
-  header: {
-    color: "#fff7f7",
-    fontSize: 20,
-    fontWeight: "700",
-    textAlign: "center",
-  },
   listContent: {
     padding: 16,
   },

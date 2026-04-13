@@ -8,6 +8,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { router } from "expo-router";
+import { isAxiosError } from "axios";
 import BackHeader from "../../components/BackHeader";
 import AppToast from "../../components/AppToast";
 import api from "../../services/api";
@@ -67,6 +69,16 @@ export default function ChangePasswordScreen() {
     });
   };
 
+  const formatChangePasswordMessage = (message?: string) => {
+    const normalized = (message || "").toLowerCase();
+
+    if (normalized.includes("mat khau cu khong dung")) {
+      return "Mật khẩu cũ không đúng";
+    }
+
+    return message || "Không thể đổi mật khẩu";
+  };
+
   const closeNotice = () => {
     setNotice({
       visible: false,
@@ -98,18 +110,24 @@ export default function ChangePasswordScreen() {
         setNewPassword("");
         setConfirmPassword("");
       } else {
-        showNotice("Lỗi", res.data.message || "Không thể đổi mật khẩu");
+        showNotice("Thông báo", formatChangePasswordMessage(res.data.message));
       }
     } catch (err) {
       console.error(err);
-      showNotice("Lỗi", "Có lỗi xảy ra");
+
+      if (isAxiosError(err)) {
+        showNotice("Thông báo", formatChangePasswordMessage(err.response?.data?.message));
+        return;
+      }
+
+      showNotice("Thông báo", "Có lỗi xảy ra");
     }
   };
 
   return (
     <>
       <View style={styles.container}>
-        <BackHeader title="Đổi mật khẩu" />
+        <BackHeader title="Đổi mật khẩu" onBack={() => router.replace("/tabs/profile")} />
 
         <View style={styles.card}>
           <Input

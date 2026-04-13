@@ -290,7 +290,7 @@ export default function CheckoutScreen() {
   return (
     <>
       <View style={styles.container}>
-        <BackHeader title="Thanh toán" />
+        <BackHeader title="Thanh toán" onBack={() => router.replace("/tabs/cart")} />
 
         <FlatList
           data={items}

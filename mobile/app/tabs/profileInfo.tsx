@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { router } from "expo-router";
 import {
   ScrollView,
   StyleSheet,
@@ -81,7 +82,7 @@ export default function ProfileInfo() {
   return (
     <>
       <ScrollView style={styles.container}>
-        <BackHeader title="Thông tin cá nhân" />
+        <BackHeader title="Thông tin cá nhân" onBack={() => router.replace("/tabs/profile")} />
 
         <View style={styles.card}>
           <View style={styles.avatar}>

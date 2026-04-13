@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { router } from "expo-router";
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import AppBottomNav, { APP_BOTTOM_NAV_HEIGHT } from "../components/AppBottomNav";
 import BackHeader from "../components/BackHeader";
@@ -167,7 +168,7 @@ export default function OrderDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <BackHeader title="Chi tiết đơn hàng" />
+      <BackHeader title="Chi tiết đơn hàng" onBack={() => router.replace("/tabs/orders")} />
 
       <FlatList
         data={order.items}
