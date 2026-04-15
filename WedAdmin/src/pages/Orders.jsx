@@ -6,22 +6,22 @@ import OrderCancelReasonDialog from "../components/OrderCancelReasonDialog";
 import "./Orders.css";
 
 const statusOptions = [
-  "Chá» xÃ¡c nháº­n",
-  "ÄÃ£ xÃ¡c nháº­n",
-  "Äang xá»­ lÃ½",
-  "Äang giao hÃ ng",
-  "HoÃ n táº¥t",
-  "ÄÃ£ há»§y",
+  "Chờ xác nhận",
+  "Đã xác nhận",
+  "Đang xử lý",
+  "Đang giao hàng",
+  "Hoàn tất",
+  "Đã hủy",
 ];
 
 const getAllowedStatusOptions = (currentStatus) => {
   const map = {
-    "Chá» xÃ¡c nháº­n": ["Chá» xÃ¡c nháº­n", "ÄÃ£ xÃ¡c nháº­n","Äang xá»­ lÃ½", "Äang giao hÃ ng", "HoÃ n táº¥t", "ÄÃ£ há»§y"],
-    "ÄÃ£ xÃ¡c nháº­n": ["ÄÃ£ xÃ¡c nháº­n", "Äang xá»­ lÃ½", "Äang giao hÃ ng", "HoÃ n táº¥t"],
-    "Äang xá»­ lÃ½": ["Äang xá»­ lÃ½", "Äang giao hÃ ng","HoÃ n táº¥t"],
-    "Äang giao hÃ ng": ["Äang giao hÃ ng", "HoÃ n táº¥t"],
-    "HoÃ n táº¥t": ["HoÃ n táº¥t"],
-    "ÄÃ£ há»§y": ["ÄÃ£ há»§y"],
+    "Chờ xác nhận": ["Chờ xác nhận", "Đã xác nhận", "Đang xử lý", "Đang giao hàng", "Hoàn tất", "Đã hủy"],
+    "Đã xác nhận": ["Đã xác nhận", "Đang xử lý", "Đang giao hàng", "Hoàn tất"],
+    "Đang xử lý": ["Đang xử lý", "Đang giao hàng", "Hoàn tất"],
+    "Đang giao hàng": ["Đang giao hàng", "Hoàn tất"],
+    "Hoàn tất": ["Hoàn tất"],
+    "Đã hủy": ["Đã hủy"],
   };
 
   return map[currentStatus] || [currentStatus];
@@ -29,23 +29,23 @@ const getAllowedStatusOptions = (currentStatus) => {
 
 const getStatusTone = (value) => {
   const map = {
-    "Chá» xÃ¡c nháº­n": "status-pending",
-    "ÄÃ£ xÃ¡c nháº­n": "status-confirmed",
-    "Äang xá»­ lÃ½": "status-processing",
-    "Äang giao hÃ ng": "status-shipping",
-    "HoÃ n táº¥t": "status-completed",
-    "ÄÃ£ há»§y": "status-cancelled",
+    "Chờ xác nhận": "status-pending",
+    "Đã xác nhận": "status-confirmed",
+    "Đang xử lý": "status-processing",
+    "Đang giao hàng": "status-shipping",
+    "Hoàn tất": "status-completed",
+    "Đã hủy": "status-cancelled",
   };
 
   return map[value] || "status-pill-neutral";
 };
 
-const CANCELLED_STATUS = "ÄÃ£ há»§y";
+const CANCELLED_STATUS = "Đã hủy";
 
 const getPaymentTone = (value) => {
   const map = {
-    "ChÆ°a thanh toÃ¡n": "status-pending",
-    "ÄÃ£ thanh toÃ¡n": "status-paid",
+    "Chưa thanh toán": "status-pending",
+    "Đã thanh toán": "status-paid",
   };
 
   return map[value] || "status-pill-neutral";
@@ -93,11 +93,11 @@ export default function Orders() {
 
     try {
       await api.patch(`/admin/orders/${orderId}/status`, payload);
-      setMessage("Cáº­p nháº­t Ä‘Æ¡n hÃ ng thÃ nh cÃ´ng");
+      setMessage("Cập nhật đơn hàng thành công");
       reloadCurrentPage();
       return true;
     } catch (err) {
-      setMessage(err.response?.data?.message || "KhÃ´ng thá»ƒ cáº­p nháº­t Ä‘Æ¡n hÃ ng");
+      setMessage(err.response?.data?.message || "Không thể cập nhật đơn hàng");
       return false;
     }
   };
@@ -139,7 +139,7 @@ export default function Orders() {
     if (!reason) {
       setCancelDialog((prev) => ({
         ...prev,
-        error: "Vui lÃ²ng nháº­p lÃ½ do há»§y Ä‘Æ¡n hÃ ng",
+        error: "Vui lòng nhập lý do hủy đơn hàng",
       }));
       return;
     }
@@ -167,9 +167,9 @@ export default function Orders() {
 
   const stats = useMemo(() => {
     const total = orders.length;
-    const paid = orders.filter((order) => order.paymentStatus === "ÄÃ£ thanh toÃ¡n").length;
-    const completed = orders.filter((order) => order.orderStatus === "HoÃ n táº¥t").length;
-    const cancelled = orders.filter((order) => order.orderStatus === "ÄÃ£ há»§y").length;
+    const paid = orders.filter((order) => order.paymentStatus === "Đã thanh toán").length;
+    const completed = orders.filter((order) => order.orderStatus === "Hoàn tất").length;
+    const cancelled = orders.filter((order) => order.orderStatus === "Đã hủy").length;
 
     return { total, paid, completed, cancelled };
   }, [orders]);
@@ -179,25 +179,25 @@ export default function Orders() {
       <section className="panel panel-hero">
         <div className="panel-header">
           <div>
-            <p className="eyebrow">Quáº£n lÃ½ Ä‘Æ¡n hÃ ng</p>
-            <h3>Theo dÃµi thanh toÃ¡n vÃ  tráº¡ng thÃ¡i xá»­ lÃ½</h3>
+            <p className="eyebrow">Quản lý đơn hàng</p>
+            <h3>Theo dõi thanh toán và trạng thái xử lý</h3>
           </div>
 
           <div className="stats-inline">
             <div className="mini-stat">
-              <span>Tá»•ng</span>
+              <span>Tổng</span>
               <strong>{stats.total}</strong>
             </div>
             <div className="mini-stat">
-              <span>ÄÃ£ thanh toÃ¡n</span>
+              <span>Đã thanh toán</span>
               <strong>{stats.paid}</strong>
             </div>
             <div className="mini-stat">
-              <span>HoÃ n táº¥t</span>
+              <span>Hoàn tất</span>
               <strong>{stats.completed}</strong>
             </div>
             <div className="mini-stat">
-              <span>ÄÃ£ há»§y</span>
+              <span>Đã hủy</span>
               <strong>{stats.cancelled}</strong>
             </div>
           </div>
@@ -211,7 +211,7 @@ export default function Orders() {
             name="search"
             value={filters.search}
             onChange={handleFilterChange}
-            placeholder="MÃ£ Ä‘Æ¡n..."
+            placeholder="Mã đơn..."
           />
           <select
             style={{ width: "50%" }}
@@ -219,7 +219,7 @@ export default function Orders() {
             value={filters.status}
             onChange={handleFilterChange}
           >
-            <option value="">Táº¥t cáº£ tráº¡ng thÃ¡i</option>
+            <option value="">Tất cả trạng thái</option>
             {statusOptions.map((status) => (
               <option key={status} value={status}>
                 {status}
@@ -227,25 +227,25 @@ export default function Orders() {
             ))}
           </select>
           <button className="btn btn-secondary" type="button" onClick={load}>
-            Lá»c
+            Lọc
           </button>
         </div>
       </section>
 
       <section className="panel">
         {loading ? (
-          <p>Äang táº£i...</p>
+          <p>Đang tải...</p>
         ) : (
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>MÃ£ Ä‘Æ¡n</th>
-                  <th>KhÃ¡ch hÃ ng</th>
-                  <th>Thanh toÃ¡n</th>
-                  <th>Tráº¡ng thÃ¡i</th>
-                  <th>Tá»•ng tiá»n</th>
-                  <th>HÃ nh Ä‘á»™ng</th>
+                  <th>Mã đơn</th>
+                  <th>Khách hàng</th>
+                  <th>Thanh toán</th>
+                  <th>Trạng thái</th>
+                  <th>Tổng tiền</th>
+                  <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
@@ -275,7 +275,7 @@ export default function Orders() {
                           {order.orderStatus}
                         </span>
                       </td>
-                      <td>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} â‚«</td>
+                      <td>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} ₫</td>
                       <td>
                         <div className="actions-inline">
                           <select
@@ -293,7 +293,7 @@ export default function Orders() {
                             type="button"
                             onClick={() => handleSaveClick(order._id)}
                           >
-                            LÆ°u
+                            Lưu
                           </button>
                         </div>
                       </td>
