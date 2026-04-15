@@ -112,6 +112,10 @@ const orderSchema = new mongoose.Schema(
     },
     paidAt: Date,
     trackingNumber: String,
+    cancelReason: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true },
 );

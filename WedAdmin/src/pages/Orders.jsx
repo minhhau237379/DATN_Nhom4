@@ -2,25 +2,26 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import { reloadCurrentPage } from "../utils/adminActions";
+import OrderCancelReasonDialog from "../components/OrderCancelReasonDialog";
 import "./Orders.css";
 
 const statusOptions = [
-  "Chờ xác nhận",
-  "Đã xác nhận",
-  "Đang xử lý",
-  "Đang giao hàng",
-  "Hoàn tất",
-  "Đã hủy",
+  "Chá» xÃ¡c nháº­n",
+  "ÄÃ£ xÃ¡c nháº­n",
+  "Äang xá»­ lÃ½",
+  "Äang giao hÃ ng",
+  "HoÃ n táº¥t",
+  "ÄÃ£ há»§y",
 ];
 
 const getAllowedStatusOptions = (currentStatus) => {
   const map = {
-    "Chờ xác nhận": ["Chờ xác nhận", "Đã xác nhận","Đang xử lý", "Đang giao hàng", "Hoàn tất", "Đã hủy"],
-    "Đã xác nhận": ["Đã xác nhận", "Đang xử lý", "Đang giao hàng", "Hoàn tất"],
-    "Đang xử lý": ["Đang xử lý", "Đang giao hàng","Hoàn tất"],
-    "Đang giao hàng": ["Đang giao hàng", "Hoàn tất"],
-    "Hoàn tất": ["Hoàn tất"],
-    "Đã hủy": ["Đã hủy"],
+    "Chá» xÃ¡c nháº­n": ["Chá» xÃ¡c nháº­n", "ÄÃ£ xÃ¡c nháº­n","Äang xá»­ lÃ½", "Äang giao hÃ ng", "HoÃ n táº¥t", "ÄÃ£ há»§y"],
+    "ÄÃ£ xÃ¡c nháº­n": ["ÄÃ£ xÃ¡c nháº­n", "Äang xá»­ lÃ½", "Äang giao hÃ ng", "HoÃ n táº¥t"],
+    "Äang xá»­ lÃ½": ["Äang xá»­ lÃ½", "Äang giao hÃ ng","HoÃ n táº¥t"],
+    "Äang giao hÃ ng": ["Äang giao hÃ ng", "HoÃ n táº¥t"],
+    "HoÃ n táº¥t": ["HoÃ n táº¥t"],
+    "ÄÃ£ há»§y": ["ÄÃ£ há»§y"],
   };
 
   return map[currentStatus] || [currentStatus];
@@ -28,21 +29,23 @@ const getAllowedStatusOptions = (currentStatus) => {
 
 const getStatusTone = (value) => {
   const map = {
-    "Chờ xác nhận": "status-pending",
-    "Đã xác nhận": "status-confirmed",
-    "Đang xử lý": "status-processing",
-    "Đang giao hàng": "status-shipping",
-    "Hoàn tất": "status-completed",
-    "Đã hủy": "status-cancelled",
+    "Chá» xÃ¡c nháº­n": "status-pending",
+    "ÄÃ£ xÃ¡c nháº­n": "status-confirmed",
+    "Äang xá»­ lÃ½": "status-processing",
+    "Äang giao hÃ ng": "status-shipping",
+    "HoÃ n táº¥t": "status-completed",
+    "ÄÃ£ há»§y": "status-cancelled",
   };
 
   return map[value] || "status-pill-neutral";
 };
 
+const CANCELLED_STATUS = "ÄÃ£ há»§y";
+
 const getPaymentTone = (value) => {
   const map = {
-    "Chưa thanh toán": "status-pending",
-    "Đã thanh toán": "status-paid",
+    "ChÆ°a thanh toÃ¡n": "status-pending",
+    "ÄÃ£ thanh toÃ¡n": "status-paid",
   };
 
   return map[value] || "status-pill-neutral";
@@ -54,6 +57,13 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [drafts, setDrafts] = useState({});
+  const [cancelDialog, setCancelDialog] = useState({
+    open: false,
+    orderId: "",
+    reason: "",
+    saving: false,
+    error: "",
+  });
 
   const load = async () => {
     setLoading(true);
@@ -74,16 +84,75 @@ export default function Orders() {
     setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const updateOrder = async (orderId) => {
+  const updateOrder = async (orderId, cancelReason = "") => {
     const current = drafts[orderId] || {};
+    const payload = {
+      ...current,
+      ...(cancelReason ? { cancelReason } : {}),
+    };
+
     try {
-      await api.patch(`/admin/orders/${orderId}/status`, current);
-      setMessage("Cập nhật đơn hàng thành công");
+      await api.patch(`/admin/orders/${orderId}/status`, payload);
+      setMessage("Cáº­p nháº­t Ä‘Æ¡n hÃ ng thÃ nh cÃ´ng");
       reloadCurrentPage();
-      return;
+      return true;
     } catch (err) {
-      setMessage(err.response?.data?.message || "Không thể cập nhật đơn hàng");
+      setMessage(err.response?.data?.message || "KhÃ´ng thá»ƒ cáº­p nháº­t Ä‘Æ¡n hÃ ng");
+      return false;
     }
+  };
+
+  const submitOrderUpdate = async (orderId, cancelReason = "") => {
+    return updateOrder(orderId, cancelReason);
+  };
+
+  const handleSaveClick = (orderId) => {
+    const current = drafts[orderId] || {};
+
+    if (current.orderStatus === CANCELLED_STATUS) {
+      setCancelDialog({
+        open: true,
+        orderId,
+        reason: "",
+        saving: false,
+        error: "",
+      });
+      return;
+    }
+
+    submitOrderUpdate(orderId);
+  };
+
+  const closeCancelDialog = () => {
+    setCancelDialog({
+      open: false,
+      orderId: "",
+      reason: "",
+      saving: false,
+      error: "",
+    });
+  };
+
+  const confirmCancelDialog = async () => {
+    const reason = cancelDialog.reason.trim();
+
+    if (!reason) {
+      setCancelDialog((prev) => ({
+        ...prev,
+        error: "Vui lÃ²ng nháº­p lÃ½ do há»§y Ä‘Æ¡n hÃ ng",
+      }));
+      return;
+    }
+
+    setCancelDialog((prev) => ({ ...prev, saving: true, error: "" }));
+    const ok = await submitOrderUpdate(cancelDialog.orderId, reason);
+
+    if (ok) {
+      closeCancelDialog();
+      return;
+    }
+
+    setCancelDialog((prev) => ({ ...prev, saving: false }));
   };
 
   const setDraft = (orderId, field, value) => {
@@ -98,9 +167,9 @@ export default function Orders() {
 
   const stats = useMemo(() => {
     const total = orders.length;
-    const paid = orders.filter((order) => order.paymentStatus === "Đã thanh toán").length;
-    const completed = orders.filter((order) => order.orderStatus === "Hoàn tất").length;
-    const cancelled = orders.filter((order) => order.orderStatus === "Đã hủy").length;
+    const paid = orders.filter((order) => order.paymentStatus === "ÄÃ£ thanh toÃ¡n").length;
+    const completed = orders.filter((order) => order.orderStatus === "HoÃ n táº¥t").length;
+    const cancelled = orders.filter((order) => order.orderStatus === "ÄÃ£ há»§y").length;
 
     return { total, paid, completed, cancelled };
   }, [orders]);
@@ -110,25 +179,25 @@ export default function Orders() {
       <section className="panel panel-hero">
         <div className="panel-header">
           <div>
-            <p className="eyebrow">Quản lý đơn hàng</p>
-            <h3>Theo dõi thanh toán và trạng thái xử lý</h3>
+            <p className="eyebrow">Quáº£n lÃ½ Ä‘Æ¡n hÃ ng</p>
+            <h3>Theo dÃµi thanh toÃ¡n vÃ  tráº¡ng thÃ¡i xá»­ lÃ½</h3>
           </div>
 
           <div className="stats-inline">
             <div className="mini-stat">
-              <span>Tổng</span>
+              <span>Tá»•ng</span>
               <strong>{stats.total}</strong>
             </div>
             <div className="mini-stat">
-              <span>Đã thanh toán</span>
+              <span>ÄÃ£ thanh toÃ¡n</span>
               <strong>{stats.paid}</strong>
             </div>
             <div className="mini-stat">
-              <span>Hoàn tất</span>
+              <span>HoÃ n táº¥t</span>
               <strong>{stats.completed}</strong>
             </div>
             <div className="mini-stat">
-              <span>Đã hủy</span>
+              <span>ÄÃ£ há»§y</span>
               <strong>{stats.cancelled}</strong>
             </div>
           </div>
@@ -142,7 +211,7 @@ export default function Orders() {
             name="search"
             value={filters.search}
             onChange={handleFilterChange}
-            placeholder="Mã đơn..."
+            placeholder="MÃ£ Ä‘Æ¡n..."
           />
           <select
             style={{ width: "50%" }}
@@ -150,7 +219,7 @@ export default function Orders() {
             value={filters.status}
             onChange={handleFilterChange}
           >
-            <option value="">Tất cả trạng thái</option>
+            <option value="">Táº¥t cáº£ tráº¡ng thÃ¡i</option>
             {statusOptions.map((status) => (
               <option key={status} value={status}>
                 {status}
@@ -158,25 +227,25 @@ export default function Orders() {
             ))}
           </select>
           <button className="btn btn-secondary" type="button" onClick={load}>
-            Lọc
+            Lá»c
           </button>
         </div>
       </section>
 
       <section className="panel">
         {loading ? (
-          <p>Đang tải...</p>
+          <p>Äang táº£i...</p>
         ) : (
           <div className="table-wrap">
             <table>
               <thead>
                 <tr>
-                  <th>Mã đơn</th>
-                  <th>Khách hàng</th>
-                  <th>Thanh toán</th>
-                  <th>Trạng thái</th>
-                  <th>Tổng tiền</th>
-                  <th>Hành động</th>
+                  <th>MÃ£ Ä‘Æ¡n</th>
+                  <th>KhÃ¡ch hÃ ng</th>
+                  <th>Thanh toÃ¡n</th>
+                  <th>Tráº¡ng thÃ¡i</th>
+                  <th>Tá»•ng tiá»n</th>
+                  <th>HÃ nh Ä‘á»™ng</th>
                 </tr>
               </thead>
               <tbody>
@@ -206,7 +275,7 @@ export default function Orders() {
                           {order.orderStatus}
                         </span>
                       </td>
-                      <td>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} ₫</td>
+                      <td>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} â‚«</td>
                       <td>
                         <div className="actions-inline">
                           <select
@@ -222,9 +291,9 @@ export default function Orders() {
                           <button
                             className="btn btn-primary"
                             type="button"
-                            onClick={() => updateOrder(order._id)}
+                            onClick={() => handleSaveClick(order._id)}
                           >
-                            Lưu
+                            LÆ°u
                           </button>
                         </div>
                       </td>
@@ -236,6 +305,22 @@ export default function Orders() {
           </div>
         )}
       </section>
+
+      <OrderCancelReasonDialog
+        visible={cancelDialog.open}
+        reason={cancelDialog.reason}
+        error={cancelDialog.error}
+        saving={cancelDialog.saving}
+        onReasonChange={(reason) =>
+          setCancelDialog((prev) => ({
+            ...prev,
+            reason,
+            error: "",
+          }))
+        }
+        onConfirm={confirmCancelDialog}
+        onClose={closeCancelDialog}
+      />
     </div>
   );
 }

@@ -31,6 +31,16 @@ const createTransporter = () => {
   });
 };
 
+const escapeHtml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const formatMoney = (value) => Number(value || 0).toLocaleString("vi-VN");
+
 const sendPasswordResetOtp = async ({ email, otp }) => {
   const transporter = createTransporter();
   const config = getRequiredMailConfig();
@@ -46,7 +56,9 @@ const sendPasswordResetOtp = async ({ email, otp }) => {
         <div style="max-width:640px;margin:0 auto;padding:32px 16px;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#1f2937;">
           <div style="background:#ffffff;border:1px solid #dbe4f0;border-radius:20px;overflow:hidden;box-shadow:0 12px 30px rgba(15,23,42,0.08);">
             <div style="background:linear-gradient(135deg,#1d4ed8 0%,#2563eb 45%,#60a5fa 100%);padding:28px 32px;text-align:center;color:#ffffff;">
-              <div style="display:inline-block;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,0.16);font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">${appName}</div>
+              <div style="display:inline-block;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,0.16);font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">${escapeHtml(
+                appName,
+              )}</div>
               <h1 style="margin:16px 0 8px;font-size:28px;line-height:1.25;">Đặt lại mật khẩu</h1>
               <p style="margin:0;font-size:15px;opacity:0.95;">Bạn đã gửi yêu cầu đặt lại mật khẩu cho tài khoản của mình</p>
             </div>
@@ -78,12 +90,14 @@ const sendPasswordResetOtp = async ({ email, otp }) => {
                 Nếu bạn gặp khó khăn khi sử dụng mã OTP, hãy liên hệ với bộ phận hỗ trợ của chúng tôi để được giúp đỡ.
               </p>
               <p style="margin:18px 0 0;font-size:16px;line-height:1.7;">Trân trọng,</p>
-              <p style="margin:0;font-size:16px;font-weight:700;color:#0f172a;">Đội ngũ hỗ trợ ${appName}</p>
+              <p style="margin:0;font-size:16px;font-weight:700;color:#0f172a;">Đội ngũ hỗ trợ ${escapeHtml(
+                appName,
+              )}</p>
             </div>
           </div>
 
           <p style="margin:16px 0 0;text-align:center;font-size:12px;color:#94a3b8;">
-            Đây là email tự động từ ${appName}, vui lòng không trả lời trực tiếp.
+            Đây là email tự động từ ${escapeHtml(appName)}, vui lòng không trả lời trực tiếp.
           </p>
         </div>
       </div>
@@ -92,6 +106,86 @@ const sendPasswordResetOtp = async ({ email, otp }) => {
   });
 };
 
+const sendOrderStatusUpdateEmail = async ({
+  email,
+  orderNumber,
+  customerName,
+  previousStatus,
+  nextStatus,
+  cancelReason = "",
+  totalPrice,
+}) => {
+  const transporter = createTransporter();
+  const config = getRequiredMailConfig();
+  const appName = process.env.APP_NAME?.trim() || "Ứng dụng của bạn";
+  const safeReason = String(cancelReason || "").trim();
+  const hasCancelReason = Boolean(safeReason);
+
+  await transporter.sendMail({
+    from: config.from,
+    to: email,
+    subject: `[${appName}] Cập nhật trạng thái đơn hàng ${orderNumber || ""}`.trim(),
+    html: `
+      <div style="margin:0;padding:0;background:#f8fafc;width:100%;">
+        <div style="max-width:640px;margin:0 auto;padding:32px 16px;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;color:#1f2937;">
+          <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:20px;overflow:hidden;box-shadow:0 12px 30px rgba(15,23,42,0.08);">
+            <div style="background:linear-gradient(135deg,#0f8b8d 0%,#14b8a6 100%);padding:28px 32px;color:#ffffff;">
+              <div style="display:inline-block;padding:8px 14px;border-radius:999px;background:rgba(255,255,255,0.16);font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;">${escapeHtml(
+                appName,
+              )}</div>
+              <h1 style="margin:16px 0 8px;font-size:28px;line-height:1.25;">Cập nhật trạng thái đơn hàng</h1>
+              <p style="margin:0;font-size:15px;opacity:0.95;">Đơn hàng của bạn đã được cập nhật trạng thái từ hệ thống.</p>
+            </div>
+
+            <div style="padding:32px;">
+              <p style="margin:0 0 16px;font-size:16px;line-height:1.7;">Xin chào ${escapeHtml(customerName || "khách hàng")},</p>
+              <p style="margin:0 0 20px;font-size:16px;line-height:1.7;color:#334155;">
+                Chúng tôi xin thông báo trạng thái đơn hàng của bạn đã được cập nhật.
+              </p>
+
+              <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:18px 20px;margin:0 0 24px;">
+                <p style="margin:0 0 8px;font-size:15px;"><strong>Mã đơn:</strong> ${escapeHtml(orderNumber || "")}</p>
+                <p style="margin:0 0 8px;font-size:15px;"><strong>Trạng thái:</strong> ${escapeHtml(
+                  `${previousStatus || ""} -> ${nextStatus || ""}`.trim(),
+                )}</p>
+                <p style="margin:0 0 8px;font-size:15px;"><strong>Tổng tiền:</strong> ${escapeHtml(
+                  formatMoney(totalPrice),
+                )} VND</p>
+                ${
+                  hasCancelReason
+                    ? `<p style="margin:0;font-size:15px;"><strong>Lý do hủy:</strong> ${escapeHtml(
+                        safeReason,
+                      )}</p>`
+                    : ""
+                }
+              </div>
+
+              <p style="margin:0;font-size:16px;line-height:1.7;color:#334155;">
+                Nếu bạn cần hỗ trợ thêm, vui lòng liên hệ bộ phận chăm sóc khách hàng của chúng tôi.
+              </p>
+            </div>
+          </div>
+
+          <p style="margin:16px 0 0;text-align:center;font-size:12px;color:#94a3b8;">
+            Đây là email tự động từ ${escapeHtml(appName)}, vui lòng không trả lời trên email này.
+          </p>
+        </div>
+      </div>
+    `,
+    text: [
+      `Xin chào ${customerName || "khách hàng"},`,
+      `Đơn hàng ${orderNumber || ""} đã được cập nhật trạng thái.`,
+      `Trạng thái: ${previousStatus || ""} -> ${nextStatus || ""}`.trim(),
+      `Tổng tiền: ${formatMoney(totalPrice)} VND`,
+      hasCancelReason ? `Lý do hủy: ${safeReason}` : null,
+      `Nếu cần hỗ trợ thêm, vui lòng liên hệ bộ phận chăm sóc khách hàng.`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
+  });
+};
+
 module.exports = {
   sendPasswordResetOtp,
+  sendOrderStatusUpdateEmail,
 };

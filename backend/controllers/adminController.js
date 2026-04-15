@@ -21,6 +21,7 @@ const {
   canMoveForward,
   isFinalOrderStatus,
 } = require("../utils/orderStatus");
+const { sendOrderStatusUpdateEmail } = require("../utils/mailer");
 
 const normalizePrice = (value) => {
   if (value === undefined || value === null || value === "") return undefined;
@@ -688,6 +689,16 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
+    const cancelReason =
+      nextStatus === ORDER_STATUS.CANCELLED ? String(req.body.cancelReason || "").trim() : "";
+
+    if (nextStatus === ORDER_STATUS.CANCELLED && !cancelReason) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng nhập lý do hủy đơn hàng",
+      });
+    }
+
     if (req.body.trackingNumber !== undefined) {
       order.trackingNumber = req.body.trackingNumber;
     }
@@ -697,6 +708,7 @@ exports.updateOrderStatus = async (req, res) => {
     }
 
     order.orderStatus = nextStatus;
+    order.cancelReason = nextStatus === ORDER_STATUS.CANCELLED ? cancelReason : "";
 
     if (
       order.paymentMethod === "COD" &&
@@ -717,13 +729,31 @@ exports.updateOrderStatus = async (req, res) => {
       .populate("user", "username email phoneNumber role")
       .populate("items.product");
 
+    const orderData = populatedOrder.toObject();
+
+    if (orderData.user?.email && currentStatus !== nextStatus) {
+      try {
+        await sendOrderStatusUpdateEmail({
+          email: orderData.user.email,
+          orderNumber: orderData.orderNumber,
+          customerName:
+            orderData.user.username || orderData.shippingAddress?.fullName || "khách hàng",
+          previousStatus: currentStatus,
+          nextStatus,
+          cancelReason: orderData.cancelReason || cancelReason,
+          totalPrice: orderData.totalPrice,
+        });
+      } catch (mailError) {
+        console.error("ADMIN ORDER STATUS EMAIL ERROR:", mailError);
+      }
+    }
     res.json({
       success: true,
       message: "Cập nhật đơn hàng thành công",
       order: {
-        ...populatedOrder.toObject(),
-        orderStatus: normalizeOrderStatus(populatedOrder.orderStatus),
-        paymentStatus: normalizePaymentStatus(populatedOrder.paymentStatus),
+        ...orderData,
+        orderStatus: normalizeOrderStatus(orderData.orderStatus),
+        paymentStatus: normalizePaymentStatus(orderData.paymentStatus),
       },
     });
   } catch (err) {

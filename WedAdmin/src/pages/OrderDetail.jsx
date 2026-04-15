@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../services/api";
 import { reloadCurrentPage } from "../utils/adminActions";
+import OrderCancelReasonDialog from "../components/OrderCancelReasonDialog";
 import "./OrderDetail.css";
 
 const getAllowedStatusOptions = (currentStatus) => {
@@ -30,6 +31,8 @@ const getStatusTone = (value) => {
   return map[value] || "status-pill-neutral";
 };
 
+const CANCELLED_STATUS = "Đã hủy";
+
 const getPaymentTone = (value) => {
   const map = {
     "Chưa thanh toán": "status-pending",
@@ -44,6 +47,12 @@ export default function OrderDetail() {
   const [order, setOrder] = useState(null);
   const [draft, setDraft] = useState({ orderStatus: "" });
   const [message, setMessage] = useState("");
+  const [cancelDialog, setCancelDialog] = useState({
+    open: false,
+    reason: "",
+    saving: false,
+    error: "",
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -77,6 +86,68 @@ export default function OrderDetail() {
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể cập nhật đơn hàng");
     }
+  };
+
+  const submitOrderUpdate = async (cancelReason = "") => {
+    const payload = {
+      ...draft,
+      ...(cancelReason ? { cancelReason } : {}),
+    };
+
+    try {
+      await api.patch(`/admin/orders/${id}/status`, payload);
+      setMessage("Cáº­p nháº­t Ä‘Æ¡n hÃ ng thÃ nh cÃ´ng");
+      reloadCurrentPage();
+      return true;
+    } catch (err) {
+      setMessage(err.response?.data?.message || "KhÃ´ng thá»ƒ cáº­p nháº­t Ä‘Æ¡n hÃ ng");
+      return false;
+    }
+  };
+
+  const handleSaveClick = () => {
+    if (draft.orderStatus === CANCELLED_STATUS) {
+      setCancelDialog({
+        open: true,
+        reason: "",
+        saving: false,
+        error: "",
+      });
+      return;
+    }
+
+    save();
+  };
+
+  const closeCancelDialog = () => {
+    setCancelDialog({
+      open: false,
+      reason: "",
+      saving: false,
+      error: "",
+    });
+  };
+
+  const confirmCancelDialog = async () => {
+    const reason = cancelDialog.reason.trim();
+
+    if (!reason) {
+      setCancelDialog((prev) => ({
+        ...prev,
+        error: "Vui lòng nhập lý do hủy đơn hàng",
+      }));
+      return;
+    }
+
+    setCancelDialog((prev) => ({ ...prev, saving: true, error: "" }));
+    const ok = await submitOrderUpdate(reason);
+
+    if (ok) {
+      closeCancelDialog();
+      return;
+    }
+
+    setCancelDialog((prev) => ({ ...prev, saving: false }));
   };
 
   const totalItems = useMemo(
@@ -170,7 +241,7 @@ export default function OrderDetail() {
           </div>
         </div>
 
-        <button className="btn btn-primary" onClick={save}>
+        <button className="btn btn-primary" onClick={handleSaveClick}>
           LƯu thay đổi
         </button>
       </section>
@@ -202,6 +273,22 @@ export default function OrderDetail() {
           </table>
         </div>
       </section>
+
+      <OrderCancelReasonDialog
+        visible={cancelDialog.open}
+        reason={cancelDialog.reason}
+        error={cancelDialog.error}
+        saving={cancelDialog.saving}
+        onReasonChange={(reason) =>
+          setCancelDialog((prev) => ({
+            ...prev,
+            reason,
+            error: "",
+          }))
+        }
+        onConfirm={confirmCancelDialog}
+        onClose={closeCancelDialog}
+      />
     </div>
   );
 }
