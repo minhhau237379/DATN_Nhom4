@@ -7,6 +7,8 @@ const getFeatureMessage = (feature?: string | string[]) => {
   switch (value) {
     case "favorite":
       return "Vui lòng đăng nhập để sử dụng yêu thích";
+    case "chat":
+      return "Vui lòng đăng nhập để chat với admin";
     case "cart":
       return "Vui lòng đăng nhập để sử dụng giỏ hàng";
     case "profile":

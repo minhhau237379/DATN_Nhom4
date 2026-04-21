@@ -4,6 +4,7 @@ const router = express.Router();
 
 const authController = require("../controllers/authController");
 const adminController = require("../controllers/adminController");
+const chatController = require("../controllers/chatController");
 const authMiddleware = require("../middlewares/authMiddleware");
 const { requireAdmin } = require("../middlewares/adminMiddleware");
 
@@ -41,5 +42,9 @@ router.get("/users/:id", adminController.getUserDetail);
 router.patch("/users/:id/lock", adminController.updateUserLockStatus);
 
 router.get("/stats/overview", adminController.dashboardStats);
+
+router.get("/chats", chatController.listAdminThreads);
+router.get("/chats/:userId", chatController.getAdminThread);
+router.post("/chats/:userId/messages", chatController.sendAdminMessage);
 
 module.exports = router;

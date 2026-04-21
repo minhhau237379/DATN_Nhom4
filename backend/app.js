@@ -17,6 +17,7 @@ const cartRoutes = require("./routes/cartRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const addressRoutes = require("./routes/address");
 const paymentRoutes = require("./routes/paymentRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 
 const corsOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173,http://localhost:5174,http://localhost:8081,http://14.225.224.132,http://14.225.224.132:3003")
   .split(",")
@@ -71,6 +72,7 @@ app.use("/api/order", orderRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/orders", orderRoutes);
 app.use("/api/address", addressRoutes);
+app.use("/api/chat", chatRoutes);
 app.use("/payment/vnpay", paymentRoutes);
 /* ======================= HEALTH CHECK ======================= */
 app.get("/health", (req, res) => {

@@ -18,6 +18,7 @@ import RenderHTML from "react-native-render-html";
 import BackHeader from "../../components/BackHeader";
 import AppToast from "../../components/AppToast";
 import api from "../../services/api";
+import { createProductAttachment, sendChatMessage } from "../../services/chat";
 import { isLoggedIn } from "../../utils/auth";
 import { getProductImages, resolveImageUri } from "../../utils/productImage";
 
@@ -161,6 +162,36 @@ export default function ProductDetail() {
     } catch (err) {
       console.error(err);
       showNotice("Lỗi", "Có lỗi xảy ra");
+    }
+  };
+
+  const chatWithAdmin = async () => {
+    try {
+      if (!product) {
+        return;
+      }
+
+      if (!(await isLoggedIn())) {
+        showNotice("Thông báo", "Bạn cần đăng nhập để chat với admin");
+        return;
+      }
+
+      const attachment = createProductAttachment({
+        productId: product._id,
+        name: product.name,
+        price: product.price,
+        image: productImages[0] || "",
+      });
+
+      await sendChatMessage({
+        content: `Mình muốn hỏi về sản phẩm: ${product.name}`,
+        attachment,
+      });
+
+      router.push("/tabs/chat");
+    } catch (err) {
+      console.error(err);
+      showNotice("Lỗi", "Không thể gửi sản phẩm sang chat");
     }
   };
 
@@ -343,6 +374,14 @@ export default function ProductDetail() {
           </TouchableOpacity>
         </View>
 
+        <TouchableOpacity
+          style={styles.chatBtn}
+          onPress={chatWithAdmin}
+        >
+          <Ionicons name="chatbox-ellipses-outline" size={18} color="#fff" />
+          <Text style={styles.chatBtnText}>Chat với admin</Text>
+        </TouchableOpacity>
+
         <View style={styles.section}>
           <Text style={styles.title}>Thông tin sản phẩm</Text>
 
@@ -493,6 +532,21 @@ const styles = StyleSheet.create({
   },
   buyNowText: { color: "#d5001c", fontWeight: "bold" },
   cartBtnText: { color: "white", fontWeight: "bold" },
+  chatBtn: {
+    marginHorizontal: 10,
+    marginTop: 10,
+    backgroundColor: "#0f8b8d",
+    paddingVertical: 14,
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    gap: 8,
+  },
+  chatBtnText: {
+    color: "white",
+    fontWeight: "bold",
+  },
   title: { fontWeight: "bold", marginBottom: 5 },
   descriptionPanel: {
     backgroundColor: "#f8fafc",

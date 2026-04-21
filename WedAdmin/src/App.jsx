@@ -8,6 +8,7 @@ import Categories from "./pages/Categories";
 import Users from "./pages/Users";
 import Orders from "./pages/Orders";
 import OrderDetail from "./pages/OrderDetail";
+import Chat from "./pages/Chat";
 
 const isAdminLoggedIn = () => Boolean(localStorage.getItem("adminToken"));
 
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="/admin/users" element={<Users />} />
             <Route path="/admin/orders" element={<Orders />} />
             <Route path="/admin/orders/:id" element={<OrderDetail />} />
+            <Route path="/admin/chat" element={<Chat />} />
           </Route>
         </Route>
       </Routes>

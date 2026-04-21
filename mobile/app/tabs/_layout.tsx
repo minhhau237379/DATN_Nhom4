@@ -20,7 +20,7 @@ export default function RootLayout() {
     }, [loadToken]),
   );
 
-  const guardTab = (feature: "favorite" | "cart" | "profile") => ({
+  const guardTab = (feature: "favorite" | "chat" | "cart" | "profile") => ({
     tabPress: (event: { preventDefault: () => void }) => {
       if (hasToken) {
         return;
@@ -64,6 +64,17 @@ export default function RootLayout() {
             title: "Yêu thích",
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="heart" size={size} color={color} />
+            ),
+          }}
+        />
+
+        <Tabs.Screen
+          name="chat"
+          listeners={guardTab("chat")}
+          options={{
+            title: "Chat",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="chatbox-ellipses-outline" size={size} color={color} />
             ),
           }}
         />

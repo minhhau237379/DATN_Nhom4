@@ -1,20 +1,22 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { isLoggedIn } from "../utils/auth";
 
-type TabKey = "home" | "favorite" | "cart" | "profile";
+type TabKey = "home" | "favorite" | "chat" | "cart" | "profile";
 
 type AppBottomNavProps = {
   active: TabKey;
 };
 
+const CHAT_ICON_SOURCE: string | null = null;
+
 const tabs: {
   key: TabKey;
   label: string;
   icon: keyof typeof Ionicons.glyphMap;
-  route: "/tabs/product" | "/tabs/favorites" | "/tabs/cart" | "/tabs/profile";
+  route: "/tabs/product" | "/tabs/favorites" | "/tabs/chat" | "/tabs/cart" | "/tabs/profile";
 }[] = [
   {
     key: "home",
@@ -27,6 +29,12 @@ const tabs: {
     label: "Yêu thích",
     icon: "heart",
     route: "/tabs/favorites",
+  },
+  {
+    key: "chat",
+    label: "Chat",
+    icon: "chatbox-ellipses-outline",
+    route: "/tabs/chat",
   },
   {
     key: "cart",
@@ -48,7 +56,7 @@ export default function AppBottomNav({ active }: AppBottomNavProps) {
   const insets = useSafeAreaInsets();
 
   const handlePress = async (tab: (typeof tabs)[number]) => {
-    const protectedTabs: TabKey[] = ["favorite", "cart", "profile"];
+    const protectedTabs: TabKey[] = ["favorite", "chat", "cart", "profile"];
 
     if (protectedTabs.includes(tab.key) && !(await isLoggedIn())) {
       router.push({
@@ -80,11 +88,22 @@ export default function AppBottomNav({ active }: AppBottomNavProps) {
             style={styles.item}
             onPress={() => handlePress(tab)}
           >
-            <Ionicons
-              name={tab.icon}
-              size={24}
-              color={isActive ? "#e30019" : "#8a8a8a"}
-            />
+            {tab.key === "chat" && CHAT_ICON_SOURCE ? (
+              <Image
+                source={{ uri: CHAT_ICON_SOURCE }}
+                style={[
+                  styles.chatIcon,
+                  { tintColor: isActive ? "#e30019" : "#8a8a8a" },
+                ]}
+                resizeMode="contain"
+              />
+            ) : (
+              <Ionicons
+                name={tab.icon}
+                size={24}
+                color={isActive ? "#e30019" : "#8a8a8a"}
+              />
+            )}
             <Text style={[styles.label, isActive && styles.labelActive]}>
               {tab.label}
             </Text>
@@ -123,5 +142,9 @@ const styles = StyleSheet.create({
   labelActive: {
     color: "#e30019",
     fontWeight: "600",
+  },
+  chatIcon: {
+    width: 24,
+    height: 24,
   },
 });

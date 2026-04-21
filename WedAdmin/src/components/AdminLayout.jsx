@@ -10,6 +10,7 @@ const navItems = [
   { to: "/admin/categories", label: "Danh mục" },
   { to: "/admin/users", label: "Người dùng" },
   { to: "/admin/orders", label: "Đơn hàng" },
+  { to: "/admin/chat", label: "Chat" },
 ];
 
 export default function AdminLayout() {
