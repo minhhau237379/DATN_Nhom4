@@ -1,5 +1,5 @@
 .page-chat {
-  height: calc(100vh - 120px);
+  height: calc(140vh - 150px);
   overflow: hidden;
 }
 
@@ -10,8 +10,8 @@
 .page-chat .chat-hero {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 16px;
+  align-items: start;
+  gap: 10px;
 }
 
 .page-chat .chat-banner {
