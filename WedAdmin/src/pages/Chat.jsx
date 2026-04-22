@@ -106,24 +106,6 @@ export default function Chat() {
     isNearBottomRef.current = distanceFromBottom < 120;
   }, []);
 
-  const handleWheelScroll = useCallback((event) => {
-    const container = event.currentTarget;
-    const canScroll = container.scrollHeight > container.clientHeight + 1;
-
-    if (!canScroll) {
-      return;
-    }
-
-    const nextTop = container.scrollTop + event.deltaY;
-    const maxTop = container.scrollHeight - container.clientHeight;
-    const clampedTop = Math.max(0, Math.min(maxTop, nextTop));
-
-    if (clampedTop !== container.scrollTop) {
-      container.scrollTop = clampedTop;
-      event.preventDefault();
-    }
-  }, []);
-
   const loadThreads = useCallback(
     async ({ silent = false } = {}) => {
       if (!silent) {
@@ -271,7 +253,7 @@ export default function Chat() {
             </div>
           </div>
 
-          <div className="thread-scroll" ref={threadListRef} onWheel={handleWheelScroll}>
+          <div className="thread-scroll" ref={threadListRef}>
             {loadingThreads ? (
               <p className="muted-text">Đang tải danh sách...</p>
             ) : threads.length === 0 ? (
@@ -318,7 +300,6 @@ export default function Chat() {
             className="chat-message-list"
             ref={messageListRef}
             onScroll={handleMessageListScroll}
-            onWheel={handleWheelScroll}
           >
             {loadingMessages ? (
               <p className="muted-text">Đang tải nội dung chat...</p>
