@@ -21,7 +21,7 @@
   display: grid;
   grid-template-columns: 330px minmax(0, 1fr);
   gap: 20px;
-  min-height: 72vh;
+  height: clamp(560px, 72vh, calc(100vh - 220px));
   align-items: stretch;
 }
 
@@ -34,10 +34,12 @@
 
 .page-chat .chat-thread-list {
   grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
 }
 
 .page-chat .thread-scroll {
   min-height: 0;
+  height: 100%;
   overflow: auto;
   padding-right: 4px;
   overscroll-behavior: contain;
@@ -95,7 +97,7 @@
 }
 
 .page-chat .chat-panel {
-  min-height: 72vh;
+  height: 100%;
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
 

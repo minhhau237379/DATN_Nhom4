@@ -236,11 +236,11 @@ export default function Chat() {
     try {
       await api.post(`/admin/chats/${selectedUserId}/messages`, { content });
       setDraft("");
-      setMessage("Da gui tin nhan");
+      setMessage("Đã gửi tin nhắn");
       await loadThreads({ silent: true });
       await loadThreadDetail(selectedUserId, { silent: true });
     } catch (err) {
-      setMessage(err.response?.data?.message || "Khong the gui tin nhan");
+      setMessage(err.response?.data?.message || "Không thể gửi tin nhắn");
     } finally {
       setSending(false);
     }
@@ -253,10 +253,10 @@ export default function Chat() {
     <div className="page-chat grid">
       <div className="panel panel-hero chat-hero">
         <div>
-          <p className="eyebrow">Hop thu</p>
-          <h3>Chat voi khach hang</h3>
+          <p className="eyebrow">Hộp thư</p>
+          <h3>Chat với khách hàng</h3>
           <p className="muted-text">
-            Theo doi hoi thoai tu app mobile va tra loi truc tiep trong admin.
+            Theo dõi cuộc trò chuyện từ ứng dụng di động và trả lời trực tiếp trong admin.
           </p>
         </div>
         {message ? <div className="chat-banner">{message}</div> : null}
@@ -266,18 +266,18 @@ export default function Chat() {
         <aside className="panel chat-thread-list">
           <div className="panel-header">
             <div>
-              <h3>Hoi thoai</h3>
-              <p className="muted-text small-text">{threads.length} cuoc tro chuyen</p>
+              <h3>Hội thoại</h3>
+              <p className="muted-text small-text">{threads.length} cuộc trò chuyện</p>
             </div>
           </div>
 
           <div className="thread-scroll" ref={threadListRef} onWheel={handleWheelScroll}>
             {loadingThreads ? (
-              <p className="muted-text">Dang tai danh sach...</p>
+              <p className="muted-text">Đang tải danh sách...</p>
             ) : threads.length === 0 ? (
               <div className="empty-thread">
-                <strong>Chua co tin nhan</strong>
-                <span>Hoi thoai tu app mobile se xuat hien o day.</span>
+                <strong>Chưa có tin nhắn</strong>
+                <span>Hội thoại từ app mobile sẽ xuất hiện ở đây.</span>
               </div>
             ) : (
               <div className="thread-stack">
@@ -292,10 +292,10 @@ export default function Chat() {
                       onClick={() => setSelectedUserId(thread.user?._id || "")}
                     >
                       <div className="thread-head">
-                        <strong>{thread.user?.username || "user"}</strong>
+                        <strong>{thread.user?.username || "người dùng"}</strong>
                         <span>{formatTime(thread.lastMessageAt)}</span>
                       </div>
-                      <p>{thread.lastMessage?.content || "Chua co tin nhan"}</p>
+                      <p>{thread.lastMessage?.content || "Chưa có tin nhắn"}</p>
                       <small>{thread.user?.email || ""}</small>
                     </button>
                   );
@@ -308,9 +308,9 @@ export default function Chat() {
         <section className="panel chat-panel">
           <div className="chat-panel-header">
             <div>
-              <p className="eyebrow">Nguoi dung</p>
-              <h3>{user?.username || "Chon mot hoi thoai"}</h3>
-              <p className="muted-text small-text">{user?.email || "Chua co du lieu"}</p>
+              <p className="eyebrow">Người dùng</p>
+              <h3>{user?.username || "Chọn một hội thoại"}</h3>
+              <p className="muted-text small-text">{user?.email || "Chưa có dữ liệu"}</p>
             </div>
           </div>
 
@@ -321,11 +321,11 @@ export default function Chat() {
             onWheel={handleWheelScroll}
           >
             {loadingMessages ? (
-              <p className="muted-text">Dang tai noi dung chat...</p>
+              <p className="muted-text">Đang tải nội dung chat...</p>
             ) : messages.length === 0 ? (
               <div className="empty-chat">
-                <strong>Chua co tin nhan</strong>
-                <span>Hay gui loi nhan dau tien cho khach hang.</span>
+                <strong>Chưa có tin nhắn</strong>
+                <span>Hãy gửi lời nhắn đầu tiên cho khách hàng.</span>
               </div>
             ) : (
               messages.map((item, index) => {
@@ -351,7 +351,7 @@ export default function Chat() {
                               alt={item.attachment.name}
                             />
                           ) : (
-                            <div className="attachment-placeholder">Anh</div>
+                            <div className="attachment-placeholder">Ảnh</div>
                           )}
                           <div>
                             <strong>{item.attachment.name}</strong>
@@ -371,13 +371,14 @@ export default function Chat() {
 
           <form className="chat-composer" onSubmit={handleSend}>
             <textarea
+              style={{ width: "95.5%", height: "60px", marginTop: "20px" }}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder="Nhap tin nhan..."
+              placeholder="Nhập tin nhắn..."
               rows={3}
             />
             <button className="btn btn-primary" type="submit" disabled={sending || !selectedUserId}>
-              {sending ? "Dang gui..." : "Gui"}
+              {sending ? "Đang gửi..." : "Gửi"}
             </button>
           </form>
         </section>
