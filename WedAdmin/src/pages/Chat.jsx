@@ -34,6 +34,8 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const [draft, setDraft] = useState("");
   const [message, setMessage] = useState("");
+
+  const threadListRef = useRef(null);
   const messageListRef = useRef(null);
   const messagesEndRef = useRef(null);
   const previousMessageCountRef = useRef(0);
@@ -44,6 +46,40 @@ export default function Chat() {
     () => threads.find((thread) => thread.user?._id === selectedUserId),
     [threads, selectedUserId],
   );
+
+  const areThreadsEqual = useCallback((prevThreads, nextThreads) => {
+    if (prevThreads.length !== nextThreads.length) {
+      return false;
+    }
+
+    return prevThreads.every((thread, index) => {
+      const nextThread = nextThreads[index];
+
+      return (
+        thread.user?._id === nextThread.user?._id &&
+        String(thread.lastMessageAt || "") === String(nextThread.lastMessageAt || "") &&
+        String(thread.lastMessage?.content || "") === String(nextThread.lastMessage?.content || "")
+      );
+    });
+  }, []);
+
+  const areMessagesEqual = useCallback((prevMessages, nextMessages) => {
+    if (prevMessages.length !== nextMessages.length) {
+      return false;
+    }
+
+    return prevMessages.every((messageItem, index) => {
+      const nextMessage = nextMessages[index];
+
+      return (
+        String(messageItem.createdAt || "") === String(nextMessage.createdAt || "") &&
+        String(messageItem.senderRole || "") === String(nextMessage.senderRole || "") &&
+        String(messageItem.senderName || "") === String(nextMessage.senderName || "") &&
+        String(messageItem.content || "") === String(nextMessage.content || "") &&
+        JSON.stringify(messageItem.attachment || null) === JSON.stringify(nextMessage.attachment || null)
+      );
+    });
+  }, []);
 
   const scrollToBottom = useCallback(() => {
     const container = messageListRef.current;
@@ -70,37 +106,86 @@ export default function Chat() {
     isNearBottomRef.current = distanceFromBottom < 120;
   }, []);
 
-  const loadThreads = useCallback(async () => {
-    setLoadingThreads(true);
-    try {
-      const res = await api.get("/admin/chats");
-      const list = res.data.threads || [];
-      setThreads(list);
+  const handleWheelScroll = useCallback((event) => {
+    const container = event.currentTarget;
+    const canScroll = container.scrollHeight > container.clientHeight + 1;
 
-      if (!selectedUserId && list.length) {
-        setSelectedUserId(list[0].user?._id || "");
-      } else if (selectedUserId && !list.some((item) => item.user?._id === selectedUserId)) {
-        setSelectedUserId(list[0]?.user?._id || "");
-      }
-    } finally {
-      setLoadingThreads(false);
-    }
-  }, [selectedUserId]);
-
-  const loadThreadDetail = useCallback(async (userId) => {
-    if (!userId) {
-      setThreadDetail(null);
+    if (!canScroll) {
       return;
     }
 
-    setLoadingMessages(true);
-    try {
-      const res = await api.get(`/admin/chats/${userId}`);
-      setThreadDetail(res.data.thread || null);
-    } finally {
-      setLoadingMessages(false);
+    const nextTop = container.scrollTop + event.deltaY;
+    const maxTop = container.scrollHeight - container.clientHeight;
+    const clampedTop = Math.max(0, Math.min(maxTop, nextTop));
+
+    if (clampedTop !== container.scrollTop) {
+      container.scrollTop = clampedTop;
+      event.preventDefault();
     }
   }, []);
+
+  const loadThreads = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!silent) {
+        setLoadingThreads(true);
+      }
+
+      try {
+        const res = await api.get("/admin/chats");
+        const list = res.data.threads || [];
+
+        setThreads((prevThreads) => (areThreadsEqual(prevThreads, list) ? prevThreads : list));
+
+        if (!selectedUserId && list.length) {
+          setSelectedUserId(list[0].user?._id || "");
+        } else if (selectedUserId && !list.some((item) => item.user?._id === selectedUserId)) {
+          setSelectedUserId(list[0]?.user?._id || "");
+        }
+      } finally {
+        if (!silent) {
+          setLoadingThreads(false);
+        }
+      }
+    },
+    [areThreadsEqual, selectedUserId],
+  );
+
+  const loadThreadDetail = useCallback(
+    async (userId, { silent = false } = {}) => {
+      if (!userId) {
+        setThreadDetail(null);
+        return;
+      }
+
+      if (!silent) {
+        setLoadingMessages(true);
+      }
+
+      try {
+        const res = await api.get(`/admin/chats/${userId}`);
+        const nextThread = res.data.thread || null;
+
+        setThreadDetail((prevThread) => {
+          if (!prevThread || !nextThread) {
+            return nextThread;
+          }
+
+          const prevMessages = prevThread.messages || [];
+          const nextMessages = nextThread.messages || [];
+          const sameMessages = areMessagesEqual(prevMessages, nextMessages);
+          const sameLastMessageAt =
+            String(prevThread.lastMessageAt || "") === String(nextThread.lastMessageAt || "");
+
+          return sameMessages && sameLastMessageAt ? prevThread : nextThread;
+        });
+      } finally {
+        if (!silent) {
+          setLoadingMessages(false);
+        }
+      }
+    },
+    [areMessagesEqual],
+  );
 
   useEffect(() => {
     loadThreads();
@@ -114,9 +199,9 @@ export default function Chat() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      loadThreads();
+      loadThreads({ silent: true });
       if (selectedUserId) {
-        loadThreadDetail(selectedUserId);
+        loadThreadDetail(selectedUserId, { silent: true });
       }
     }, 8000);
 
@@ -151,11 +236,11 @@ export default function Chat() {
     try {
       await api.post(`/admin/chats/${selectedUserId}/messages`, { content });
       setDraft("");
-      setMessage("Đã gửi tin nhắn");
-      await loadThreads();
-      await loadThreadDetail(selectedUserId);
+      setMessage("Da gui tin nhan");
+      await loadThreads({ silent: true });
+      await loadThreadDetail(selectedUserId, { silent: true });
     } catch (err) {
-      setMessage(err.response?.data?.message || "Không thể gửi tin nhắn");
+      setMessage(err.response?.data?.message || "Khong the gui tin nhan");
     } finally {
       setSending(false);
     }
@@ -168,10 +253,10 @@ export default function Chat() {
     <div className="page-chat grid">
       <div className="panel panel-hero chat-hero">
         <div>
-          <p className="eyebrow">Hộp thư</p>
-          <h3>Chat với khách hàng</h3>
+          <p className="eyebrow">Hop thu</p>
+          <h3>Chat voi khach hang</h3>
           <p className="muted-text">
-            Theo dõi hội thoại từ app mobile và trả lời trực tiếp trong admin.
+            Theo doi hoi thoai tu app mobile va tra loi truc tiep trong admin.
           </p>
         </div>
         {message ? <div className="chat-banner">{message}</div> : null}
@@ -181,61 +266,66 @@ export default function Chat() {
         <aside className="panel chat-thread-list">
           <div className="panel-header">
             <div>
-              <h3>Hội thoại</h3>
-              <p className="muted-text small-text">
-                {threads.length} cuộc trò chuyện
-              </p>
+              <h3>Hoi thoai</h3>
+              <p className="muted-text small-text">{threads.length} cuoc tro chuyen</p>
             </div>
           </div>
 
-          {loadingThreads ? (
-            <p className="muted-text">Đang tải danh sách...</p>
-          ) : threads.length === 0 ? (
-            <div className="empty-thread">
-              <strong>Chưa có tin nhắn</strong>
-              <span>Hội thoại từ app mobile sẽ xuất hiện ở đây.</span>
-            </div>
-          ) : (
-            <div className="thread-stack">
-              {threads.map((thread) => {
-                const isActive = thread.user?._id === selectedUserId;
+          <div className="thread-scroll" ref={threadListRef} onWheel={handleWheelScroll}>
+            {loadingThreads ? (
+              <p className="muted-text">Dang tai danh sach...</p>
+            ) : threads.length === 0 ? (
+              <div className="empty-thread">
+                <strong>Chua co tin nhan</strong>
+                <span>Hoi thoai tu app mobile se xuat hien o day.</span>
+              </div>
+            ) : (
+              <div className="thread-stack">
+                {threads.map((thread) => {
+                  const isActive = thread.user?._id === selectedUserId;
 
-                return (
-                  <button
-                    key={thread.user?._id}
-                    type="button"
-                    className={`thread-item ${isActive ? "active" : ""}`}
-                    onClick={() => setSelectedUserId(thread.user?._id || "")}
-                  >
-                    <div className="thread-head">
-                      <strong>{thread.user?.username || "user"}</strong>
-                      <span>{formatTime(thread.lastMessageAt)}</span>
-                    </div>
-                    <p>{thread.lastMessage?.content || "Chưa có tin nhắn"}</p>
-                    <small>{thread.user?.email || ""}</small>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+                  return (
+                    <button
+                      key={thread.user?._id}
+                      type="button"
+                      className={`thread-item ${isActive ? "active" : ""}`}
+                      onClick={() => setSelectedUserId(thread.user?._id || "")}
+                    >
+                      <div className="thread-head">
+                        <strong>{thread.user?.username || "user"}</strong>
+                        <span>{formatTime(thread.lastMessageAt)}</span>
+                      </div>
+                      <p>{thread.lastMessage?.content || "Chua co tin nhan"}</p>
+                      <small>{thread.user?.email || ""}</small>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </aside>
 
         <section className="panel chat-panel">
           <div className="chat-panel-header">
             <div>
-              <p className="eyebrow">Người dùng</p>
-              <h3>{user?.username || "Chọn một hội thoại"}</h3>
-              <p className="muted-text small-text">{user?.email || "Chưa có dữ liệu"}</p>
+              <p className="eyebrow">Nguoi dung</p>
+              <h3>{user?.username || "Chon mot hoi thoai"}</h3>
+              <p className="muted-text small-text">{user?.email || "Chua co du lieu"}</p>
             </div>
           </div>
 
-          <div className="chat-message-list" ref={messageListRef} onScroll={handleMessageListScroll}>
+          <div
+            className="chat-message-list"
+            ref={messageListRef}
+            onScroll={handleMessageListScroll}
+            onWheel={handleWheelScroll}
+          >
             {loadingMessages ? (
-              <p className="muted-text">Đang tải nội dung chat...</p>
+              <p className="muted-text">Dang tai noi dung chat...</p>
             ) : messages.length === 0 ? (
               <div className="empty-chat">
-                <strong>Chưa có tin nhắn</strong>
-                <span>Hãy gửi lời nhắn đầu tiên cho khách hàng.</span>
+                <strong>Chua co tin nhan</strong>
+                <span>Hay gui loi nhan dau tien cho khach hang.</span>
               </div>
             ) : (
               messages.map((item, index) => {
@@ -261,7 +351,7 @@ export default function Chat() {
                               alt={item.attachment.name}
                             />
                           ) : (
-                            <div className="attachment-placeholder">Ảnh</div>
+                            <div className="attachment-placeholder">Anh</div>
                           )}
                           <div>
                             <strong>{item.attachment.name}</strong>
@@ -283,11 +373,11 @@ export default function Chat() {
             <textarea
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
-              placeholder="Nhập tin nhắn..."
+              placeholder="Nhap tin nhan..."
               rows={3}
             />
             <button className="btn btn-primary" type="submit" disabled={sending || !selectedUserId}>
-              {sending ? "Đang gửi..." : "Gửi"}
+              {sending ? "Dang gui..." : "Gui"}
             </button>
           </form>
         </section>

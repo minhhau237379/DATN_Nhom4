@@ -22,25 +22,31 @@
   grid-template-columns: 330px minmax(0, 1fr);
   gap: 20px;
   min-height: 72vh;
+  align-items: stretch;
 }
 
 .page-chat .chat-thread-list,
 .page-chat .chat-panel {
   display: grid;
   gap: 16px;
+  min-height: 0;
 }
 
 .page-chat .chat-thread-list {
-  align-content: start;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.page-chat .thread-scroll {
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
 }
 
 .page-chat .thread-stack {
   display: grid;
   gap: 12px;
-  max-height: 66vh;
-  overflow: auto;
-  padding-right: 4px;
-  overscroll-behavior: contain;
 }
 
 .page-chat .thread-item {
@@ -90,7 +96,7 @@
 
 .page-chat .chat-panel {
   min-height: 72vh;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
 .page-chat .chat-panel-header {
@@ -102,6 +108,7 @@
 
 .page-chat .chat-message-list {
   min-height: 0;
+  height: 100%;
   overflow: auto;
   display: grid;
   gap: 14px;
