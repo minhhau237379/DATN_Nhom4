@@ -1,5 +1,7 @@
 .page-chat {
-  height: calc(140vh - 150px);
+  height: calc(150vh - 180px);
+  box-sizing: border-box;
+  padding-bottom: 40px;
   overflow: hidden;
 }
 
@@ -232,7 +234,7 @@
 .page-chat .chat-composer textarea {
   width: 100%;
   resize: vertical;
-  min-height: 88px;
+  min-height: 10px;
   border-radius: 18px;
   border: 1px solid rgba(37, 56, 82, 0.14);
   padding: 14px 16px;
@@ -245,6 +247,7 @@
   .page-chat {
     height: auto;
     overflow: visible;
+    padding-bottom: 0;
   }
 
   .page-chat .chat-layout {
