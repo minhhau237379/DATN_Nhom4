@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
   View,
@@ -223,7 +224,7 @@ export default function Cart() {
             style={styles.qtyBtn}
             onPress={() => updateQty(item.product._id, -1)}
           >
-            <Text style={styles.qtyText}>-</Text>
+            <Ionicons name="remove" size={18} color="#fff" />
           </TouchableOpacity>
 
           <Text style={styles.qtyNumber}>{item.quantity}</Text>
@@ -232,11 +233,11 @@ export default function Cart() {
             style={styles.qtyBtn}
             onPress={() => updateQty(item.product._id, 1)}
           >
-            <Text style={styles.qtyText}>+</Text>
+            <Ionicons name="add" size={18} color="#fff" />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => deleteItem(item.product._id)}>
-            <Text style={styles.delete}>X</Text>
+          <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteItem(item.product._id)}>
+            <Ionicons name="trash-outline" size={18} color="#d5001c" />
           </TouchableOpacity>
         </View>
       </View>
@@ -407,22 +408,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  qtyText: {
-    color: "white",
-    fontSize: 18,
-    fontWeight: "700",
-  },
   qtyNumber: {
     minWidth: 20,
     textAlign: "center",
     fontSize: 16,
     color: "#111",
   },
-  delete: {
-    fontSize: 18,
-    marginLeft: 10,
-    color: "#d5001c",
-    fontWeight: "700",
+  deleteBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    marginLeft: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff1f3",
   },
   checkoutBar: {
     backgroundColor: "white",

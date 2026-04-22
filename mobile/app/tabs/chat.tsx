@@ -104,7 +104,7 @@ export default function ChatScreen() {
   useEffect(() => {
     if (messages.length) {
       requestAnimationFrame(() => {
-        listRef.current?.scrollToOffset({ offset: 0, animated: true });
+        listRef.current?.scrollToEnd({ animated: true });
       });
     }
   }, [messages]);
@@ -126,7 +126,7 @@ export default function ChatScreen() {
 
       setMessages(thread.messages || []);
       setDraft("");
-      showNotice("Thành công", "Đã gửi tin nhắn cho admin");
+      // showNotice("Thành công", "Đã gửi tin nhắn cho admin");
     } catch (err) {
       console.error("Send chat message error:", err);
       showNotice("Lỗi", "Không thể gửi tin nhắn");
@@ -168,12 +168,12 @@ export default function ChatScreen() {
   return (
     <KeyboardAvoidingView
       style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 18 : 0}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 20}
     >
       <View style={styles.header}>
         <Text style={styles.title}>Chat với admin</Text>
-        <Text style={styles.subtitle}>Trao đổi trực tiếp như trên sàn thương mại điện tử</Text>
+        <Text style={styles.subtitle}>Trao đổi trực tiếp với admin</Text>
       </View>
 
       {productAttachment ? (
@@ -203,7 +203,6 @@ export default function ChatScreen() {
             data={messages}
             keyExtractor={(item, index) => `${item.createdAt}-${index}`}
             renderItem={renderMessage}
-            inverted
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
@@ -292,7 +291,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   quickSendName: {
-    color: "#0f172a",
+    color: "#fefefe",
     fontWeight: "600",
   },
   quickSendBtn: {
@@ -349,9 +348,9 @@ const styles = StyleSheet.create({
     borderColor: "#e2e8f0",
   },
   sender: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "700",
-    color: "#64748b",
+    color: "#ffffff",
   },
   messageText: {
     color: "#0f172a",
@@ -408,6 +407,7 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingHorizontal: 12,
     paddingTop: 10,
+    paddingBottom: 20,
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: "#e2e8f0",

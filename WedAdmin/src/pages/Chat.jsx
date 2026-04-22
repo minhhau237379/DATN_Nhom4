@@ -34,16 +34,41 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const [draft, setDraft] = useState("");
   const [message, setMessage] = useState("");
+  const messageListRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const previousMessageCountRef = useRef(0);
+  const activeThreadIdRef = useRef("");
+  const isNearBottomRef = useRef(true);
 
   const selectedThread = useMemo(
     () => threads.find((thread) => thread.user?._id === selectedUserId),
     [threads, selectedUserId],
   );
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  };
+  const scrollToBottom = useCallback(() => {
+    const container = messageListRef.current;
+
+    if (!container) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      return;
+    }
+
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: "smooth",
+    });
+  }, []);
+
+  const handleMessageListScroll = useCallback(() => {
+    const container = messageListRef.current;
+
+    if (!container) {
+      return;
+    }
+
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    isNearBottomRef.current = distanceFromBottom < 120;
+  }, []);
 
   const loadThreads = useCallback(async () => {
     setLoadingThreads(true);
@@ -99,8 +124,20 @@ export default function Chat() {
   }, [loadThreads, loadThreadDetail, selectedUserId]);
 
   useEffect(() => {
-    scrollToBottom();
-  }, [threadDetail?.messages]);
+    const messageCount = threadDetail?.messages?.length || 0;
+    const threadId = selectedUserId || "";
+    const threadChanged = activeThreadIdRef.current !== threadId;
+    const hasNewMessages = messageCount > previousMessageCountRef.current;
+
+    if (threadChanged) {
+      requestAnimationFrame(scrollToBottom);
+    } else if (hasNewMessages && isNearBottomRef.current) {
+      requestAnimationFrame(scrollToBottom);
+    }
+
+    activeThreadIdRef.current = threadId;
+    previousMessageCountRef.current = messageCount;
+  }, [scrollToBottom, selectedUserId, threadDetail?.messages]);
 
   const handleSend = async (event) => {
     event.preventDefault();
@@ -192,7 +229,7 @@ export default function Chat() {
             </div>
           </div>
 
-          <div className="chat-message-list">
+          <div className="chat-message-list" ref={messageListRef} onScroll={handleMessageListScroll}>
             {loadingMessages ? (
               <p className="muted-text">Đang tải nội dung chat...</p>
             ) : messages.length === 0 ? (
