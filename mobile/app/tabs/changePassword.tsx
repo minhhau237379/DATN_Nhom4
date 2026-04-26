@@ -14,6 +14,15 @@ import BackHeader from "../../components/BackHeader";
 import AppToast from "../../components/AppToast";
 import api from "../../services/api";
 
+const PASSWORD_RULES = [
+  "8-16 ký tự",
+  "Ít nhất 1 chữ in hoa",
+  "Ít nhất 1 ký tự đặc biệt",
+  "Ít nhất 1 chữ số",
+];
+
+const PASSWORD_SPECIAL_CHAR_REGEX = /[^A-Za-z0-9]/;
+
 export default function ChangePasswordScreen() {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -87,9 +96,36 @@ export default function ChangePasswordScreen() {
     });
   };
 
+  const validateNewPassword = () => {
+    if (newPassword.length < 8 || newPassword.length > 16) {
+      return "Mật khẩu mới phải từ 8-16 ký tự";
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      return "Mật khẩu mới phải có ít nhất 1 chữ in hoa";
+    }
+
+    if (!PASSWORD_SPECIAL_CHAR_REGEX.test(newPassword)) {
+      return "Mật khẩu mới phải có ít nhất 1 ký tự đặc biệt";
+    }
+
+    if (!/[0-9]/.test(newPassword)) {
+      return "Mật khẩu mới phải có ít nhất 1 chữ số";
+    }
+
+    return null;
+  };
+
   const submit = async () => {
     if (!oldPassword || !newPassword || !confirmPassword) {
       showNotice("Thông báo", "Vui lòng nhập đầy đủ thông tin");
+      return;
+    }
+
+    const passwordError = validateNewPassword();
+
+    if (passwordError) {
+      showNotice("Thông báo", passwordError);
       return;
     }
 
@@ -146,6 +182,9 @@ export default function ChangePasswordScreen() {
             onToggleVisible={() => setShowNewPassword((prev) => !prev)}
             autoComplete="new-password"
           />
+          <Text style={styles.passwordHint}>
+            Yêu cầu mật khẩu: {PASSWORD_RULES.join(", ")}.
+          </Text>
           <Input
             placeholder="Nhập lại mật khẩu mới"
             value={confirmPassword}
@@ -249,6 +288,13 @@ const styles = StyleSheet.create({
   submitText: {
     color: "white",
     fontWeight: "700",
+  },
+  passwordHint: {
+    marginTop: -2,
+    marginBottom: 14,
+    color: "#666",
+    lineHeight: 20,
+    fontSize: 13,
   },
 });
 

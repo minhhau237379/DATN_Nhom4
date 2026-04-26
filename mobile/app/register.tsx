@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -14,6 +14,15 @@ import {
 import { useRouter } from "expo-router";
 import AppToast from "../components/AppToast";
 import api from "../services/api";
+
+const PASSWORD_RULES = [
+  "8-16 ký tự",
+  "Ít nhất 1 chữ in hoa",
+  "Ít nhất 1 ký tự đặc biệt",
+  "Ít nhất 1 chữ số",
+];
+
+const PASSWORD_SPECIAL_CHAR_REGEX = /[^A-Za-z0-9]/;
 
 type RegisterForm = {
   username: string;
@@ -143,8 +152,12 @@ export default function Register() {
       return "Phải có ít nhất 1 chữ hoa";
     }
 
-    if (!/[!@#$%^&*]/.test(password)) {
+    if (!PASSWORD_SPECIAL_CHAR_REGEX.test(password)) {
       return "Phải có ít nhất 1 ký tự đặc biệt";
+    }
+
+    if (!/[0-9]/.test(password)) {
+      return "Phải có ít nhất 1 chữ số";
     }
 
     return null;
@@ -290,6 +303,10 @@ export default function Register() {
             </TouchableOpacity>
           </View>
 
+          <Text style={styles.passwordHint}>
+            Yêu cầu mật khẩu: {PASSWORD_RULES.join(", ")}.
+          </Text>
+
           {errors.password ? <Text style={styles.error}>{errors.password}</Text> : null}
 
           <View style={styles.passwordWrapper}>
@@ -404,6 +421,12 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     marginRight: 10,
+  },
+  passwordHint: {
+    color: "#666",
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 10,
   },
   button: {
     backgroundColor: "#000000",

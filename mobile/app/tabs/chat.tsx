@@ -6,6 +6,7 @@ import {
   FlatList,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   StyleSheet,
   Text,
@@ -15,6 +16,7 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import AppToast from "../../components/AppToast";
+import api from "../../services/api";
 import { isLoggedIn } from "../../utils/auth";
 import { resolveImageUri } from "../../utils/productImage";
 import {
@@ -31,12 +33,27 @@ type ProductChatParams = {
   productImage?: string;
 };
 
+type ProductPickerItem = {
+  _id: string;
+  name: string;
+  price: number;
+  image: string | string[];
+  stock?: number;
+};
+
 export default function ChatScreen() {
   const params = useLocalSearchParams<ProductChatParams>();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [pickerVisible, setPickerVisible] = useState(false);
+  const [pickerLoading, setPickerLoading] = useState(false);
+  const [pickerProducts, setPickerProducts] = useState<ProductPickerItem[]>([]);
+  const [pickerSearch, setPickerSearch] = useState("");
+  const [pendingAttachment, setPendingAttachment] = useState<ReturnType<
+    typeof createProductAttachment
+  > | null>(null);
   const [notice, setNotice] = useState({
     visible: false,
     title: "",
@@ -57,6 +74,10 @@ export default function ChatScreen() {
     });
   }, [params.productId, params.productName, params.productPrice, params.productImage]);
 
+  useEffect(() => {
+    setPendingAttachment(productAttachment);
+  }, [productAttachment]);
+
   const showNotice = (title: string, message: string) => {
     setNotice({ visible: true, title, message });
   };
@@ -73,6 +94,25 @@ export default function ChatScreen() {
       console.error("Load chat thread error:", err);
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const loadProducts = useCallback(async (keyword?: string) => {
+    setPickerLoading(true);
+
+    try {
+      const res = await api.get("/shop", {
+        params: {
+          search: keyword?.trim() || "",
+        },
+      });
+
+      setPickerProducts(res.data.products || []);
+    } catch (err) {
+      console.error("Load chat products error:", err);
+      showNotice("Lỗi", "Không thể tải danh sách sản phẩm");
+    } finally {
+      setPickerLoading(false);
     }
   }, []);
 
@@ -109,10 +149,22 @@ export default function ChatScreen() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    if (!pickerVisible) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      loadProducts(pickerSearch);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [pickerVisible, pickerSearch, loadProducts]);
+
   const handleSend = async () => {
     const content = draft.trim();
 
-    if (!content && !productAttachment) {
+    if (!content && !pendingAttachment) {
       showNotice("Thông báo", "Nhập nội dung trước khi gửi");
       return;
     }
@@ -121,15 +173,78 @@ export default function ChatScreen() {
     try {
       const thread = await sendChatMessage({
         content: content || (productAttachment ? `Mình muốn hỏi về ${productAttachment.name}` : ""),
-        attachment: productAttachment,
+        attachment: pendingAttachment,
       });
 
       setMessages(thread.messages || []);
       setDraft("");
+      setPendingAttachment(null);
       // showNotice("Thành công", "Đã gửi tin nhắn cho admin");
     } catch (err) {
       console.error("Send chat message error:", err);
       showNotice("Lỗi", "Không thể gửi tin nhắn");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleComposerSend = async () => {
+    const content = draft.trim();
+    const fallbackContent = pendingAttachment
+      ? `Mình muốn hỏi về ${pendingAttachment.name}`
+      : "";
+
+    if (!content && !pendingAttachment) {
+      showNotice("Thông báo", "Nhập nội dung trước khi gửi");
+      return;
+    }
+
+    setSending(true);
+    try {
+      const thread = await sendChatMessage({
+        content: content || fallbackContent,
+        attachment: pendingAttachment,
+      });
+
+      setMessages(thread.messages || []);
+      setDraft("");
+      setPendingAttachment(null);
+    } catch (err) {
+      console.error("Send chat message error:", err);
+      showNotice("Lỗi", "Không thể gửi tin nhắn");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const openProductPicker = async () => {
+    setPickerVisible(true);
+    setPickerSearch("");
+    await loadProducts("");
+  };
+
+  const handleSendProduct = async (product: ProductPickerItem) => {
+    const attachment = createProductAttachment({
+      productId: product._id,
+      name: product.name,
+      price: product.price,
+      image: Array.isArray(product.image) ? product.image[0] || "" : product.image || "",
+    });
+
+    setSending(true);
+    try {
+      const thread = await sendChatMessage({
+        content: `Mình muốn hỏi về sản phẩm: ${product.name}`,
+        attachment,
+      });
+
+      setMessages(thread.messages || []);
+      setPendingAttachment(null);
+      setPickerVisible(false);
+      setPickerSearch("");
+    } catch (err) {
+      console.error("Send chat product error:", err);
+      showNotice("Lỗi", "Không thể gửi sản phẩm vào chat");
     } finally {
       setSending(false);
     }
@@ -176,15 +291,19 @@ export default function ChatScreen() {
         <Text style={styles.subtitle}>Trao đổi trực tiếp với admin</Text>
       </View>
 
-      {productAttachment ? (
+      {pendingAttachment ? (
         <View style={styles.quickSend}>
           <View style={styles.quickSendInfo}>
             <Text style={styles.quickSendLabel}>Sản phẩm đang mở</Text>
             <Text numberOfLines={2} style={styles.quickSendName}>
-              {productAttachment.name}
+              {pendingAttachment.name}
             </Text>
           </View>
-          <TouchableOpacity style={styles.quickSendBtn} onPress={handleSend} disabled={sending}>
+          <TouchableOpacity
+            style={styles.quickSendBtn}
+            onPress={handleComposerSend}
+            disabled={sending}
+          >
             <Ionicons name="paper-plane" size={18} color="#fff" />
             <Text style={styles.quickSendBtnText}>Gửi</Text>
           </TouchableOpacity>
@@ -219,6 +338,13 @@ export default function ChatScreen() {
       </View>
 
       <View style={styles.composer}>
+        <TouchableOpacity
+          style={styles.toolBtn}
+          onPress={openProductPicker}
+          disabled={sending}
+        >
+          <Ionicons name="bag-handle-outline" size={22} color="#475569" />
+        </TouchableOpacity>
         <TextInput
           value={draft}
           onChangeText={setDraft}
@@ -242,6 +368,73 @@ export default function ChatScreen() {
         message={notice.message}
         onHide={closeNotice}
       />
+
+      <Modal
+        visible={pickerVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setPickerVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Chọn sản phẩm</Text>
+              <TouchableOpacity onPress={() => setPickerVisible(false)}>
+                <Text style={styles.modalClose}>Đóng</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TextInput
+              value={pickerSearch}
+              onChangeText={setPickerSearch}
+              placeholder="Tìm sản phẩm"
+              placeholderTextColor="#94a3b8"
+              style={styles.modalSearch}
+            />
+
+            {pickerLoading ? (
+              <View style={styles.modalLoading}>
+                <ActivityIndicator color="#d5001c" />
+              </View>
+            ) : (
+              <FlatList
+                data={pickerProducts}
+                keyExtractor={(item) => item._id}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.modalListContent}
+                renderItem={({ item }) => (
+                  <View style={styles.productRow}>
+                    <Image
+                      source={{ uri: resolveImageUri(item.image) }}
+                      style={styles.productRowImage}
+                    />
+                    <View style={styles.productRowBody}>
+                      <Text numberOfLines={2} style={styles.productRowName}>
+                        {item.name}
+                      </Text>
+                      <Text style={styles.productRowPrice}>
+                        {item.price.toLocaleString("vi-VN")} VND
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={styles.productRowBtn}
+                      onPress={() => handleSendProduct(item)}
+                      disabled={sending}
+                    >
+                      <Text style={styles.productRowBtnText}>Gửi</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                ListEmptyComponent={
+                  <View style={styles.modalEmpty}>
+                    <Text style={styles.modalEmptyText}>Không có sản phẩm phù hợp</Text>
+                  </View>
+                }
+              />
+            )}
+          </View>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -284,6 +477,11 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 4,
   },
+  quickSendActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   quickSendLabel: {
     fontSize: 12,
     fontWeight: "700",
@@ -291,8 +489,18 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   quickSendName: {
-    color: "#fefefe",
+    color: "#0f172a",
     fontWeight: "600",
+  },
+  quickSendGhostBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#f1b8bf",
+    backgroundColor: "#fff",
+    alignItems: "center",
+    justifyContent: "center",
   },
   quickSendBtn: {
     backgroundColor: "#d5001c",
@@ -403,7 +611,7 @@ const styles = StyleSheet.create({
   },
   composer: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     gap: 10,
     paddingHorizontal: 12,
     paddingTop: 10,
@@ -411,6 +619,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: "#e2e8f0",
+  },
+  toolBtn: {
+    width: 42,
+    height: 42,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#dbe4ef",
+    backgroundColor: "#f8fafc",
+    alignItems: "center",
+    justifyContent: "center",
   },
   input: {
     flex: 1,
@@ -434,5 +652,100 @@ const styles = StyleSheet.create({
   },
   sendBtnDisabled: {
     opacity: 0.7,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.35)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    maxHeight: "82%",
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#0f172a",
+  },
+  modalClose: {
+    color: "#d5001c",
+    fontWeight: "700",
+  },
+  modalSearch: {
+    height: 46,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#dbe4ef",
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 14,
+    color: "#0f172a",
+  },
+  modalLoading: {
+    paddingVertical: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalListContent: {
+    paddingVertical: 14,
+    gap: 12,
+  },
+  productRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 12,
+    borderRadius: 18,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  productRowImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 14,
+    backgroundColor: "#f8fafc",
+  },
+  productRowBody: {
+    flex: 1,
+    gap: 6,
+  },
+  productRowName: {
+    color: "#0f172a",
+    fontWeight: "700",
+  },
+  productRowPrice: {
+    color: "#d5001c",
+    fontWeight: "700",
+  },
+  productRowBtn: {
+    minWidth: 62,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#f04f67",
+    alignItems: "center",
+  },
+  productRowBtnText: {
+    color: "#d5001c",
+    fontWeight: "700",
+  },
+  modalEmpty: {
+    paddingVertical: 28,
+    alignItems: "center",
+  },
+  modalEmptyText: {
+    color: "#64748b",
   },
 });

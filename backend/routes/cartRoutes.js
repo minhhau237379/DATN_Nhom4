@@ -74,7 +74,10 @@ router.get("/", async (req, res) => {
 
     const cart = await Cart.findOne({
       user: userInfo.id,
-    }).populate("items.product");
+    }).populate({
+      path: "items.product",
+      match: { status: 1 },
+    });
 
     if (!cart) {
       return res.json({
@@ -84,17 +87,25 @@ router.get("/", async (req, res) => {
       });
     }
 
+    const visibleItems = cart.items.filter((item) => item.product);
+
+    if (visibleItems.length !== cart.items.length) {
+      cart.items = visibleItems.map((item) => ({
+        product: item.product._id,
+        quantity: item.quantity,
+      }));
+      await cart.save();
+    }
+
     let total = 0;
 
-    cart.items.forEach((i) => {
-      if (i.product) {
-        total += i.product.price * i.quantity;
-      }
+    visibleItems.forEach((item) => {
+      total += item.product.price * item.quantity;
     });
 
     res.json({
       success: true,
-      items: cart.items,
+      items: visibleItems,
       total,
     });
   } catch (err) {

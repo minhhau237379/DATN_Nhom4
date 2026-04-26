@@ -203,6 +203,20 @@ export default function Products() {
     }));
   };
 
+  const removeSelectedFile = (indexToRemove) => {
+    setSelectedFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
+    setFilePreviewUrls((prev) => {
+      const next = [...prev];
+      const [removedUrl] = next.splice(indexToRemove, 1);
+
+      if (removedUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(removedUrl);
+      }
+
+      return next;
+    });
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -503,7 +517,17 @@ export default function Products() {
                           >
                             Xóa
                           </button>
-                        ) : null}
+                        ) : (
+                          <button
+                            type="button"
+                            className="image-remove-btn"
+                            onClick={() =>
+                              removeSelectedFile(index - (form.imagePaths || []).length)
+                            }
+                          >
+                            XÃ³a
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>

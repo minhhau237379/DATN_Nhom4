@@ -210,6 +210,7 @@ export default function Shop() {
     }
 
     if (minNumber > maxNumber) {
+      closePriceDialog();
       showNotice("Lọc giá", "Giá từ phải nhỏ hơn hoặc bằng giá đến");
       return;
     }
@@ -447,7 +448,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   sortBtn: {
-    backgroundColor: "#eee",
+    backgroundColor: "#ffffff",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 10,

@@ -4,12 +4,14 @@ import {
   View,
   Text,
   Image,
+  RefreshControl,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
   FlatList,
 } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import api from "../../services/api";
 import AppToast from "../../components/AppToast";
@@ -22,6 +24,7 @@ type Product = {
   price: number;
   image: string | string[];
   stock?: number;
+  status?: number;
 };
 
 type CartItem = {
@@ -31,9 +34,12 @@ type CartItem = {
 
 export default function Cart() {
   const params = useLocalSearchParams<{ selectedProductId?: string }>();
+  const navigation = useNavigation();
   const tabBarHeight = useBottomTabBarHeight();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+  const [quantityInputs, setQuantityInputs] = useState<Record<string, string>>({});
+  const [refreshing, setRefreshing] = useState(false);
   const [notice, setNotice] = useState({
     visible: false,
     title: "",
@@ -62,8 +68,19 @@ export default function Cart() {
       const data = res.data;
 
       if (data.success) {
-        const items = data.items || [];
+        const items = (data.items || []).filter(
+          (cartItem: CartItem) => cartItem.product && cartItem.product.status !== 0,
+        );
         setCartItems(items);
+        setQuantityInputs(
+          items.reduce(
+            (acc: Record<string, string>, cartItem: CartItem) => {
+              acc[cartItem.product._id] = String(cartItem.quantity);
+              return acc;
+            },
+            {},
+          ),
+        );
         setSelectedProductIds((prev) =>
           prev.filter((id) =>
             items.some((cartItem: CartItem) => cartItem.product._id === id),
@@ -71,6 +88,7 @@ export default function Cart() {
         );
       } else {
         setCartItems([]);
+        setQuantityInputs({});
         setSelectedProductIds([]);
       }
     } catch (err) {
@@ -112,6 +130,24 @@ export default function Cart() {
     }, [loadCart]),
   );
 
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("tabPress", () => {
+      void loadCart();
+    });
+
+    return unsubscribe;
+  }, [navigation, loadCart]);
+
+  const refreshCart = useCallback(async () => {
+    setRefreshing(true);
+
+    try {
+      await loadCart();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadCart]);
+
   const updateQty = async (productId: string, change: number) => {
     try {
       const res = await api.post("/cart/update", {
@@ -130,6 +166,45 @@ export default function Cart() {
       console.error("Update cart error:", err);
       showNotice("Lỗi", "Có lỗi xảy ra khi cập nhật số lượng");
     }
+  };
+
+  const submitQuantity = async (productId: string) => {
+    const item = cartItems.find((cartItem) => cartItem.product._id === productId);
+    const rawValue = quantityInputs[productId]?.trim() ?? "";
+
+    if (!item) {
+      return;
+    }
+
+    if (!rawValue) {
+      setQuantityInputs((prev) => ({
+        ...prev,
+        [productId]: String(item.quantity),
+      }));
+      showNotice("Thông báo", "Vui lòng nhập số lượng");
+      return;
+    }
+
+    const nextQuantity = Number(rawValue);
+
+    if (!Number.isInteger(nextQuantity) || nextQuantity <= 0) {
+      setQuantityInputs((prev) => ({
+        ...prev,
+        [productId]: String(item.quantity),
+      }));
+      showNotice("Thông báo", "Số lượng phải là số nguyên lớn hơn 0");
+      return;
+    }
+
+    if (nextQuantity === item.quantity) {
+      setQuantityInputs((prev) => ({
+        ...prev,
+        [productId]: String(item.quantity),
+      }));
+      return;
+    }
+
+    await updateQty(productId, nextQuantity - item.quantity);
   };
 
   const deleteItem = async (productId: string) => {
@@ -227,7 +302,21 @@ export default function Cart() {
             <Ionicons name="remove" size={18} color="#fff" />
           </TouchableOpacity>
 
-          <Text style={styles.qtyNumber}>{item.quantity}</Text>
+          <TextInput
+            style={styles.qtyInput}
+            value={quantityInputs[item.product._id] ?? String(item.quantity)}
+            onChangeText={(value) =>
+              setQuantityInputs((prev) => ({
+                ...prev,
+                [item.product._id]: value.replace(/[^0-9]/g, ""),
+              }))
+            }
+            onBlur={() => submitQuantity(item.product._id)}
+            onSubmitEditing={() => submitQuantity(item.product._id)}
+            keyboardType="number-pad"
+            returnKeyType="done"
+            textAlign="center"
+          />
 
           <TouchableOpacity
             style={styles.qtyBtn}
@@ -276,9 +365,21 @@ export default function Cart() {
       </View>
 
       {cartItems.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>Giỏ hàng trống</Text>
-        </View>
+        <FlatList
+          data={[]}
+          keyExtractor={(_, index) => String(index)}
+          renderItem={null}
+          style={styles.list}
+          contentContainerStyle={styles.emptyListContent}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={refreshCart} />
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>Giỏ hàng trống</Text>
+            </View>
+          }
+        />
       ) : (
         <View style={styles.listArea}>
           <FlatList
@@ -294,6 +395,9 @@ export default function Cart() {
               },
             ]}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={refreshCart} />
+            }
           />
 
           {renderCheckoutBar()}
@@ -414,6 +518,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#111",
   },
+  qtyInput: {
+    minWidth: 48,
+    height: 34,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    backgroundColor: "#fff",
+    paddingHorizontal: 8,
+    fontSize: 16,
+    color: "#111",
+  },
   deleteBtn: {
     width: 34,
     height: 34,
@@ -467,6 +582,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
+  },
+  emptyListContent: {
+    flexGrow: 1,
   },
   emptyText: {
     color: "#d5001c",
