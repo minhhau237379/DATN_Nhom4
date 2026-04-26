@@ -525,7 +525,7 @@ export default function Products() {
                               removeSelectedFile(index - (form.imagePaths || []).length)
                             }
                           >
-                            XÃ³a
+                            Xóa
                           </button>
                         )}
                       </div>
