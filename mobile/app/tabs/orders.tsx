@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from "react-native
 import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
 import BackHeader from "../../components/BackHeader";
+import AppToast from "../../components/AppToast";
 import api from "../../services/api";
 
 type OrderItem = {
@@ -16,11 +17,67 @@ type OrderItem = {
   items?: { quantity: number }[];
 };
 
-const orderStatusLabel = (value?: string) => value || "Chờ xác nhận";
-const paymentStatusLabel = (value?: string) => value || "Chưa thanh toán";
+const WAITING_CONFIRM_STATUS = "Chờ xác nhận";
+
+const orderStatusLabel = (value?: string) => {
+  const map: Record<string, string> = {
+    pending: WAITING_CONFIRM_STATUS,
+    cho_xu_ly: WAITING_CONFIRM_STATUS,
+    confirmed: "Đã xác nhận",
+    da_xac_nhan: "Đã xác nhận",
+    processing: "Đang xử lý",
+    dang_xu_ly: "Đang xử lý",
+    shipping: "Đang giao hàng",
+    dang_giao_hang: "Đang giao hàng",
+    completed: "Hoàn tất",
+    hoan_tat: "Hoàn tất",
+    cancelled: "Đã hủy",
+    da_huy: "Đã hủy",
+  };
+
+  return map[value || ""] || value || WAITING_CONFIRM_STATUS;
+};
+
+const paymentStatusLabel = (value?: string) => {
+  const map: Record<string, string> = {
+    pending: "Chưa thanh toán",
+    failed: "Chưa thanh toán",
+    refunded: "Chưa thanh toán",
+    chua_thanh_toan: "Chưa thanh toán",
+    paid: "Đã thanh toán",
+    da_thanh_toan: "Đã thanh toán",
+  };
+
+  return map[value || ""] || value || "Chưa thanh toán";
+};
+
+const canCancelOrder = (orderStatus?: string) =>
+  orderStatusLabel(orderStatus) === WAITING_CONFIRM_STATUS;
 
 export default function OrdersScreen() {
   const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [cancellingId, setCancellingId] = useState("");
+  const [notice, setNotice] = useState({
+    visible: false,
+    title: "",
+    message: "",
+  });
+
+  const showNotice = (title: string, message: string) => {
+    setNotice({
+      visible: true,
+      title,
+      message,
+    });
+  };
+
+  const closeNotice = () => {
+    setNotice({
+      visible: false,
+      title: "",
+      message: "",
+    });
+  };
 
   const loadOrders = useCallback(async () => {
     try {
@@ -30,6 +87,36 @@ export default function OrdersScreen() {
       console.error(err);
     }
   }, []);
+
+  const openOrderDetail = (orderId: string) => {
+    router.push({
+      pathname: "/orderDetail",
+      params: { id: orderId },
+    });
+  };
+
+  const cancelOrder = async (orderId: string) => {
+    try {
+      setCancellingId(orderId);
+      const res = await api.patch(`/order/${orderId}/cancel`);
+
+      if (res.data?.success) {
+        showNotice("Thành công", res.data.message || "Đã hủy đơn hàng");
+        setOrders((prev) =>
+          prev.map((order) =>
+            order._id === orderId ? { ...order, ...res.data.order } : order,
+          ),
+        );
+      } else {
+        showNotice("Lỗi", res.data?.message || "Không thể hủy đơn hàng");
+      }
+    } catch (err: any) {
+      console.error(err);
+      showNotice("Lỗi", err.response?.data?.message || "Không thể hủy đơn hàng");
+    } finally {
+      setCancellingId("");
+    }
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -46,15 +133,7 @@ export default function OrdersScreen() {
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() =>
-              router.push({
-                pathname: "/orderDetail",
-                params: { id: item._id },
-              })
-            }
-          >
+          <View style={styles.card}>
             <Text style={styles.code}>
               Mã đơn: {item.orderNumber || `#${item._id.slice(-6)}`}
             </Text>
@@ -76,13 +155,44 @@ export default function OrdersScreen() {
             <Text style={styles.total}>
               Tổng tiền: {(item.totalPrice || 0).toLocaleString("vi-VN")} VND
             </Text>
-          </TouchableOpacity>
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.detailBtn]}
+                onPress={() => openOrderDetail(item._id)}
+              >
+                <Text style={styles.detailText}>Xem chi tiết đơn</Text>
+              </TouchableOpacity>
+
+              {canCancelOrder(item.orderStatus) ? (
+                <TouchableOpacity
+                  style={[
+                    styles.actionBtn,
+                    styles.cancelBtn,
+                    cancellingId === item._id && styles.actionBtnDisabled,
+                  ]}
+                  onPress={() => cancelOrder(item._id)}
+                  disabled={cancellingId === item._id}
+                >
+                  <Text style={styles.cancelText}>
+                    {cancellingId === item._id ? "Đang hủy..." : "Hủy đơn"}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </View>
         )}
         ListEmptyComponent={
           <View style={styles.emptyBox}>
             <Text style={styles.emptyText}>Chưa có đơn hàng nào</Text>
           </View>
         }
+      />
+
+      <AppToast
+        visible={notice.visible}
+        title={notice.title}
+        message={notice.message}
+        onHide={closeNotice}
       />
     </View>
   );
@@ -111,6 +221,38 @@ const styles = StyleSheet.create({
     color: "#d5001c",
     fontWeight: "700",
     marginTop: 10,
+  },
+  actions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 14,
+  },
+  actionBtn: {
+    flex: 1,
+    borderRadius: 24,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  detailBtn: {
+    backgroundColor: "#d5001c",
+  },
+  detailText: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+  cancelBtn: {
+    backgroundColor: "#fff",
+    borderColor: "#d5001c",
+    borderWidth: 1.5,
+  },
+  actionBtnDisabled: {
+    opacity: 0.6,
+  },
+  cancelText: {
+    color: "#d5001c",
+    fontWeight: "700",
   },
   emptyBox: {
     paddingTop: 40,

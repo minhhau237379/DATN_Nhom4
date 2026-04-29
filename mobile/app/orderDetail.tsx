@@ -2,22 +2,23 @@ import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { router } from "expo-router";
-import { useFocusEffect, useLocalSearchParams } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import AppBottomNav, { APP_BOTTOM_NAV_HEIGHT } from "../components/AppBottomNav";
 import BackHeader from "../components/BackHeader";
 import AppToast from "../components/AppToast";
 import api from "../services/api";
+import { resolveImageUri } from "../utils/productImage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type OrderItem = {
   name: string;
-  image?: string;
+  image?: string | string[];
   price: number;
   quantity: number;
 };
@@ -222,15 +223,23 @@ export default function OrderDetailScreen() {
           </>
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <Text style={styles.itemName}>{item.name}</Text>
-            <Text style={styles.meta}>Số lượng: {item.quantity}</Text>
-            <Text style={styles.meta}>
-              Đơn giá: {item.price.toLocaleString("vi-VN")} VND
-            </Text>
-            <Text style={styles.totalLine}>
-              Tạm tính: {(item.price * item.quantity).toLocaleString("vi-VN")} VND
-            </Text>
+          <View style={[styles.card, styles.productCard]}>
+            <Image
+              source={{ uri: resolveImageUri(item.image) }}
+              style={styles.productImage}
+            />
+            <View style={styles.productInfo}>
+              <Text style={styles.itemName} numberOfLines={2}>
+                {item.name}
+              </Text>
+              <Text style={styles.meta}>Số lượng: {item.quantity}</Text>
+              <Text style={styles.meta}>
+                Đơn giá: {item.price.toLocaleString("vi-VN")} VND
+              </Text>
+              <Text style={styles.totalLine}>
+                Tạm tính: {(item.price * item.quantity).toLocaleString("vi-VN")} VND
+              </Text>
+            </View>
           </View>
         )}
         ListFooterComponent={
@@ -308,6 +317,21 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "700",
     color: "#111",
+  },
+  productCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  productImage: {
+    width: 78,
+    height: 78,
+    borderRadius: 12,
+    backgroundColor: "#f4f4f4",
+    resizeMode: "cover",
+  },
+  productInfo: {
+    flex: 1,
   },
   totalLine: {
     marginTop: 10,

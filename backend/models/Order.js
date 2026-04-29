@@ -66,6 +66,27 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    subtotalPrice: {
+      type: Number,
+      default: 0,
+    },
+    discountAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    voucher: {
+      voucherId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Voucher",
+      },
+      code: String,
+      name: String,
+      discountType: String,
+      discountValue: Number,
+      minOrderValue: Number,
+      maxDiscount: Number,
+    },
     shippingAddress: {
       type: shippingAddressSchema,
       required: true,

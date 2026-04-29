@@ -5,6 +5,7 @@ const Category = require("../models/Category");
 const Order = require("../models/Order");
 const Address = require("../models/Address");
 const User = require("../models/User");
+const Voucher = require("../models/Voucher");
 const { saveImageBuffer, sanitizeFolderName } = require("../utils/storage");
 const {
   normalizeProductImages,
@@ -33,6 +34,49 @@ const normalizeStock = (value) => {
   if (value === undefined || value === null || value === "") return undefined;
   const parsed = Number(value);
   return Number.isNaN(parsed) ? undefined : parsed;
+};
+
+const normalizeNonNegativeNumber = (value, fallback = 0) => {
+  if (value === undefined || value === null || value === "") return fallback;
+  const parsed = Number(value);
+  if (Number.isNaN(parsed) || parsed < 0) return fallback;
+  return parsed;
+};
+
+const normalizeDateInput = (value) => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const buildVoucherPayload = (body) => {
+  const discountType = body.discountType === "amount" ? "amount" : "percent";
+  const discountValue = normalizeNonNegativeNumber(body.discountValue);
+
+  if (!body.code?.trim()) {
+    throw new Error("Vui long nhap ma voucher");
+  }
+
+  if (discountValue <= 0) {
+    throw new Error("Gia tri giam gia phai lon hon 0");
+  }
+
+  if (discountType === "percent" && discountValue > 100) {
+    throw new Error("Voucher phan tram khong duoc vuot qua 100%");
+  }
+
+  return {
+    code: String(body.code).trim().toUpperCase(),
+    name: body.name?.trim() || "",
+    discountType,
+    discountValue,
+    minOrderValue: normalizeNonNegativeNumber(body.minOrderValue),
+    maxDiscount: normalizeNonNegativeNumber(body.maxDiscount),
+    usageLimit: normalizeNonNegativeNumber(body.usageLimit),
+    startDate: normalizeDateInput(body.startDate),
+    endDate: normalizeDateInput(body.endDate),
+    status: normalizeStatus(body.status) ?? 1,
+  };
 };
 
 const parseSpecifications = (value) => {
@@ -566,6 +610,129 @@ exports.deleteCategory = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Không thể xóa danh mục",
+    });
+  }
+};
+
+exports.listVouchers = async (req, res) => {
+  try {
+    const vouchers = await Voucher.find().sort({ createdAt: -1 }).lean();
+    res.json({ success: true, vouchers });
+  } catch (err) {
+    console.error("ADMIN LIST VOUCHERS ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: "Khong the tai danh sach voucher",
+    });
+  }
+};
+
+exports.createVoucher = async (req, res) => {
+  try {
+    const payload = buildVoucherPayload(req.body);
+    const voucher = await Voucher.create(payload);
+
+    res.status(201).json({
+      success: true,
+      message: "Tao voucher thanh cong",
+      voucher,
+    });
+  } catch (err) {
+    console.error("ADMIN CREATE VOUCHER ERROR:", err);
+    res.status(400).json({
+      success: false,
+      message: err.code === 11000 ? "Ma voucher da ton tai" : err.message || "Khong the tao voucher",
+    });
+  }
+};
+
+exports.updateVoucher = async (req, res) => {
+  try {
+    const payload = buildVoucherPayload(req.body);
+    const voucher = await Voucher.findByIdAndUpdate(req.params.id, payload, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!voucher) {
+      return res.status(404).json({
+        success: false,
+        message: "Khong tim thay voucher",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Cap nhat voucher thanh cong",
+      voucher,
+    });
+  } catch (err) {
+    console.error("ADMIN UPDATE VOUCHER ERROR:", err);
+    res.status(400).json({
+      success: false,
+      message: err.code === 11000 ? "Ma voucher da ton tai" : err.message || "Khong the cap nhat voucher",
+    });
+  }
+};
+
+exports.updateVoucherStatus = async (req, res) => {
+  try {
+    const status = normalizeStatus(req.body.status);
+
+    if (status === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Trang thai khong hop le",
+      });
+    }
+
+    const voucher = await Voucher.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true, runValidators: true },
+    );
+
+    if (!voucher) {
+      return res.status(404).json({
+        success: false,
+        message: "Khong tim thay voucher",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: status === 1 ? "Da bat voucher" : "Da tat voucher",
+      voucher,
+    });
+  } catch (err) {
+    console.error("ADMIN UPDATE VOUCHER STATUS ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: "Khong the doi trang thai voucher",
+    });
+  }
+};
+
+exports.deleteVoucher = async (req, res) => {
+  try {
+    const voucher = await Voucher.findByIdAndDelete(req.params.id);
+
+    if (!voucher) {
+      return res.status(404).json({
+        success: false,
+        message: "Khong tim thay voucher",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Xoa voucher thanh cong",
+    });
+  } catch (err) {
+    console.error("ADMIN DELETE VOUCHER ERROR:", err);
+    res.status(500).json({
+      success: false,
+      message: "Khong the xoa voucher",
     });
   }
 };

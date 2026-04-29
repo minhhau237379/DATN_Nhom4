@@ -3,6 +3,7 @@ const Cart = require("../models/Cart");
 const Product = require("../models/Product");
 const Order = require("../models/Order");
 const Address = require("../models/Address");
+const Voucher = require("../models/Voucher");
 const { buildPaymentUrl, formatVnpDate, verifyReturnParams } = require("../utils/vnpay");
 const {
   normalizeProductImages,
@@ -18,6 +19,10 @@ const {
   canMoveForward,
   isFinalOrderStatus,
 } = require("../utils/orderStatus");
+const {
+  validateVoucherForOrder,
+  consumeVoucher,
+} = require("../utils/voucher");
 
 const getClientIp = (req) => {
   const forwarded = req.headers["x-forwarded-for"];
@@ -50,6 +55,8 @@ const normalizeOrderRecord = (order) => {
     ...order,
     orderStatus: normalizeOrderStatus(order.orderStatus),
     paymentStatus: normalizePaymentStatus(order.paymentStatus),
+    subtotalPrice: Number(order.subtotalPrice || order.totalPrice || 0),
+    discountAmount: Number(order.discountAmount || 0),
     items: (order.items || []).map((item) => ({
       ...item,
       image: normalizeProductImages(item.image),
@@ -301,9 +308,13 @@ const finalizePaidOrder = async (order) => {
       await cart.save({ session });
     }
 
+    const shouldConsumeVoucher = Boolean(lockedOrder.voucher?.voucherId && !lockedOrder.paidAt);
     lockedOrder.paymentStatus = PAYMENT_STATUS.PAID;
     lockedOrder.orderStatus = ORDER_STATUS.WAITING_CONFIRM;
     lockedOrder.paidAt = lockedOrder.paidAt || new Date();
+    if (shouldConsumeVoucher) {
+      await consumeVoucher(lockedOrder.voucher.voucherId, session);
+    }
     await lockedOrder.save({ session });
 
     await session.commitTransaction();
@@ -338,6 +349,51 @@ const restoreOrderStock = async (order, session) => {
   }
 };
 
+exports.listAvailableVouchers = async (req, res) => {
+  try {
+    const now = new Date();
+    const vouchers = await Voucher.find({
+      status: 1,
+      $and: [
+        { $or: [{ startDate: null }, { startDate: { $exists: false } }, { startDate: { $lte: now } }] },
+        { $or: [{ endDate: null }, { endDate: { $exists: false } }, { endDate: { $gte: now } }] },
+        {
+          $or: [
+            { usageLimit: 0 },
+            { $expr: { $lt: ["$usedCount", "$usageLimit"] } },
+          ],
+        },
+      ],
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    res.json({ success: true, vouchers });
+  } catch (err) {
+    console.error("LIST VOUCHERS ERROR:", err);
+    res.status(500).json({ success: false, message: "Khong the tai voucher" });
+  }
+};
+
+exports.validateVoucher = async (req, res) => {
+  try {
+    const subtotal = Number(req.body.subtotal || req.body.totalPrice || 0);
+    const result = await validateVoucherForOrder(req.body.code, subtotal);
+
+    res.json({
+      success: true,
+      voucher: result.voucherSnapshot,
+      discountAmount: result.discountAmount,
+      totalPrice: Math.max(subtotal - result.discountAmount, 0),
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      message: err.message || "Voucher khong hop le",
+    });
+  }
+};
+
 exports.createOrder = async (req, res) => {
   const session = await mongoose.startSession();
 
@@ -354,6 +410,7 @@ exports.createOrder = async (req, res) => {
       paymentMethod = "COD",
       selectedProductIds = [],
       directProductIds = [],
+      voucherCode = "",
     } = req.body;
 
     if (
@@ -371,6 +428,12 @@ exports.createOrder = async (req, res) => {
         directProductIds,
         session,
       });
+    const {
+      voucher,
+      discountAmount,
+      voucherSnapshot,
+    } = await validateVoucherForOrder(voucherCode, totalPrice, { session });
+    const payableTotal = Math.max(totalPrice - discountAmount, 0);
 
     const reusableOrder = await findReusableCheckoutOrder({
       userId,
@@ -381,7 +444,10 @@ exports.createOrder = async (req, res) => {
 
     const orderData = {
       items: orderItems,
-      totalPrice,
+      subtotalPrice: totalPrice,
+      discountAmount,
+      voucher: voucherSnapshot,
+      totalPrice: payableTotal,
       shippingAddress: {
         addressId: selectedAddress._id,
         fullName: selectedAddress.fullName,
@@ -447,6 +513,10 @@ exports.createOrder = async (req, res) => {
       );
     }
 
+    if (voucher) {
+      await consumeVoucher(voucher._id, session);
+    }
+
     await session.commitTransaction();
 
     res.json({
@@ -480,6 +550,7 @@ exports.createVnpayPayment = async (req, res) => {
       directProductIds = [],
       clientReturnUrl,
       bankCode = "",
+      voucherCode = "",
     } = req.body;
 
     if (
@@ -500,6 +571,11 @@ exports.createVnpayPayment = async (req, res) => {
       directProductIds,
       session,
     });
+    const {
+      discountAmount,
+      voucherSnapshot,
+    } = await validateVoucherForOrder(voucherCode, totalPrice, { session });
+    const payableTotal = Math.max(totalPrice - discountAmount, 0);
 
     const reusableOrder = await findReusableCheckoutOrder({
       userId,
@@ -511,7 +587,10 @@ exports.createVnpayPayment = async (req, res) => {
     const orderPayload = {
       user: userId,
       items: orderItems,
-      totalPrice,
+      subtotalPrice: totalPrice,
+      discountAmount,
+      voucher: voucherSnapshot,
+      totalPrice: payableTotal,
       shippingAddress: {
         addressId: selectedAddress._id,
         fullName: selectedAddress.fullName,
@@ -565,7 +644,7 @@ exports.createVnpayPayment = async (req, res) => {
       vnp_TxnRef: order.orderNumber,
       vnp_OrderInfo: `Thanh toan don hang ${order.orderNumber}`,
       vnp_OrderType: "other",
-      vnp_Amount: Math.round(totalPrice * 100),
+      vnp_Amount: Math.round(payableTotal * 100),
       vnp_ReturnUrl: returnUrl,
       vnp_IpAddr: getClientIp(req),
       vnp_CreateDate: formatVnpDate(new Date()),

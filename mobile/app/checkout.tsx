@@ -2,19 +2,23 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Image,
   Platform,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
+import AppDialog from "../components/AppDialog";
 import AppToast from "../components/AppToast";
 import AppBottomNav, { APP_BOTTOM_NAV_HEIGHT } from "../components/AppBottomNav";
 import BackHeader from "../components/BackHeader";
 import api from "../services/api";
+import { resolveImageUri } from "../utils/productImage";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -38,6 +42,12 @@ type AddressItem = {
   isDefault?: boolean;
 };
 
+type AppliedVoucher = {
+  code: string;
+  discountAmount: number;
+  totalPrice: number;
+};
+
 export default function CheckoutScreen() {
   const params = useLocalSearchParams<{
     selected?: string;
@@ -50,6 +60,9 @@ export default function CheckoutScreen() {
   const [addresses, setAddresses] = useState<AddressItem[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"COD" | "VNPAY">("COD");
+  const [voucherCode, setVoucherCode] = useState("");
+  const [appliedVoucher, setAppliedVoucher] = useState<AppliedVoucher | null>(null);
+  const [applyingVoucher, setApplyingVoucher] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [handledPaymentResult, setHandledPaymentResult] = useState(false);
@@ -58,6 +71,10 @@ export default function CheckoutScreen() {
     visible: false,
     title: "",
     message: "",
+    orderId: "",
+  });
+  const [successDialog, setSuccessDialog] = useState({
+    visible: false,
     orderId: "",
   });
 
@@ -90,6 +107,23 @@ export default function CheckoutScreen() {
     });
   };
 
+  const showOrderSuccessDialog = (nextOrderId = "") => {
+    setSuccessDialog({
+      visible: true,
+      orderId: nextOrderId,
+    });
+  };
+
+  const continueShopping = () => {
+    setSuccessDialog({ visible: false, orderId: "" });
+    router.replace("/tabs/product");
+  };
+
+  const goToMyOrders = () => {
+    setSuccessDialog({ visible: false, orderId: "" });
+    router.replace("/tabs/orders");
+  };
+
   const closeNotice = () => {
     const nextOrderId = notice.orderId;
 
@@ -119,7 +153,7 @@ export default function CheckoutScreen() {
     }
 
     if (paymentStatus === "success") {
-      showNotice("Thành công", paymentMessage || "Thanh toán online thành công", orderId);
+      showOrderSuccessDialog(orderId || "");
     } else {
       showNotice("Lỗi", paymentMessage || "Thanh toán thất bại hoặc đã bị hủy");
     }
@@ -184,6 +218,48 @@ export default function CheckoutScreen() {
     (sum, item) => sum + item.product.price * item.quantity,
     0,
   );
+  const discountAmount = appliedVoucher?.discountAmount || 0;
+  const finalTotalPrice = Math.max(totalPrice - discountAmount, 0);
+
+  const applyVoucher = async () => {
+    const code = voucherCode.trim().toUpperCase();
+
+    if (!code) {
+      showNotice("Thông báo", "Vui lòng nhập mã voucher");
+      return;
+    }
+
+    if (totalPrice <= 0) {
+      showNotice("Thông báo", "Không có sản phẩm nào để áp dụng voucher");
+      return;
+    }
+
+    try {
+      setApplyingVoucher(true);
+      const res = await api.post("/order/vouchers/validate", {
+        code,
+        subtotal: totalPrice,
+      });
+
+      setAppliedVoucher({
+        code: res.data.voucher?.code || code,
+        discountAmount: Number(res.data.discountAmount || 0),
+        totalPrice: Number(res.data.totalPrice || 0),
+      });
+      setVoucherCode(res.data.voucher?.code || code);
+      showNotice("Thành công", "Đã áp dụng voucher");
+    } catch (err: any) {
+      setAppliedVoucher(null);
+      showNotice("Lỗi", err.response?.data?.message || "Voucher không hợp lệ");
+    } finally {
+      setApplyingVoucher(false);
+    }
+  };
+
+  const removeVoucher = () => {
+    setAppliedVoucher(null);
+    setVoucherCode("");
+  };
 
   const submitOrder = async () => {
     if (!items.length) {
@@ -205,6 +281,7 @@ export default function CheckoutScreen() {
           selectedProductIds: directProductId ? [directProductId] : selectedProductIds,
           directProductIds: directProductId ? [directProductId] : [],
           clientReturnUrl: getClientReturnUrl(),
+          voucherCode: appliedVoucher?.code || "",
         });
 
         if (!res.data.success || !res.data.paymentUrl) {
@@ -240,11 +317,7 @@ export default function CheckoutScreen() {
               : "";
 
           if (resultStatus === "success") {
-            showNotice(
-              "Thành công",
-              resultMessage || "Thanh toán online thành công",
-              resultOrderId,
-            );
+            showOrderSuccessDialog(resultOrderId);
           } else {
             showNotice("Lỗi", resultMessage || "Thanh toán thất bại hoặc đã bị hủy");
           }
@@ -260,14 +333,11 @@ export default function CheckoutScreen() {
         paymentMethod,
         selectedProductIds: directProductId ? [directProductId] : selectedProductIds,
         directProductIds: directProductId ? [directProductId] : [],
+        voucherCode: appliedVoucher?.code || "",
       });
 
       if (res.data.success) {
-        showNotice(
-          "Thành công",
-          "Đặt hàng thành công",
-          res.data.order?._id || "done",
-        );
+        showOrderSuccessDialog(res.data.order?._id || "");
       } else {
         showNotice("Lỗi", res.data.message || "Không thể tạo đơn hàng");
       }
@@ -339,11 +409,19 @@ export default function CheckoutScreen() {
           }
           renderItem={({ item }) => (
             <View style={styles.itemCard}>
-              <Text style={styles.itemName}>{item.product.name}</Text>
-              <Text style={styles.itemMeta}>Số lượng: {item.quantity}</Text>
-              <Text style={styles.itemPrice}>
-                {(item.product.price * item.quantity).toLocaleString("vi-VN")} VND
-              </Text>
+              <Image
+                source={{ uri: resolveImageUri(item.product.image) }}
+                style={styles.itemImage}
+              />
+              <View style={styles.itemInfo}>
+                <Text style={styles.itemName} numberOfLines={2}>
+                  {item.product.name}
+                </Text>
+                <Text style={styles.itemMeta}>Số lượng: {item.quantity}</Text>
+                <Text style={styles.itemPrice}>
+                  {(item.product.price * item.quantity).toLocaleString("vi-VN")} VND
+                </Text>
+              </View>
             </View>
           )}
           ListFooterComponent={
@@ -386,10 +464,66 @@ export default function CheckoutScreen() {
                 </TouchableOpacity>
               </View>
 
+              <Text style={styles.sectionTitle}>Voucher</Text>
+
+              <View style={styles.voucherCard}>
+                <View style={styles.voucherRow}>
+                  <TextInput
+                    style={styles.voucherInput}
+                    value={voucherCode}
+                    onChangeText={(value) => {
+                      setVoucherCode(value.toUpperCase());
+                      if (appliedVoucher) {
+                        setAppliedVoucher(null);
+                      }
+                    }}
+                    placeholder="Nhập mã voucher"
+                    autoCapitalize="characters"
+                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.voucherBtn,
+                      applyingVoucher && styles.voucherBtnDisabled,
+                    ]}
+                    onPress={applyVoucher}
+                    disabled={applyingVoucher}
+                  >
+                    <Text style={styles.voucherBtnText}>
+                      {applyingVoucher ? "Đang áp dụng" : "Áp dụng"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {appliedVoucher ? (
+                  <View style={styles.appliedVoucherBox}>
+                    <Text style={styles.appliedVoucherText}>
+                      Đã áp dụng {appliedVoucher.code}
+                    </Text>
+                    <TouchableOpacity onPress={removeVoucher}>
+                      <Text style={styles.removeVoucherText}>Xóa</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
+              </View>
+
               <View style={styles.summaryCard}>
+                <View style={styles.summaryLine}>
+                  <Text style={styles.summaryLabel}>Tạm tính</Text>
+                  <Text style={styles.summaryText}>
+                    {totalPrice.toLocaleString("vi-VN")} VND
+                  </Text>
+                </View>
+                {discountAmount > 0 ? (
+                  <View style={styles.summaryLine}>
+                    <Text style={styles.summaryLabel}>Voucher</Text>
+                    <Text style={styles.discountText}>
+                      -{discountAmount.toLocaleString("vi-VN")} VND
+                    </Text>
+                  </View>
+                ) : null}
                 <Text style={styles.summaryLabel}>Tổng thanh toán</Text>
                 <Text style={styles.summaryValue}>
-                  {totalPrice.toLocaleString("vi-VN")} VND
+                  {finalTotalPrice.toLocaleString("vi-VN")} VND
                 </Text>
 
                 <TouchableOpacity
@@ -408,6 +542,16 @@ export default function CheckoutScreen() {
       </View>
 
       <AppBottomNav active="cart" />
+
+      <AppDialog
+        visible={successDialog.visible}
+        title="Đặt hàng thành công"
+        message="Đơn hàng của bạn đã được tạo thành công."
+        cancelText="Tiếp tục mua sắm"
+        confirmText="Đơn hàng của tôi"
+        onClose={continueShopping}
+        onConfirm={goToMyOrders}
+      />
 
       <AppToast
         visible={notice.visible}
@@ -490,6 +634,19 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     padding: 16,
     marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  itemImage: {
+    width: 76,
+    height: 76,
+    borderRadius: 12,
+    backgroundColor: "#f4f4f4",
+    resizeMode: "cover",
+  },
+  itemInfo: {
+    flex: 1,
   },
   itemName: {
     color: "#111",
@@ -527,15 +684,82 @@ const styles = StyleSheet.create({
   paymentTextActive: {
     color: "#d5001c",
   },
+  voucherCard: {
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 14,
+  },
+  voucherRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  voucherInput: {
+    flex: 1,
+    height: 46,
+    borderWidth: 1,
+    borderColor: "#e5e5e5",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    color: "#111",
+    fontWeight: "700",
+  },
+  voucherBtn: {
+    minWidth: 92,
+    height: 46,
+    borderRadius: 12,
+    backgroundColor: "#d5001c",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
+  voucherBtnDisabled: {
+    opacity: 0.6,
+  },
+  voucherBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+  appliedVoucherBox: {
+    marginTop: 10,
+    borderRadius: 12,
+    backgroundColor: "#fff5f5",
+    padding: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  appliedVoucherText: {
+    color: "#d5001c",
+    fontWeight: "700",
+  },
+  removeVoucherText: {
+    color: "#333",
+    fontWeight: "700",
+  },
   summaryCard: {
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 16,
     marginTop: 16,
   },
+  summaryLine: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 10,
+  },
   summaryLabel: {
     color: "#666",
     fontSize: 15,
+  },
+  summaryText: {
+    color: "#111",
+    fontWeight: "700",
+  },
+  discountText: {
+    color: "#d5001c",
+    fontWeight: "700",
   },
   summaryValue: {
     color: "#d5001c",

@@ -33,6 +33,12 @@ router.put("/categories/:id", adminController.updateCategory);
 router.patch("/categories/:id/status", adminController.updateCategoryStatus);
 router.delete("/categories/:id", adminController.deleteCategory);
 
+router.get("/vouchers", adminController.listVouchers);
+router.post("/vouchers", adminController.createVoucher);
+router.put("/vouchers/:id", adminController.updateVoucher);
+router.patch("/vouchers/:id/status", adminController.updateVoucherStatus);
+router.delete("/vouchers/:id", adminController.deleteVoucher);
+
 router.get("/orders", adminController.listOrders);
 router.get("/orders/:id", adminController.getOrderDetail);
 router.patch("/orders/:id/status", adminController.updateOrderStatus);
