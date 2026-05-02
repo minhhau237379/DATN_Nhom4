@@ -220,8 +220,8 @@ export default function Register() {
     <>
       <KeyboardAvoidingView
         style={styles.screen}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 0}
+        behavior={Platform.OS === "ios" ? "height" : "height"}
+        keyboardVerticalOffset={0}
       >
         <ScrollView
           contentContainerStyle={styles.container}
@@ -283,7 +283,7 @@ export default function Register() {
               style={styles.inputPassword}
               placeholderTextColor="#000"
               placeholder="Mật khẩu"
-              secureTextEntry={!showPassword}
+              secureTextEntry={false}
               value={form.password}
               autoCapitalize="none"
               autoCorrect={false}
@@ -314,7 +314,7 @@ export default function Register() {
               style={styles.inputPassword}
               placeholderTextColor="#000"
               placeholder="Xác nhận mật khẩu"
-              secureTextEntry={!showConfirmPassword}
+              secureTextEntry={false}
               value={form.confirmPassword}
               autoCapitalize="none"
               autoCorrect={false}

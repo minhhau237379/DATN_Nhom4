@@ -144,10 +144,14 @@ export default function OrdersScreen() {
                 : ""}
             </Text>
             <Text style={styles.meta}>
-              Trạng thái: {orderStatusLabel(item.orderStatus)}
+              <Text style={styles.metaLabel}>Trạng thái: </Text>
+              <Text style={styles.metaValue}>{orderStatusLabel(item.orderStatus)}</Text>
             </Text>
             <Text style={styles.meta}>
-              Thanh toán: {item.paymentMethod || "COD"} - {paymentStatusLabel(item.paymentStatus)}
+              <Text style={styles.metaLabel}>Thanh toán: </Text>
+              <Text style={styles.metaValue}>
+                {item.paymentMethod || "COD"} - {paymentStatusLabel(item.paymentStatus)}
+              </Text>
             </Text>
             <Text style={styles.meta}>
               Số sản phẩm: {item.items?.reduce((sum, product) => sum + product.quantity, 0) || 0}
@@ -216,6 +220,14 @@ const styles = StyleSheet.create({
   meta: {
     color: "#666",
     marginTop: 6,
+  },
+  metaLabel: {
+    fontWeight: "700",
+    color: "#333",
+  },
+  metaValue: {
+    fontWeight: "700",
+    color: "#111",
   },
   total: {
     color: "#d5001c",

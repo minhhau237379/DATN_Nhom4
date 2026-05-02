@@ -352,8 +352,8 @@ export default function Shop() {
       >
         <View style={styles.modalOverlay}>
           <KeyboardAvoidingView
-            behavior={Platform.OS === "ios" ? "padding" : undefined}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+            behavior={Platform.OS === "ios" ? "position" : undefined}
+            keyboardVerticalOffset={Platform.OS === "ios" ? 20 : 20}
             style={styles.modalKeyboardWrap}
           >
             <View style={styles.modalCard}>

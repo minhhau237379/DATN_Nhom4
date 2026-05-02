@@ -2,6 +2,9 @@
 import {
   ActivityIndicator,
   Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -124,8 +127,17 @@ export default function ForgotPasswordScreen() {
 
   return (
     <>
-      <View style={styles.container}>
-        <View style={styles.card}>
+      <KeyboardAvoidingView
+        style={styles.wrapper}
+        behavior={Platform.OS === "ios" ? "height" : "height"}
+        keyboardVerticalOffset={0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
+          <View style={styles.card}>
           <Text style={styles.title}>Quên mật khẩu</Text>
           <Text style={styles.subtitle}>
             {step === 1
@@ -194,7 +206,7 @@ export default function ForgotPasswordScreen() {
             placeholderTextColor="#000"
             placeholder="Mật khẩu mới"
                   value={newPassword}
-                  secureTextEntry={!showNewPassword}
+                  secureTextEntry={false}
                   autoCapitalize="none"
                   autoCorrect={false}
                   autoComplete="new-password"
@@ -217,7 +229,7 @@ export default function ForgotPasswordScreen() {
             placeholderTextColor="#000"
             placeholder="Nhập lại mật khẩu mới"
                   value={confirmPassword}
-                  secureTextEntry={!showConfirmPassword}
+                  secureTextEntry={false}
                   autoCapitalize="none"
                   autoCorrect={false}
                   autoComplete="new-password"
@@ -256,8 +268,9 @@ export default function ForgotPasswordScreen() {
           >
             <Text style={styles.backText}>Quay lại đăng nhập</Text>
           </TouchableOpacity>
-        </View>
-      </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <AppToast
         visible={notice.visible}
@@ -270,11 +283,16 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
     flex: 1,
+  },
+  container: {
+    flexGrow: 1,
+    justifyContent: "flex-start",
+    paddingTop: 80,
+    paddingHorizontal: 24,
+    paddingBottom: 24,
     backgroundColor: "#f5f5f5",
-    justifyContent: "center",
-    padding: 24,
   },
   card: {
     backgroundColor: "#fff",

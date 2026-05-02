@@ -95,7 +95,8 @@ export default function AddressAddScreen() {
   return (
     <>
       <View style={styles.container}>
-        <BackHeader title={isEdit ? "Sửa địa chỉ" : "Thêm địa chỉ"} />
+        
+        <BackHeader title="Sửa địa chỉ" onBack={() => router.replace("/tabs/address")} />
 
         <View style={styles.form}>
           <Input

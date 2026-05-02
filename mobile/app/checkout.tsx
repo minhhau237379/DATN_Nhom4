@@ -464,7 +464,7 @@ export default function CheckoutScreen() {
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.sectionTitle}>Voucher</Text>
+              {/* <Text style={styles.sectionTitle}>Voucher</Text>
 
               <View style={styles.voucherCard}>
                 <View style={styles.voucherRow}>
@@ -504,7 +504,7 @@ export default function CheckoutScreen() {
                     </TouchableOpacity>
                   </View>
                 ) : null}
-              </View>
+              </View> */}
 
               <View style={styles.summaryCard}>
                 <View style={styles.summaryLine}>

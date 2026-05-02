@@ -157,7 +157,8 @@ export default function Login() {
   return (
     <KeyboardAvoidingView
       style={styles.page}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "height" : "height"}
+      keyboardVerticalOffset={0}
     >
       <View style={styles.container}>
         <View style={styles.header}>
@@ -194,7 +195,7 @@ export default function Login() {
             style={styles.inputPassword}
             placeholderTextColor="#000"
             placeholder="Nhập mật khẩu"
-            secureTextEntry={!showPassword}
+            secureTextEntry={false}
             value={form.password}
             autoCapitalize="none"
             autoCorrect={false}
@@ -244,8 +245,10 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     backgroundColor: "#f5f5f5",
-    justifyContent: "center",
-    padding: 20,
+    justifyContent: "flex-start",
+    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   container: {
     backgroundColor: "#fff",

@@ -191,10 +191,14 @@ export default function OrderDetailScreen() {
                   : ""}
               </Text>
               <Text style={styles.meta}>
-                Trạng thái đơn: {orderStatusLabel(order.orderStatus)}
+                <Text style={styles.metaLabel}>Trạng thái đơn: </Text>
+                <Text style={styles.metaValue}>{orderStatusLabel(order.orderStatus)}</Text>
               </Text>
               <Text style={styles.meta}>
-                Thanh toán: {order.paymentMethod} - {paymentStatusLabel(order.paymentStatus)}
+                <Text style={styles.metaLabel}>Thanh toán: </Text>
+                <Text style={styles.metaValue}>
+                  {order.paymentMethod} - {paymentStatusLabel(order.paymentStatus)}
+                </Text>
               </Text>
             </View>
 
@@ -302,6 +306,14 @@ const styles = StyleSheet.create({
   meta: {
     marginTop: 6,
     color: "#666",
+  },
+  metaLabel: {
+    fontWeight: "700",
+    color: "#333",
+  },
+  metaValue: {
+    fontWeight: "700",
+    color: "#111",
   },
   sectionTitle: {
     fontSize: 17,

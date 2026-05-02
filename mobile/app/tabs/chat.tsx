@@ -358,7 +358,7 @@ export default function ChatScreen() {
           onPress={handleSend}
           disabled={sending}
         >
-          <Ionicons name="send" size={18} color="#fff" />
+          <Ionicons name="send" size={18} color="#ffffff" />
         </TouchableOpacity>
       </View>
 
@@ -512,7 +512,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   quickSendBtnText: {
-    color: "#fff",
+    color: "#ffffff",
     fontWeight: "700",
   },
   listWrap: {
@@ -548,10 +548,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   userBubble: {
-    backgroundColor: "#d5001c",
+    backgroundColor: "#158e03",
   },
   adminBubble: {
-    backgroundColor: "#fff",
+    backgroundColor: "#158e03",
     borderWidth: 1,
     borderColor: "#e2e8f0",
   },
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 999,
-    backgroundColor: "#d5001c",
+    backgroundColor: "#000000",
     alignItems: "center",
     justifyContent: "center",
   },
