@@ -36,8 +36,8 @@ const resolveImageUrl = (value) => {
   return `${getBackendOrigin()}${trimmed}`;
 };
 
-const StatCard = ({ label, value, hint, accent = false }) => (
-  <div className={`stat-card ${accent ? "stat-card-accent" : ""}`}>
+const StatCard = ({ label, value, hint, accent = false, wide = false }) => (
+  <div className={`stat-card ${accent ? "stat-card-accent" : ""} ${wide ? "stat-card-wide" : ""}`}>
     <span>{label}</span>
     <strong>{value}</strong>
     <small>{hint}</small>
@@ -318,6 +318,7 @@ export default function Dashboard() {
           value={`${Number(dashboardStats.revenue || 0).toLocaleString("vi-VN")} ₫`}
           hint="Từ đơn đã thanh toán"
           accent
+          wide
         />
       </div>
 

@@ -43,20 +43,13 @@ export default function AdminLayout() {
 
   return (
     <div className="wrapper">
-      {/* Navbar */}
-      <nav className="main-header navbar navbar-expand navbar-white navbar-light">
-        <div className="navbar-nav ml-auto" />
-      </nav>
-
       {/* Sidebar */}
       <aside className="main-sidebar sidebar-light-primary elevation-4">
         <div className="sidebar">
           {/* Brand/Logo */}
-          <div className="brand-link" style={{ textAlign: "center", padding: "15px" }}>
-            <h3 style={{ margin: "0", fontSize: "20px", fontWeight: "bold", color: "#333" }}>
-              🎮 HoppyStore88
-            </h3>
-            <small style={{ color: "#666" }}>Quản trị hệ thống</small>
+          <div className="brand-link">
+            <img src="/images.UI/logo.jpg" alt="Logo" className="brand-image" />
+            <h3>HoppyStore88</h3>
           </div>
 
           {/* Sidebar Menu */}

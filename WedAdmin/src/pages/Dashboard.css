@@ -3,7 +3,7 @@
 }
 
 .page-dashboard .stats-grid {
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 18px;
 }
 
@@ -16,6 +16,10 @@
   border: 1px solid rgba(15, 23, 42, 0.08);
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
   min-height: 132px;
+}
+
+.page-dashboard .stat-card-wide {
+  grid-column: span 2;
 }
 
 .page-dashboard .stat-card span {
@@ -51,7 +55,8 @@
 .page-dashboard .dashboard-charts {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
+  gap: 22px;
+  margin-top: 24px;
 }
 
 .page-dashboard .dashboard-status-summary {
@@ -63,6 +68,10 @@
 .page-dashboard .chart-panel {
   display: grid;
   gap: 16px;
+  padding: 22px;
+  border-radius: 22px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
 }
 
 .page-dashboard .chart-panel-wide {
@@ -172,7 +181,7 @@
 
 .page-dashboard .ranking-list {
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .page-dashboard .ranking-item {
