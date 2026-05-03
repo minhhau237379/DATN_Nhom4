@@ -14,7 +14,9 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import api from "../../services/api";
+import BackHeader from "../../components/BackHeader";
 import AppToast from "../../components/AppToast";
+
 import { isLoggedIn } from "../../utils/auth";
 import { resolveImageUri } from "../../utils/productImage";
 
@@ -361,7 +363,7 @@ export default function Cart() {
   return (
     <View style={styles.container}>
       <View style={styles.headerWrap}>
-        <Text style={styles.header}>Giỏ hàng của bạn</Text>
+        <BackHeader title="Giỏ hàng" showBack={false} />
       </View>
 
       {cartItems.length === 0 ? (

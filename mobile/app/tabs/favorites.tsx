@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { router } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
+import BackHeader from "../../components/BackHeader";
 import api from "../../services/api";
 import { isLoggedIn } from "../../utils/auth";
 import { resolveImageUri } from "../../utils/productImage";
@@ -99,9 +100,7 @@ export default function Favorite() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerWrap}>
-        <Text style={styles.header}>Sản phẩm yêu thích</Text>
-      </View>
+      <BackHeader title="Sản phẩm yêu thích" showBack={false} />
 
       {items.length === 0 ? (
         <View style={styles.emptyBox}>
@@ -127,18 +126,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
-  },
-  headerWrap: {
-    backgroundColor: "#d5001c",
-    paddingHorizontal: 16,
-    paddingTop: 14,
-    paddingBottom: 14,
-  },
-  header: {
-    color: "#fff7f7",
-    fontSize: 20,
-    fontWeight: "700",
-    textAlign: "center",
   },
   listContent: {
     padding: 12,

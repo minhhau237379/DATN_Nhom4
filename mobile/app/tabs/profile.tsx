@@ -9,6 +9,7 @@ import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import api from "../../services/api";
+import BackHeader from "../../components/BackHeader";
 import AppDialog from "../../components/AppDialog";
 import { isLoggedIn } from "../../utils/auth";
 
@@ -88,7 +89,8 @@ export default function Profile() {
   return (
     <View style={styles.container}>
       <View style={styles.headerWrap}>
-        <Text style={styles.headerTitle}>Tài khoản</Text>
+        <BackHeader title="Tài khoản" showBack={false} />
+        
       </View>
 
       <View style={styles.profileHeader}>

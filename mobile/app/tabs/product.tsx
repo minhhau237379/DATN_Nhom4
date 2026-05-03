@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   FlatList,
   Image,
@@ -19,6 +19,7 @@ import AppToast from "../../components/AppToast";
 import api from "../../services/api";
 import { isLoggedIn } from "../../utils/auth";
 import { resolveImageUri } from "../../utils/productImage";
+import BackHeader from "../../components/BackHeader";
 
 type Product = {
   _id: string;
@@ -267,6 +268,7 @@ export default function Shop() {
   return (
     <>
       <View style={styles.container}>
+        {/* <BackHeader title="Sản phẩm" showBack={false} /> */}
         <View style={styles.header}>
           <TextInput
             placeholderTextColor="#000"
@@ -422,6 +424,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingTop: Platform.OS === "ios" ? 18 : 12,
     paddingBottom: 12,
+    marginTop: Platform.OS === "ios" ? 34 : 12,
   },
   input: {
     backgroundColor: "white",

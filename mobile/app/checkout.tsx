@@ -15,7 +15,10 @@ import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import AppDialog from "../components/AppDialog";
 import AppToast from "../components/AppToast";
-import AppBottomNav, { APP_BOTTOM_NAV_HEIGHT } from "../components/AppBottomNav";
+import AppBottomNav, {
+  APP_BOTTOM_NAV_HEIGHT,
+  resolveNavSafeAreaBottom,
+} from "../components/AppBottomNav";
 import BackHeader from "../components/BackHeader";
 import api from "../services/api";
 import { resolveImageUri } from "../utils/productImage";
@@ -67,6 +70,7 @@ export default function CheckoutScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [handledPaymentResult, setHandledPaymentResult] = useState(false);
   const insets = useSafeAreaInsets();
+  const safeBottom = resolveNavSafeAreaBottom(insets.bottom);
   const [notice, setNotice] = useState({
     visible: false,
     title: "",
@@ -367,7 +371,7 @@ export default function CheckoutScreen() {
           keyExtractor={(item) => item.product._id}
           contentContainerStyle={[
             styles.content,
-            { paddingBottom: APP_BOTTOM_NAV_HEIGHT + insets.bottom + 28 },
+            { paddingBottom: APP_BOTTOM_NAV_HEIGHT + safeBottom + 28 },
           ]}
           ListHeaderComponent={
             <>

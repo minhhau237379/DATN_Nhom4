@@ -17,6 +17,7 @@ import {
 import { useFocusEffect } from "@react-navigation/native";
 import AppToast from "../../components/AppToast";
 import api from "../../services/api";
+import BackHeader from "../../components/BackHeader";
 import { isLoggedIn } from "../../utils/auth";
 import { resolveImageUri } from "../../utils/productImage";
 import {
@@ -254,7 +255,9 @@ export default function ChatScreen() {
     const isUser = item.senderRole === "user";
 
     return (
+      
       <View style={[styles.messageRow, isUser ? styles.messageRowUser : styles.messageRowAdmin]}>
+        
         <View style={[styles.bubble, isUser ? styles.userBubble : styles.adminBubble]}>
           <Text style={styles.sender}>{isUser ? "Bạn" : item.senderName || "Admin"}</Text>
           {item.content ? <Text style={styles.messageText}>{item.content}</Text> : null}
@@ -287,7 +290,8 @@ export default function ChatScreen() {
       keyboardVerticalOffset={Platform.OS === "ios" ? 24 : 20}
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Chat với admin</Text>
+        
+        <Text style={styles.title}></Text>
         <Text style={styles.subtitle}>Trao đổi trực tiếp với admin</Text>
       </View>
 

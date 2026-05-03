@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { isLoggedIn } from "../utils/auth";
 
@@ -50,10 +50,20 @@ const tabs: {
   },
 ];
 
+/** Chiều cao ước lượng (padding + hàng icon/chữ), dùng cho contentInset scroll — không gồm vùng an toàn dưới. */
 export const APP_BOTTOM_NAV_HEIGHT = 76;
+
+/** Một số máy Android trả `insets.bottom === 0` dù vẫn có thanh điều hướng — tránh thanh custom “lơ lửng”. */
+export function resolveNavSafeAreaBottom(insetBottom: number) {
+  return Math.max(
+    insetBottom,
+    Platform.OS === "android" && insetBottom === 0 ? 12 : 0,
+  );
+}
 
 export default function AppBottomNav({ active }: AppBottomNavProps) {
   const insets = useSafeAreaInsets();
+  const safeBottom = resolveNavSafeAreaBottom(insets.bottom);
 
   const handlePress = async (tab: (typeof tabs)[number]) => {
     const protectedTabs: TabKey[] = ["favorite", "chat", "cart", "profile"];
@@ -74,8 +84,7 @@ export default function AppBottomNav({ active }: AppBottomNavProps) {
       style={[
         styles.wrapper,
         {
-          height: APP_BOTTOM_NAV_HEIGHT + insets.bottom,
-          paddingBottom: 8 + insets.bottom,
+          paddingBottom: 8 + safeBottom,
         },
       ]}
     >
@@ -120,7 +129,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: APP_BOTTOM_NAV_HEIGHT,
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: "#e9e9e9",
@@ -128,6 +136,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-around",
     paddingTop: 6,
+    minHeight: APP_BOTTOM_NAV_HEIGHT,
   },
   item: {
     flex: 1,

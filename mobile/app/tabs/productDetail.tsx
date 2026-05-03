@@ -242,6 +242,12 @@ export default function ProductDetail() {
       return normalizedValue && !descriptionKeys.has(key);
     });
 
+  const hasSpecs = Boolean(specEntries && specEntries.length > 0);
+  const hasDesc = Boolean(product.description?.trim());
+  const hasInfoImages = productImages.length > 0;
+  const leadInfoImage = hasInfoImages ? productImages[0] : null;
+  const restInfoImages = hasInfoImages ? productImages.slice(1) : [];
+
   const slideWidth = screenWidth - 20;
   const slideGap = 6;
   const slideInterval = slideWidth + slideGap;
@@ -385,11 +391,30 @@ export default function ProductDetail() {
         <View style={styles.section}>
           <Text style={styles.title}>Thông tin sản phẩm</Text>
 
-          {product.description?.trim() ? (
+          {hasSpecs &&
+            specEntries!.map(([key, value]) => (
+              <View key={key} style={styles.specRow}>
+                <Text style={styles.specKey}>{formatSpecLabel(key)}</Text>
+                <Text style={styles.specValue}>{value}</Text>
+              </View>
+            ))}
+
+          {leadInfoImage ? (
+            <Image
+              source={{ uri: resolveImageUri(leadInfoImage) }}
+              style={[
+                styles.descriptionGalleryImage,
+                styles.infoLeadImage,
+                hasSpecs ? styles.infoLeadImageAfterSpecs : null,
+              ]}
+            />
+          ) : null}
+
+          {hasDesc ? (
             <View style={styles.descriptionBodyPanel}>
               <RenderHTML
                 contentWidth={contentWidth - 52}
-                source={{ html: product.description }}
+                source={{ html: product.description! }}
                 baseStyle={styles.descriptionBody}
                 tagsStyles={{
                   h1: styles.renderHeading,
@@ -407,18 +432,23 @@ export default function ProductDetail() {
                 }}
               />
             </View>
-          ) : (
-            <Text style={styles.descFallback}>Chưa có thông tin</Text>
-          )}
+          ) : null}
 
-          {specEntries &&
-            specEntries.length > 0 &&
-            specEntries.map(([key, value]) => (
-              <View key={key} style={styles.specRow}>
-                <Text style={styles.specKey}>{formatSpecLabel(key)}</Text>
-                <Text style={styles.specValue}>{value}</Text>
-              </View>
-            ))}
+          {restInfoImages.length > 0 ? (
+            <View style={styles.descriptionGallery}>
+              {restInfoImages.map((uri, index) => (
+                <Image
+                  key={`info-gallery-${uri}-${index}`}
+                  source={{ uri: resolveImageUri(uri) }}
+                  style={styles.descriptionGalleryImage}
+                />
+              ))}
+            </View>
+          ) : null}
+
+          {!hasDesc && !hasInfoImages && !hasSpecs ? (
+            <Text style={styles.descFallback}>Chưa có thông tin</Text>
+          ) : null}
         </View>
 
         <View style={styles.related}>
@@ -564,6 +594,23 @@ const styles = StyleSheet.create({
     borderColor: "#e2e8f0",
     padding: 12,
     marginBottom: 10,
+  },
+  descriptionGallery: {
+    gap: 12,
+    marginBottom: 10,
+  },
+  infoLeadImage: {
+    marginBottom: 10,
+  },
+  infoLeadImageAfterSpecs: {
+    marginTop: 12,
+  },
+  descriptionGalleryImage: {
+    width: "100%",
+    height: 220,
+    borderRadius: 12,
+    resizeMode: "contain",
+    backgroundColor: "#ffffff",
   },
   descriptionRow: {
     flexDirection: "row",
