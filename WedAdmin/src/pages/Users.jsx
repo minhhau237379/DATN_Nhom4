@@ -191,7 +191,7 @@ export default function Users() {
 
   return (
     <div className="stack page-users">
-      <section className="panel panel-hero">
+      <section className="panel panel-hero card card-outline card-primary">
         <div className="panel-header">
           <div>
             <p className="eyebrow">Quản lý tài khoản</p>
@@ -234,7 +234,7 @@ export default function Users() {
         </div>
       </section>
 
-      <section className="panel">
+      <section className="panel card card-outline card-secondary">
         <div className="panel-header">
           <h3>Danh sách người dùng</h3>
         </div>

@@ -233,7 +233,7 @@ export default function Chat() {
 
   return (
     <div className="page-chat grid">
-      <div className="panel panel-hero chat-hero">
+      <div className="panel panel-hero chat-hero card card-outline card-primary">
         <div>
           <p className="eyebrow">Hộp thư</p>
           <h3>Chat với khách hàng</h3>
@@ -245,7 +245,7 @@ export default function Chat() {
       </div>
 
       <div className="chat-layout">
-        <aside className="panel chat-thread-list">
+        <aside className="panel chat-thread-list card card-outline card-secondary">
           <div className="panel-header">
             <div>
               <h3>Hội thoại</h3>
@@ -287,7 +287,7 @@ export default function Chat() {
           </div>
         </aside>
 
-        <section className="panel chat-panel">
+        <section className="panel chat-panel card card-outline card-secondary">
           <div className="chat-panel-header">
             <div>
               <p className="eyebrow">Người dùng</p>

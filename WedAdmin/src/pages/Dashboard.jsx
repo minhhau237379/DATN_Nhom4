@@ -89,7 +89,7 @@ const BarChart = ({ title, series, tone = "chart-blue" }) => {
   const peak = Math.max(...series.map((item) => Number(item.value || 0)), 1);
 
   return (
-    <section className="panel chart-panel">
+    <section className="panel chart-panel card card-outline card-secondary">
       <div className="panel-header">
         <h3>{title}</h3>
         <p className="muted-text">
@@ -171,7 +171,7 @@ const TrendChart = ({ title, series }) => {
       .join(" ") || "";
 
   return (
-    <section className="panel chart-panel chart-panel-wide">
+    <section className="panel chart-panel chart-panel-wide card card-outline card-secondary">
       <div className="panel-header">
         <h3>{title}</h3>
         <p className="muted-text">So sánh số đơn và doanh thu 6 tháng gần nhất.</p>
@@ -286,7 +286,7 @@ export default function Dashboard() {
 
   return (
     <div className="stack page-dashboard">
-      <section className="panel panel-hero dashboard-hero">
+      <section className="panel panel-hero dashboard-hero card card-outline card-primary">
         <div>
           <p className="eyebrow">Bảng điều khiển</p>
           <h3>Toàn bộ hoạt động của app user và web admin trên cùng backend</h3>
@@ -330,7 +330,7 @@ export default function Dashboard() {
       
 
       <div className="dashboard-duo">
-        <section className="panel">
+        <section className="panel card card-outline card-secondary">
           <div className="panel-header">
             <h3>Đơn hàng gần đây</h3>
           </div>
@@ -368,7 +368,7 @@ export default function Dashboard() {
           </div>
         </section>
 
-        <section className="panel">
+        <section className="panel card card-outline card-secondary">
           <div className="panel-header">
             <h3>Sản phẩm bán chạy</h3>
           </div>

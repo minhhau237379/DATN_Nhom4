@@ -277,7 +277,7 @@ export default function Products() {
     <div className="stack page-products">
       
 
-      <section className="panel panel-hero">
+      <section className="panel panel-hero card card-outline card-primary">
         <div className="panel-header">
           <div>
             <p className="eyebrow">Quản lý sản phẩm</p>
@@ -330,7 +330,7 @@ export default function Products() {
         </div>
       </section>
 
-      <section className="panel">
+      <section className="panel card card-outline card-secondary">
         <div className="panel-header">
           <h3>Danh sách sản phẩm</h3>
           <p className="muted-text">

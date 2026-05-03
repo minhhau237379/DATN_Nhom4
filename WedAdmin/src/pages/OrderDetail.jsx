@@ -163,7 +163,7 @@ export default function OrderDetail() {
 
   return (
     <div className="stack page-order-detail">
-      <section className="panel panel-hero">
+      <section className="panel panel-hero card card-outline card-primary">
         <div className="panel-header">
           <div>
             <p className="eyebrow">Chi tiết đơn hàng</p>
@@ -199,7 +199,7 @@ export default function OrderDetail() {
         </div>
       </section>
 
-      <section className="panel">
+      <section className="panel card card-outline card-secondary">
         <div className="panel-header">
           <h3>Thông tin xử lý</h3>
         </div>
@@ -246,7 +246,7 @@ export default function OrderDetail() {
         </button>
       </section>
 
-      <section className="panel">
+      <section className="panel card card-outline card-secondary">
         <div className="panel-header">
           <h3>Sản phẩm trong đơn</h3>
         </div>

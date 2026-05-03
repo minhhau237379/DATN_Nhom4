@@ -107,7 +107,7 @@ export default function Categories() {
 
   return (
     <div className="stack page-categories">
-      <section className="panel panel-hero">
+      <section className="panel panel-hero card card-outline card-primary">
         <div className="panel-header">
           <div>
             <p className="eyebrow">Quản lý danh mục</p>
@@ -142,7 +142,7 @@ export default function Categories() {
         </div>
       </section>
 
-      <section className="panel">
+      <section className="panel card card-outline card-secondary">
         <div className="panel-header">
           <h3>Danh sách danh mục</h3>
         </div>
