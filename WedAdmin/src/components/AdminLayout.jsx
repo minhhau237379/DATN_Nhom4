@@ -48,7 +48,7 @@ export default function AdminLayout() {
         <div className="sidebar">
           {/* Brand/Logo */}
           <div className="brand-link">
-            <img src="/images.UI/logo.jpg" alt="Logo" className="brand-image" />
+            <img src="/images/UI/logo.jpg" alt="Logo" className="brand-image" />
             <h3>HoppyStore88</h3>
           </div>
 
