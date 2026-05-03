@@ -89,9 +89,9 @@ const BarChart = ({ title, series, tone = "chart-blue" }) => {
   const peak = Math.max(...series.map((item) => Number(item.value || 0)), 1);
 
   return (
-    <section className="panel chart-panel card card-outline card-secondary">
-      <div className="panel-header">
-        <h3>{title}</h3>
+    <section className="card chart-panel card-outline card-secondary">
+      <div className="card-header">
+        <h3 className="card-title">{title}</h3>
         <p className="muted-text">
           Tổng: <strong>{total}</strong>
         </p>
@@ -171,9 +171,9 @@ const TrendChart = ({ title, series }) => {
       .join(" ") || "";
 
   return (
-    <section className="panel chart-panel chart-panel-wide card card-outline card-secondary">
-      <div className="panel-header">
-        <h3>{title}</h3>
+    <section className="card chart-panel chart-panel-wide card-outline card-secondary">
+      <div className="card-header">
+        <h3 className="card-title">{title}</h3>
         <p className="muted-text">So sánh số đơn và doanh thu 6 tháng gần nhất.</p>
       </div>
 
@@ -281,13 +281,13 @@ export default function Dashboard() {
   );
 
   if (loading) {
-    return <div className="panel">Đang tải thống kê...</div>;
+    return <div className="card card-outline card-secondary">Đang tải thống kê...</div>;
   }
 
   return (
     <div className="stack page-dashboard">
-      <section className="panel panel-hero dashboard-hero card card-outline card-primary">
-        <div>
+      <section className="card card-outline card-primary dashboard-hero">
+        <div className="card-body">
           <p className="eyebrow">Bảng điều khiển</p>
           <h3>Toàn bộ hoạt động của app user và web admin trên cùng backend</h3>
           <p className="muted-text">
@@ -330,9 +330,9 @@ export default function Dashboard() {
       
 
       <div className="dashboard-duo">
-        <section className="panel card card-outline card-secondary">
-          <div className="panel-header">
-            <h3>Đơn hàng gần đây</h3>
+        <section className="card card-outline card-secondary">
+          <div className="card-header">
+            <h3 className="card-title">Đơn hàng gần đây</h3>
           </div>
           <div className="table-wrap">
             <table>
@@ -368,9 +368,9 @@ export default function Dashboard() {
           </div>
         </section>
 
-        <section className="panel card card-outline card-secondary">
-          <div className="panel-header">
-            <h3>Sản phẩm bán chạy</h3>
+        <section className="card card-outline card-secondary">
+          <div className="card-header">
+            <h3 className="card-title">Sản phẩm bán chạy</h3>
           </div>
           <div className="ranking-list">
             {topProductSummary.map((item) => (

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
-import { reloadCurrentPage } from "../utils/adminActions";
 import OrderCancelReasonDialog from "../components/OrderCancelReasonDialog";
 import "./Orders.css";
 
@@ -27,18 +26,18 @@ const getAllowedStatusOptions = (currentStatus) => {
   return map[currentStatus] || [currentStatus];
 };
 
-const getStatusTone = (value) => {
-  const map = {
-    "Chờ xác nhận": "status-pending",
-    "Đã xác nhận": "status-confirmed",
-    "Đang xử lý": "status-processing",
-    "Đang giao hàng": "status-shipping",
-    "Hoàn tất": "status-completed",
-    "Đã hủy": "status-cancelled",
-  };
+// const getStatusTone = (value) => {
+//   const map = {
+//     "Chờ xác nhận": "status-pending",
+//     "Đã xác nhận": "status-confirmed",
+//     "Đang xử lý": "status-processing",
+//     "Đang giao hàng": "status-shipping",
+//     "Hoàn tất": "status-completed",
+//     "Đã hủy": "status-cancelled",
+//   };
 
-  return map[value] || "status-pill-neutral";
-};
+//   return map[value] || "status-pill-neutral";
+// };
 
 const CANCELLED_STATUS = "Đã hủy";
 
@@ -94,7 +93,7 @@ export default function Orders() {
     try {
       await api.patch(`/admin/orders/${orderId}/status`, payload);
       setMessage("Cập nhật đơn hàng thành công");
-      reloadCurrentPage();
+      await load();
       return true;
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể cập nhật đơn hàng");

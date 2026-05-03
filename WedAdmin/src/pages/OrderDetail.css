@@ -20,6 +20,15 @@
   min-width: 0;
 }
 
+.page-order-detail .order-item-thumb {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid rgba(37, 56, 82, 0.12);
+  background: #ffffff;
+}
+
 .page-order-detail .status-pill {
   min-width: 118px;
   font-weight: 900;

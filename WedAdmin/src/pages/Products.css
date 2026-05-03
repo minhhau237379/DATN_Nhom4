@@ -333,7 +333,7 @@
   white-space: nowrap;
 }
 
-.page-products .panel-actions {
+.page-products .card-tools {
   display: flex;
   justify-content: flex-end;
   margin-bottom: 3px;

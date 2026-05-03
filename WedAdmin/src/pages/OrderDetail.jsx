@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api from "../services/api";
-import { reloadCurrentPage } from "../utils/adminActions";
+import { getBackendOrigin } from "../services/baseUrl";
 import OrderCancelReasonDialog from "../components/OrderCancelReasonDialog";
 import "./OrderDetail.css";
 
@@ -42,6 +42,25 @@ const getPaymentTone = (value) => {
   return map[value] || "status-pill-neutral";
 };
 
+const resolveOrderItemImage = (value) => {
+  if (!value) {
+    return `${getBackendOrigin()}/images/no-image.png`;
+  }
+
+  const image = Array.isArray(value) ? value[0] : value;
+  const trimmed = String(image || "").trim();
+
+  if (!trimmed) {
+    return `${getBackendOrigin()}/images/no-image.png`;
+  }
+
+  if (trimmed.startsWith("http") || trimmed.startsWith("blob:") || trimmed.startsWith("data:")) {
+    return trimmed;
+  }
+
+  return `${getBackendOrigin()}${trimmed}`;
+};
+
 export default function OrderDetail() {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
@@ -53,6 +72,14 @@ export default function OrderDetail() {
     saving: false,
     error: "",
   });
+
+  const loadOrder = async () => {
+    const res = await api.get(`/admin/orders/${id}`);
+    setOrder(res.data.order);
+    setDraft({
+      orderStatus: res.data.order?.orderStatus || "",
+    });
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -81,7 +108,7 @@ export default function OrderDetail() {
     try {
       await api.patch(`/admin/orders/${id}/status`, draft);
       setMessage("Cập nhật đơn hàng thành công");
-      reloadCurrentPage();
+      await loadOrder();
       return;
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể cập nhật đơn hàng");
@@ -96,11 +123,11 @@ export default function OrderDetail() {
 
     try {
       await api.patch(`/admin/orders/${id}/status`, payload);
-      setMessage("Cáº­p nháº­t Ä‘Æ¡n hÃ ng thÃ nh cÃ´ng");
-      reloadCurrentPage();
+      setMessage("Cập nhật đơn hàng thành công");
+      await loadOrder();
       return true;
     } catch (err) {
-      setMessage(err.response?.data?.message || "KhÃ´ng thá»ƒ cáº­p nháº­t Ä‘Æ¡n hÃ ng");
+      setMessage(err.response?.data?.message || "Không thể cập nhật đơn hàng");
       return false;
     }
   };
@@ -156,15 +183,15 @@ export default function OrderDetail() {
   );
 
   if (!order) {
-    return <div className="panel">Đang tải chi tiết đơn hàng...</div>;
+    return <div className="card card-outline card-secondary p-3">Đang tải chi tiết đơn hàng...</div>;
   }
 
   const allowedStatuses = getAllowedStatusOptions(order.orderStatus);
 
   return (
     <div className="stack page-order-detail">
-      <section className="panel panel-hero card card-outline card-primary">
-        <div className="panel-header">
+      <section className="card card-outline card-primary">
+        <div className="card-header">
           <div>
             <p className="eyebrow">Chi tiết đơn hàng</p>
             <h3>#{order.orderNumber || order._id.slice(-6)}</h3>
@@ -199,9 +226,9 @@ export default function OrderDetail() {
         </div>
       </section>
 
-      <section className="panel card card-outline card-secondary">
-        <div className="panel-header">
-          <h3>Thông tin xử lý</h3>
+      <section className="card card-outline card-secondary">
+        <div className="card-header">
+          <h3 className="card-title">Thông tin xử lý</h3>
         </div>
 
         <div className="detail-grid">
@@ -242,18 +269,19 @@ export default function OrderDetail() {
         </div>
 
         <button className="btn btn-primary" onClick={handleSaveClick}>
-          LƯu thay đổi
+          Lưu thay đổi
         </button>
       </section>
 
-      <section className="panel card card-outline card-secondary">
-        <div className="panel-header">
-          <h3>Sản phẩm trong đơn</h3>
+      <section className="card card-outline card-secondary">
+        <div className="card-header">
+          <h3 className="card-title">Sản phẩm trong đơn</h3>
         </div>
         <div className="table-wrap">
           <table>
             <thead>
               <tr>
+                <th>Ảnh</th>
                 <th>Sản phẩm</th>
                 <th>Số lượng</th>
                 <th>Đơn giá</th>
@@ -263,6 +291,13 @@ export default function OrderDetail() {
             <tbody>
               {order.items.map((item) => (
                 <tr key={`${item.product?._id || item.name}-${item.quantity}`}>
+                  <td>
+                    <img
+                      className="order-item-thumb"
+                      src={resolveOrderItemImage(item.product?.image || item.image)}
+                      alt={item.product?.name || item.name || "Sản phẩm"}
+                    />
+                  </td>
                   <td>{item.product?.name || item.name}</td>
                   <td>{item.quantity}</td>
                   <td>{Number(item.price || 0).toLocaleString("vi-VN")} ₫</td>

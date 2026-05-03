@@ -1,4 +1,4 @@
-.page-categories .panel-header h3 {
+.page-categories .card-header h3 {
   margin-bottom: 0;
 }
 
@@ -25,7 +25,7 @@
   width: 100%;
 }
 
-.page-categories .panel-actions {
+.page-categories .card-tools {
   display: flex;
   justify-content: flex-end;
   margin-top: 8px;

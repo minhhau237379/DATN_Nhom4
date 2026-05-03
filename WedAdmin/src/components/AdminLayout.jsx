@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
-import { reloadCurrentPage } from "../utils/adminActions";
 import "./AdminLayout.css";
 
 const navItems = [
@@ -20,6 +19,11 @@ export default function AdminLayout() {
 
   useEffect(() => {
     document.title = "HoppyStore88";
+    document.body.classList.add("hold-transition", "sidebar-mini", "layout-fixed");
+
+    return () => {
+      document.body.classList.remove("hold-transition", "sidebar-mini", "layout-fixed");
+    };
   }, []);
 
   useEffect(() => {
@@ -90,8 +94,20 @@ export default function AdminLayout() {
       {/* Content Wrapper */}
       <div className="content-wrapper">
         <section className="content">
-          <div style={{ padding: "20px" }}>
-            <Outlet />
+          <div className="content-header">
+            <div className="container-fluid">
+              <div className="row mb-2">
+                <div className="col-sm-12">
+                  {/* breadcrumb placeholder if needed */}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="content">
+            <div className="container-fluid">
+              <Outlet />
+            </div>
           </div>
         </section>
       </div>

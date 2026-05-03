@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
-import { reloadCurrentPage, scrollToTop } from "../utils/adminActions";
+import { scrollToTop } from "../utils/adminActions";
 import "./Categories.css";
 
 const emptyForm = {
@@ -81,7 +81,7 @@ export default function Categories() {
       setMessage(res.data?.message || "Lưu thành công");
       setShowDialog(false);
       setForm(emptyForm);
-      reloadCurrentPage();
+      await load();
       return;
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể lưu danh mục");
@@ -96,7 +96,7 @@ export default function Categories() {
         status: category.status === 1 ? 0 : 1,
       });
       setMessage(category.status === 1 ? "Đã ẩn danh mục" : "Đã hiển thị danh mục");
-      reloadCurrentPage();
+      await load();
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể đổi trạng thái danh mục");
     }
@@ -107,8 +107,8 @@ export default function Categories() {
 
   return (
     <div className="stack page-categories">
-      <section className="panel panel-hero card card-outline card-primary">
-        <div className="panel-header">
+      <section className="card card-outline card-primary">
+        <div className="card-header">
           <div>
             <p className="eyebrow">Quản lý danh mục</p>
             <h3>Thêm, sửa và ẩn/hiện danh mục</h3>
@@ -135,16 +135,16 @@ export default function Categories() {
 
         {message && <div className="alert">{message}</div>}
 
-        <div className="panel-actions">
+        <div className="card-tools mb-3">
           <button type="button" className="btn btn-primary" onClick={openCreate}>
             Thêm mới
           </button>
         </div>
       </section>
 
-      <section className="panel card card-outline card-secondary">
-        <div className="panel-header">
-          <h3>Danh sách danh mục</h3>
+      <section className="card card-outline card-secondary">
+        <div className="card-header">
+          <h3 className="card-title">Danh sách danh mục</h3>
         </div>
 
         {loading ? (

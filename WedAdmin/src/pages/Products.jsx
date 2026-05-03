@@ -3,7 +3,7 @@ import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import { getBackendOrigin } from "../services/baseUrl";
-import { reloadCurrentPage, scrollToTop } from "../utils/adminActions";
+import { scrollToTop } from "../utils/adminActions";
 import "./Products.css";
 
 const emptyForm = {
@@ -249,7 +249,7 @@ export default function Products() {
       setForm(emptyForm);
       setSelectedFiles([]);
       setFilePreviewUrls([]);
-      reloadCurrentPage();
+      await load();
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể lưu sản phẩm");
     } finally {
@@ -263,7 +263,7 @@ export default function Products() {
         status: product.status === 1 ? 0 : 1,
       });
       setMessage(product.status === 1 ? "Đã ẩn sản phẩm" : "Đã hiển thị sản phẩm");
-      reloadCurrentPage();
+      await load();
     } catch (err) {
       setMessage(err.response?.data?.message || "Không thể đổi trạng thái sản phẩm");
     }
@@ -277,8 +277,8 @@ export default function Products() {
     <div className="stack page-products">
       
 
-      <section className="panel panel-hero card card-outline card-primary">
-        <div className="panel-header">
+      <section className="card card-outline card-primary">
+        <div className="card-header">
           <div>
             <p className="eyebrow">Quản lý sản phẩm</p>
             <h3>Sản phẩm, ảnh và trạng thái hiển thị</h3>
@@ -322,18 +322,18 @@ export default function Products() {
             <option value="1">Hiện</option>
             <option value="0">Ẩn</option>
           </select>
-          <div className="panel-actions">
-          <button type="button" className="btn btn-primary" onClick={openCreate}>
-            Thêm mới
-          </button>
-        </div>
+          <div className="card-tools">
+            <button type="button" className="btn btn-primary" onClick={openCreate}>
+              Thêm mới
+            </button>
+          </div>
         </div>
       </section>
 
-      <section className="panel card card-outline card-secondary">
-        <div className="panel-header">
-          <h3>Danh sách sản phẩm</h3>
-          <p className="muted-text">
+      <section className="card card-outline card-secondary">
+        <div className="card-header">
+          <h3 className="card-title">Danh sách sản phẩm</h3>
+          <p className="muted-text mb-0">
             Bấm vào nút trạng thái để ẩn/hiện nhanh mà không mất dữ liệu.
           </p>
         </div>

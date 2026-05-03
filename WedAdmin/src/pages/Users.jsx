@@ -191,8 +191,8 @@ export default function Users() {
 
   return (
     <div className="stack page-users">
-      <section className="panel panel-hero card card-outline card-primary">
-        <div className="panel-header">
+      <section className="card card-outline card-primary">
+        <div className="card-header">
           <div>
             <p className="eyebrow">Quản lý tài khoản</p>
             <h3>Người dùng, địa chỉ giao hàng và khóa/mở tài khoản</h3>
@@ -234,9 +234,9 @@ export default function Users() {
         </div>
       </section>
 
-      <section className="panel card card-outline card-secondary">
-        <div className="panel-header">
-          <h3>Danh sách người dùng</h3>
+      <section className="card card-outline card-secondary">
+        <div className="card-header">
+          <h3 className="card-title">Danh sách người dùng</h3>
         </div>
 
         {loading ? (
