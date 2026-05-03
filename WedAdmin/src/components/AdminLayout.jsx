@@ -15,7 +15,6 @@ const navItems = [
 export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const adminUser = JSON.parse(localStorage.getItem("adminUser") || "null");
 
   useEffect(() => {
     document.title = "HoppyStore88";
@@ -46,19 +45,7 @@ export default function AdminLayout() {
     <div className="wrapper">
       {/* Navbar */}
       <nav className="main-header navbar navbar-expand navbar-white navbar-light">
-        <ul className="navbar-nav ml-auto">
-          <li className="nav-item">
-            <span className="nav-link">
-              <i className="fas fa-user-circle mr-2"></i>
-              {adminUser?.username || "admin"}
-            </span>
-          </li>
-          <li className="nav-item">
-            <button className="nav-link btn btn-link" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt"></i> Đăng xuất
-            </button>
-          </li>
-        </ul>
+        <div className="navbar-nav ml-auto" />
       </nav>
 
       {/* Sidebar */}
@@ -86,6 +73,12 @@ export default function AdminLayout() {
                   </NavLink>
                 </li>
               ))}
+              <li className="nav-item nav-item-logout">
+                <button type="button" className="nav-link logout-link" onClick={handleLogout}>
+                  <i className="fas fa-sign-out-alt nav-icon"></i>
+                  <p>Đăng xuất</p>
+                </button>
+              </li>
             </ul>
           </nav>
         </div>

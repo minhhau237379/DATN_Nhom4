@@ -136,19 +136,55 @@ body {
   color: #007bff;
 }
 
+.nav-item-logout {
+  margin-top: 1rem;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.logout-link {
+  width: 100%;
+  text-align: left;
+  color: #b91c1c;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.logout-link:hover,
+.logout-link:focus {
+  background: rgba(239, 68, 68, 0.08);
+  color: #991b1b;
+}
+
+.logout-link .nav-icon {
+  color: #b91c1c;
+}
+
 /* Content Wrapper */
 .content-wrapper {
   flex: 1;
   margin-left: 280px;
   margin-top: 60px;
-  background-color: #f5f5f5;
+  background-color: #f2f4f8;
   min-height: calc(100vh - 60px);
   overflow-y: auto;
 }
 
 .content {
-  padding: 20px;
-  background-color: #f5f5f5;
+  padding: 24px 20px 40px;
+  max-width: 1300px;
+  margin: 0 auto;
+}
+
+.content .card {
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.content .card .card-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 /* Responsive */
