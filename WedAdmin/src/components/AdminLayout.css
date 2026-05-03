@@ -130,10 +130,13 @@ body {
   width: 1.25rem;
   text-align: center;
   color: #666;
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
-.nav-sidebar .nav-link.active .nav-icon {
-  color: #007bff;
+.nav-sidebar .nav-link.active .nav-icon,
+.nav-sidebar .nav-link.active .nav-icon * {
+  color: #007bff !important;
+  transform: scale(1.1);
 }
 
 .nav-item-logout {
