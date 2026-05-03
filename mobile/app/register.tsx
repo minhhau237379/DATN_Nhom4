@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { isAxiosError } from "axios";
 import AppToast from "../components/AppToast";
 import api from "../services/api";
 
@@ -210,7 +211,13 @@ export default function Register() {
       }
     } catch (err) {
       console.error(err);
-      showNotice("Lỗi", "Không kết nối được tới máy chủ");
+
+      if (isAxiosError(err)) {
+        const serverMessage = err.response?.data?.message;
+        showNotice("Lỗi", serverMessage || "Đăng ký thất bại");
+      } else {
+        showNotice("Thông báo", "Không kết nối được tới máy chủ");
+      }
     }
 
     setLoading(false);
@@ -283,7 +290,7 @@ export default function Register() {
               style={styles.inputPassword}
               placeholderTextColor="#000"
               placeholder="Mật khẩu"
-              secureTextEntry={false}
+              secureTextEntry={!showPassword}
               value={form.password}
               autoCapitalize="none"
               autoCorrect={false}
@@ -314,7 +321,7 @@ export default function Register() {
               style={styles.inputPassword}
               placeholderTextColor="#000"
               placeholder="Xác nhận mật khẩu"
-              secureTextEntry={false}
+              secureTextEntry={!showConfirmPassword}
               value={form.confirmPassword}
               autoCapitalize="none"
               autoCorrect={false}

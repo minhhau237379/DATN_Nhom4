@@ -195,7 +195,7 @@ export default function Login() {
             style={styles.inputPassword}
             placeholderTextColor="#000"
             placeholder="Nhập mật khẩu"
-            secureTextEntry={false}
+            secureTextEntry={!showPassword}
             value={form.password}
             autoCapitalize="none"
             autoCorrect={false}

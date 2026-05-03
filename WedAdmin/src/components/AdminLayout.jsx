@@ -5,12 +5,12 @@ import { reloadCurrentPage } from "../utils/adminActions";
 import "./AdminLayout.css";
 
 const navItems = [
-  { to: "/admin/dashboard", label: "Dashboard" },
-  { to: "/admin/products", label: "Sản phẩm" },
-  { to: "/admin/categories", label: "Danh mục" },
-  { to: "/admin/users", label: "Người dùng" },
-  { to: "/admin/orders", label: "Đơn hàng" },
-  { to: "/admin/chat", label: "Chat" },
+  { to: "/admin/dashboard", label: "Dashboard", icon: "fas fa-chart-line" },
+  { to: "/admin/products", label: "Sản phẩm", icon: "fas fa-box" },
+  { to: "/admin/categories", label: "Danh mục", icon: "fas fa-list" },
+  { to: "/admin/users", label: "Người dùng", icon: "fas fa-users" },
+  { to: "/admin/orders", label: "Đơn hàng", icon: "fas fa-shopping-cart" },
+  { to: "/admin/chat", label: "Chat", icon: "fas fa-comments" },
 ];
 
 export default function AdminLayout() {
@@ -39,53 +39,61 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="admin-shell">
-      <aside className="sidebar">
-        <div className="brand">
-          
-          <div>
-            <h1>HoppyStore88</h1>
-            <p className="muted-text">Quản trị hệ thống</p>
-          </div>
-        </div>
+    <div className="wrapper">
+      {/* Navbar */}
+      <nav className="main-header navbar navbar-expand navbar-white navbar-light">
+        <ul className="navbar-nav ml-auto">
+          <li className="nav-item">
+            <span className="nav-link">
+              <i className="fas fa-user-circle mr-2"></i>
+              {adminUser?.username || "admin"}
+            </span>
+          </li>
+          <li className="nav-item">
+            <button className="nav-link btn btn-link" onClick={handleLogout}>
+              <i className="fas fa-sign-out-alt"></i> Đăng xuất
+            </button>
+          </li>
+        </ul>
+      </nav>
 
-        <nav className="nav">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="sidebar-footer">
-          <div className="admin-chip">
-            <span className="dot" />
-            {adminUser?.username || "admin"}
+      {/* Sidebar */}
+      <aside className="main-sidebar sidebar-light-primary elevation-4">
+        <div className="sidebar">
+          {/* Brand/Logo */}
+          <div className="brand-link" style={{ textAlign: "center", padding: "15px" }}>
+            <h3 style={{ margin: "0", fontSize: "20px", fontWeight: "bold", color: "#333" }}>
+              🎮 HoppyStore88
+            </h3>
+            <small style={{ color: "#666" }}>Quản trị hệ thống</small>
           </div>
-          <button className="btn btn-secondary" onClick={handleLogout}>
-            Đăng xuất
-          </button>
+
+          {/* Sidebar Menu */}
+          <nav className="mt-2">
+            <ul className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+              {navItems.map((item) => (
+                <li className="nav-item" key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
+                  >
+                    <i className={`${item.icon} nav-icon`}></i>
+                    <p>{item.label}</p>
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
       </aside>
 
-      <div className="content">
-        <header className="topbar">
-          <div>
-            <p className="eyebrow">Quản trị hệ thống</p>
-            <h2>Quản lý HoppyStore88 trên cùng backend</h2>
+      {/* Content Wrapper */}
+      <div className="content-wrapper">
+        <section className="content">
+          <div style={{ padding: "20px" }}>
+            <Outlet />
           </div>
-          <button type="button" className="btn btn-primary" onClick={reloadCurrentPage}>
-            Làm mới
-          </button>
-        </header>
-
-        <main className="page">
-          <Outlet />
-        </main>
+        </section>
       </div>
     </div>
   );

@@ -175,137 +175,195 @@ export default function Orders() {
   }, [orders]);
 
   return (
-    <div className="stack page-orders">
-      <section className="panel panel-hero">
-        <div className="panel-header">
-          <div>
-            <p className="eyebrow">Quản lý đơn hàng</p>
-            <h3>Theo dõi thanh toán và trạng thái xử lý</h3>
-          </div>
-
-          <div className="stats-inline">
-            <div className="mini-stat">
-              <span>Tổng</span>
-              <strong>{stats.total}</strong>
-            </div>
-            <div className="mini-stat">
-              <span>Đã thanh toán</span>
-              <strong>{stats.paid}</strong>
-            </div>
-            <div className="mini-stat">
-              <span>Hoàn tất</span>
-              <strong>{stats.completed}</strong>
-            </div>
-            <div className="mini-stat">
-              <span>Đã hủy</span>
-              <strong>{stats.cancelled}</strong>
-            </div>
+    <div>
+      {/* Card Chính */}
+      <div className="card card-primary card-outline">
+        {/* Card Header - Tiêu đề */}
+        <div className="card-header">
+          <h3 className="card-title">
+            <i className="fas fa-shopping-cart mr-2"></i>
+            Quản lý đơn hàng
+          </h3>
+          <div className="card-tools">
+            <button className="btn btn-tool" type="button" onClick={load}>
+              <i className="fas fa-sync"></i> Làm mới
+            </button>
           </div>
         </div>
 
-        {message && <div className="alert">{message}</div>}
-
-        <div className="filter-row">
-          <input
-            style={{ width: "45%" }}
-            name="search"
-            value={filters.search}
-            onChange={handleFilterChange}
-            placeholder="Mã đơn..."
-          />
-          <select
-            style={{ width: "50%" }}
-            name="status"
-            value={filters.status}
-            onChange={handleFilterChange}
-          >
-            <option value="">Tất cả trạng thái</option>
-            {statusOptions.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-          <button className="btn btn-secondary" type="button" onClick={load}>
-            Lọc
-          </button>
-        </div>
-      </section>
-
-      <section className="panel">
-        {loading ? (
-          <p>Đang tải...</p>
-        ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Mã đơn</th>
-                  <th>Khách hàng</th>
-                  <th>Thanh toán</th>
-                  <th>Trạng thái</th>
-                  <th>Tổng tiền</th>
-                  <th>Hành động</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((order) => {
-                  const draft = drafts[order._id] || {
-                    orderStatus: order.orderStatus,
-                  };
-
-                  return (
-                    <tr key={order._id}>
-                      <td>
-                        <Link to={`/admin/orders/${order._id}`}>
-                          #{order.orderNumber || order._id.slice(-6)}
-                        </Link>
-                      </td>
-                      <td>
-                        <strong>{order.user?.username || "N/A"}</strong>
-                        <div className="muted-text small-text">{order.user?.email || ""}</div>
-                      </td>
-                      <td>
-                        <span className={`status-pill ${getPaymentTone(order.paymentStatus)}`}>
-                          {order.paymentStatus}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`status-pill ${getStatusTone(order.orderStatus)}`}>
-                          {order.orderStatus}
-                        </span>
-                      </td>
-                      <td>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} ₫</td>
-                      <td>
-                        <div className="actions-inline">
-                          <select
-                            value={draft.orderStatus || ""}
-                            onChange={(e) => setDraft(order._id, "orderStatus", e.target.value)}
-                          >
-                            {getAllowedStatusOptions(order.orderStatus).map((status) => (
-                              <option key={status} value={status}>
-                                {status}
-                              </option>
-                            ))}
-                          </select>
-                          <button
-                            className="btn btn-primary"
-                            type="button"
-                            onClick={() => handleSaveClick(order._id)}
-                          >
-                            Lưu
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        {/* Card Body */}
+        <div className="card-body">
+          {/* Thống kê nhanh */}
+          <div className="row mb-3">
+            <div className="col-md-3">
+              <div className="info-box">
+                <span className="info-box-icon bg-info">
+                  <i className="fas fa-list"></i>
+                </span>
+                <div className="info-box-content">
+                  <span className="info-box-text">Tổng đơn hàng</span>
+                  <span className="info-box-number">{stats.total}</span>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div className="info-box">
+                <span className="info-box-icon bg-success">
+                  <i className="fas fa-money-bill"></i>
+                </span>
+                <div className="info-box-content">
+                  <span className="info-box-text">Đã thanh toán</span>
+                  <span className="info-box-number">{stats.paid}</span>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div className="info-box">
+                <span className="info-box-icon bg-primary">
+                  <i className="fas fa-check-circle"></i>
+                </span>
+                <div className="info-box-content">
+                  <span className="info-box-text">Hoàn tất</span>
+                  <span className="info-box-number">{stats.completed}</span>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div className="info-box">
+                <span className="info-box-icon bg-danger">
+                  <i className="fas fa-times-circle"></i>
+                </span>
+                <div className="info-box-content">
+                  <span className="info-box-text">Đã hủy</span>
+                  <span className="info-box-number">{stats.cancelled}</span>
+                </div>
+              </div>
+            </div>
           </div>
-        )}
-      </section>
 
+          {/* Message Alert */}
+          {message && <div className="alert alert-info">{message}</div>}
+
+          {/* Filter Section */}
+          <div className="row mb-3 pb-3 border-bottom">
+            <div className="col-md-6">
+              <input
+                type="text"
+                className="form-control"
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                placeholder="Tìm kiếm mã đơn hàng..."
+              />
+            </div>
+            <div className="col-md-4">
+              <select
+                className="form-control"
+                name="status"
+                value={filters.status}
+                onChange={handleFilterChange}
+              >
+                <option value="">Tất cả trạng thái</option>
+                {statusOptions.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="col-md-2">
+              <button className="btn btn-primary btn-block" type="button" onClick={load}>
+                <i className="fas fa-search mr-1"></i> Lọc
+              </button>
+            </div>
+          </div>
+
+          {/* Table */}
+          {loading ? (
+            <div className="text-center py-5">
+              <div className="spinner-border text-primary" role="status">
+                <span className="sr-only">Đang tải...</span>
+              </div>
+              <p className="mt-2">Đang tải dữ liệu...</p>
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-bordered table-hover table-sm">
+                <thead className="table-dark">
+                  <tr>
+                    <th style={{ width: "12%" }}>Mã đơn</th>
+                    <th style={{ width: "20%" }}>Khách hàng</th>
+                    <th style={{ width: "15%" }}>Thanh toán</th>
+                    <th style={{ width: "15%" }}>Trạng thái</th>
+                    <th style={{ width: "15%" }}>Tổng tiền</th>
+                    <th style={{ width: "23%" }}>Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((order) => {
+                    const draft = drafts[order._id] || {
+                      orderStatus: order.orderStatus,
+                    };
+
+                    return (
+                      <tr key={order._id}>
+                        <td>
+                          <Link to={`/admin/orders/${order._id}`}>
+                            <strong>#{order.orderNumber || order._id.slice(-6)}</strong>
+                          </Link>
+                        </td>
+                        <td>
+                          <strong>{order.user?.username || "N/A"}</strong>
+                          <br />
+                          <small className="text-muted">{order.user?.email || ""}</small>
+                        </td>
+                        <td>
+                          <span className={`badge badge-${getPaymentTone(order.paymentStatus).includes("pending") ? "warning" : "success"}`}>
+                            {order.paymentStatus}
+                          </span>
+                        </td>
+                        <td>
+                          <span className={`badge ${getStatusBadgeClass(order.orderStatus)}`}>
+                            {order.orderStatus}
+                          </span>
+                        </td>
+                        <td>
+                          <strong>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} ₫</strong>
+                        </td>
+                        <td>
+                          <div className="d-flex gap-2">
+                            <select
+                              className="form-control form-control-sm"
+                              style={{ flex: 1 }}
+                              value={draft.orderStatus || ""}
+                              onChange={(e) => setDraft(order._id, "orderStatus", e.target.value)}
+                            >
+                              {getAllowedStatusOptions(order.orderStatus).map((status) => (
+                                <option key={status} value={status}>
+                                  {status}
+                                </option>
+                              ))}
+                            </select>
+                            <button
+                              className="btn btn-primary btn-sm"
+                              type="button"
+                              onClick={() => handleSaveClick(order._id)}
+                            >
+                              Lưu
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Cancel Dialog */}
       <OrderCancelReasonDialog
         visible={cancelDialog.open}
         reason={cancelDialog.reason}
@@ -323,4 +381,16 @@ export default function Orders() {
       />
     </div>
   );
+}
+
+function getStatusBadgeClass(status) {
+  const map = {
+    "Chờ xác nhận": "badge-warning",
+    "Đã xác nhận": "badge-info",
+    "Đang xử lý": "badge-primary",
+    "Đang giao hàng": "badge-info",
+    "Hoàn tất": "badge-success",
+    "Đã hủy": "badge-danger",
+  };
+  return map[status] || "badge-secondary";
 }
