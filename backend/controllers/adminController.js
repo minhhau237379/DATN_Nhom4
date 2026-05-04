@@ -849,12 +849,20 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
-    if (nextStatus === ORDER_STATUS.CANCELLED && currentStatus !== ORDER_STATUS.WAITING_CONFIRM) {
-      return res.status(400).json({
-        success: false,
-        message: "Đơn hàng đã được xác nhận nên không thể hủy",
-      });
-    }
+    const cancellableStatuses = [
+  ORDER_STATUS.WAITING_CONFIRM,
+  ORDER_STATUS.CONFIRMED,
+  ORDER_STATUS.PROCESSING,
+  ORDER_STATUS.SHIPPING,
+];
+
+if (nextStatus === ORDER_STATUS.CANCELLED && !cancellableStatuses.includes(currentStatus)) {
+  return res.status(400).json({
+    success: false,
+    message: "Đơn hàng đã hoàn tất hoặc đã hủy nên không thể hủy",
+  });
+}
+
 
     const cancelReason =
       nextStatus === ORDER_STATUS.CANCELLED ? String(req.body.cancelReason || "").trim() : "";

@@ -8,9 +8,9 @@ import "./OrderDetail.css";
 const getAllowedStatusOptions = (currentStatus) => {
   const map = {
     "Chờ xác nhận": ["Chờ xác nhận", "Đã xác nhận", "Đã hủy"],
-    "Đã xác nhận": ["Đã xác nhận", "Đang xử lý"],
-    "Đang xử lý": ["Đang xử lý", "Đang giao hàng"],
-    "Đang giao hàng": ["Đang giao hàng", "Hoàn tất"],
+    "Đã xác nhận": ["Đã xác nhận", "Đang xử lý", "Đã hủy"],
+    "Đang xử lý": ["Đang xử lý", "Đang giao hàng", "Đã hủy"],
+    "Đang giao hàng": ["Đang giao hàng", "Hoàn tất", "Đã hủy"],
     "Hoàn tất": ["Hoàn tất"],
     "Đã hủy": ["Đã hủy"],
   };

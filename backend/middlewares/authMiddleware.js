@@ -119,7 +119,7 @@ const checkDuplicateUser = async (req, res, next) => {
         if (existingUsername) {
             return res.status(400).json({
                 success: false,
-                message: 'Username already exists'
+                message: 'Username đã tồn tại'
             });
         }
         
@@ -128,7 +128,7 @@ const checkDuplicateUser = async (req, res, next) => {
         if (existingEmail) {
             return res.status(400).json({
                 success: false,
-                message: 'Email already registered'
+                message: 'Email đã được đăng ký'
             });
         }
         
@@ -137,7 +137,7 @@ const checkDuplicateUser = async (req, res, next) => {
         if (existingPhone) {
             return res.status(400).json({
                 success: false,
-                message: 'Phone number already registered'
+                message: 'Số điện thoại đã được đăng ký'
             });
         }
         
@@ -157,7 +157,7 @@ const checkDuplicateUser = async (req, res, next) => {
         
         res.status(500).json({
             success: false,
-            message: 'Server error during validation'
+            message: 'Lỗi máy chủ trong quá trình xác thực'
         });
     }
 };

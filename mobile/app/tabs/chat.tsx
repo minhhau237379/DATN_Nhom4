@@ -111,7 +111,7 @@ export default function ChatScreen() {
       setPickerProducts(res.data.products || []);
     } catch (err) {
       console.error("Load chat products error:", err);
-      showNotice("Lỗi", "Không thể tải danh sách sản phẩm");
+      showNotice("Thông báo", "Không thể tải danh sách sản phẩm");
     } finally {
       setPickerLoading(false);
     }
@@ -183,7 +183,7 @@ export default function ChatScreen() {
       // showNotice("Thành công", "Đã gửi tin nhắn cho admin");
     } catch (err) {
       console.error("Send chat message error:", err);
-      showNotice("Lỗi", "Không thể gửi tin nhắn");
+      showNotice("Thông báo", "Không thể gửi tin nhắn");
     } finally {
       setSending(false);
     }
@@ -212,7 +212,7 @@ export default function ChatScreen() {
       setPendingAttachment(null);
     } catch (err) {
       console.error("Send chat message error:", err);
-      showNotice("Lỗi", "Không thể gửi tin nhắn");
+      showNotice("Thông báo", "Không thể gửi tin nhắn");
     } finally {
       setSending(false);
     }
@@ -245,7 +245,7 @@ export default function ChatScreen() {
       setPickerSearch("");
     } catch (err) {
       console.error("Send chat product error:", err);
-      showNotice("Lỗi", "Không thể gửi sản phẩm vào chat");
+      showNotice("Thông báo", "Không thể gửi sản phẩm vào chat");
     } finally {
       setSending(false);
     }

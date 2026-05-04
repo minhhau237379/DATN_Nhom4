@@ -210,7 +210,8 @@ export default function Register() {
         showNotice("Lỗi", data.message || "Đăng ký thất bại");
       }
     } catch (err) {
-      console.error(err);
+      console.log("Register error:", err);
+
 
       if (isAxiosError(err)) {
         const serverMessage = err.response?.data?.message;

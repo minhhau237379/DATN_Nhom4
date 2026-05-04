@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     backgroundColor: "#f5f5f5",
-    justifyContent: "flex-start",
+    justifyContent: "center",
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,

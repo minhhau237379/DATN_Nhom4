@@ -67,10 +67,11 @@ api.interceptors.response.use(
 
         setTimeout(() => {
           isHandlingAccountLock = false;
-        }, 1000);
+        }, 2000);
       }
 
-      return error.response;
+      // Trả promise treo vĩnh viễn — screen không chạy tiếp, không lỗi, không LogBox
+      return new Promise(() => {});
     }
 
     return Promise.reject(error);
