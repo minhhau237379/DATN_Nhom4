@@ -187,6 +187,8 @@ export default function OrderDetail() {
   }
 
   const allowedStatuses = getAllowedStatusOptions(order.orderStatus);
+  const isCancelledOrder = order.orderStatus === CANCELLED_STATUS;
+  const cancelReason = String(order.cancelReason || "").trim();
 
   return (
     <div className="stack page-order-detail">
@@ -266,6 +268,14 @@ export default function OrderDetail() {
               ))}
             </select>
           </div>
+          {isCancelledOrder && (
+            <div className="cancel-reason-box">
+              <strong>Lý do hủy</strong>
+              <p className="text-danger mt-1">
+                {cancelReason || "Chưa có lý do hủy"}
+              </p>
+            </div>
+          )}
         </div>
 
         <button className="btn btn-primary" onClick={handleSaveClick}>

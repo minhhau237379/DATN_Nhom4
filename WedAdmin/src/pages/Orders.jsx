@@ -325,6 +325,11 @@ export default function Orders() {
                           <span className={`badge ${getStatusBadgeClass(order.orderStatus)}`}>
                             {order.orderStatus}
                           </span>
+                          {order.cancelReason ? (
+                            <div className="cancel-reason-inline">
+                              <strong>Lý do hủy:</strong> {order.cancelReason}
+                            </div>
+                          ) : null}
                         </td>
                         <td>
                           <strong>{Number(order.totalPrice || 0).toLocaleString("vi-VN")} ₫</strong>

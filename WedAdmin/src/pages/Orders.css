@@ -162,6 +162,13 @@
   color: white;
 }
 
+.cancel-reason-inline {
+  margin-top: 0.45rem;
+  color: #dc3545;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
 .d-flex {
   display: flex;
 }

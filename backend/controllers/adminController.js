@@ -762,6 +762,7 @@ exports.listOrders = async (req, res) => {
         ...order,
         orderStatus: normalizeOrderStatus(order.orderStatus),
         paymentStatus: normalizePaymentStatus(order.paymentStatus),
+        cancelReason: order.cancelReason || "",
       }));
 
     res.json({
@@ -797,6 +798,7 @@ exports.getOrderDetail = async (req, res) => {
         ...order,
         orderStatus: normalizeOrderStatus(order.orderStatus),
         paymentStatus: normalizePaymentStatus(order.paymentStatus),
+        cancelReason: order.cancelReason || "",
       },
     });
   } catch (err) {
@@ -929,6 +931,7 @@ if (nextStatus === ORDER_STATUS.CANCELLED && !cancellableStatuses.includes(curre
         ...orderData,
         orderStatus: normalizeOrderStatus(orderData.orderStatus),
         paymentStatus: normalizePaymentStatus(orderData.paymentStatus),
+        cancelReason: orderData.cancelReason || "",
       },
     });
   } catch (err) {
