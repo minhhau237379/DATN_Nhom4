@@ -202,22 +202,15 @@ export default function ProductDetail() {
         return;
       }
 
-      const res = await api.post("/cart/add", { productId });
-
-      if (!res.data.success) {
-        showNotice("Thông báo", res.data.message || "Không thể thêm vào giỏ hàng");
-        return;
-      }
-
       router.push({
-        pathname: "/tabs/cart",
+        pathname: "/checkout" as any,
         params: {
-          selectedProductId: productId,
+          directProductId: productId,
         },
       });
     } catch (err) {
       console.error(err);
-      showNotice("Lỗi", "Không thể mở trang giỏ hàng");
+      showNotice("Lỗi", "Không thể mở trang thanh toán");
     }
   };
 

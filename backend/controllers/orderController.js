@@ -745,11 +745,18 @@ exports.cancelOrder = async (req, res) => {
       throw new Error("Đơn hàng đã được xác nhận nên không thể hủy");
     }
 
+    const cancelReason = String(req.body.cancelReason || "").trim();
+
+    if (!cancelReason) {
+      throw new Error("Vui lòng nhập lý do hủy đơn hàng");
+    }
+
     const currentPayment = normalizePaymentStatus(order.paymentStatus);
     await restoreOrderStock(order, session);
 
     order.orderStatus = ORDER_STATUS.CANCELLED;
     order.paymentStatus = currentPayment;
+    order.cancelReason = cancelReason;
     await order.save({ session });
 
     await session.commitTransaction();
